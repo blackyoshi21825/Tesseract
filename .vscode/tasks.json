@@ -1,0 +1,56 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build beta",
+      "type": "shell",
+      "command": "gcc",
+      "args": [
+        "-std=c99",
+        "-Wall",
+        "-Wextra",
+        "-Iinclude",
+        "-o",
+        "beta",
+        "include/src/lexer.c",
+        "include/src/parser.c",
+        "include/src/ast.c",
+        "include/src/interpreter.c",
+        "include/src/variables.c",
+        "include/src/main.c"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "run tesser",
+      "type": "shell",
+      "command": "tesseract",
+      "args": [
+        "sample_file.tesser"
+      ],
+      "windows": {
+        "command": ".\\tesser.exe"
+      },
+      "osx": {
+        "command": "./tesser"
+      },
+      "linux": {
+        "command": "./tesser"
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
