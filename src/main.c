@@ -51,7 +51,6 @@ int main(int argc, char **argv)
 
     parser_init(source);
     ASTNode *root = parse_program();
-    register_standard_libraries();
     interpret(root);
 
     // TODO: free AST & source buffer here if you want
