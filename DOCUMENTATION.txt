@@ -1,4 +1,4 @@
-1. Beta is a simple interpreted programming language with:
+1. Tesseract is a simple interpreted programming language with:
     -Dynamic typing
     -Basic arithmetic operations
     -Control structures (if/else, loops)
