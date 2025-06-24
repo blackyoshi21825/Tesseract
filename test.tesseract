@@ -1,3 +1,2 @@
-$import "math.tesseract"
-
-print(pi)
+let$x := math.sqrt(25);
+::print x;

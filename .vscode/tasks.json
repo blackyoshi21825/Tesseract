@@ -11,13 +11,13 @@
         "-Wextra",
         "-Iinclude",
         "-o",
-        "beta",
-        "include/src/lexer.c",
-        "include/src/parser.c",
-        "include/src/ast.c",
-        "include/src/interpreter.c",
-        "include/src/variables.c",
-        "include/src/main.c"
+        "tesser",
+        "src/lexer.c",
+        "src/parser.c",
+        "src/ast.c",
+        "src/interpreter.c",
+        "src/variables.c",
+        "src/main.c"
       ],
       "group": {
         "kind": "build",
