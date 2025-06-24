@@ -1,2 +1,2 @@
 import$ "lib/math.tesseract"
-add(1,2)
+max4(19,39,0,0)

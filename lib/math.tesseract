@@ -77,7 +77,7 @@ func$tan(x) => {
     ::print sin(x) / cos(x)
 }
 
-func$max4(a, b, c, d) => {
+func$max(a, b, c, d) => {
     let$ m := a;
     if$ b > m {
         let$ m := b;
@@ -91,7 +91,7 @@ func$max4(a, b, c, d) => {
     ::print m
 }
 
-func$min4(a, b, c, d) => {
+func$min(a, b, c, d) => {
     let$m := a;
     if$ b < m {
         let$ m := b;
