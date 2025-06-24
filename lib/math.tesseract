@@ -1,0 +1,106 @@
+func$add(a, b) => {
+   ::print a + b
+}
+
+func$subtract(a, b) => {
+    ::print a - b
+}
+
+func$multiply(a, b) => {
+    ::print a * b
+}
+
+func$divide(a, b) => {
+    ::print a / b
+}
+
+func$mod(a, b) => {
+    ::print a % b
+}
+
+func$abs(x) => {
+    if$ x < 0 {
+        ::print x * 0 - 1
+    }
+    else {
+        ::print x
+    }
+}
+
+func$pow(base, exponent) => {
+    let$result := 1
+    loop$i := 1 => exponent {
+        let$ result := result * base;
+    }
+    ::print result
+}
+
+func$sqrt(n) => {
+    let$x := n;
+    let$guess := n / 2;
+    let$epsilon := 0.0001;
+    loop$i := 1 => 100 {
+        let$prev := guess;
+        let$ guess := (guess + x / guess) / 2;
+        if$ abs(guess - prev) < epsilon {
+            let$ i := 100;
+        }
+    }
+    ::print guess
+}
+
+func$sin(x) => {
+    let$result := 0;
+    let$term := x;
+    let$n := 1;
+    loop$i := 1 => 10 {
+        let$ result := result + term;
+        let$ term := term * (0-1) * x * x / ((2 * n) * (2 * n + 1));
+        let$ n := n + 1;
+    }
+    result
+}
+
+func$cos(x) => {
+    let$result := 1;
+    let$term := 1;
+    let$n := 1;
+    loop$i := 1 => 10 {
+        let$ term := term * (0-1) * x * x / ((2 * n - 1) * (2 * n));
+        let$ result := result + term;
+        let$ n := n + 1;
+    }
+    ::print result
+}
+
+func$tan(x) => {
+    ::print sin(x) / cos(x)
+}
+
+func$max4(a, b, c, d) => {
+    let$ m := a;
+    if$ b > m {
+        let$ m := b;
+    }
+    if$ c > m {
+        let$ m := c;
+    }
+    if$ d > m {
+        let$ m := d;
+    }
+    ::print m
+}
+
+func$min4(a, b, c, d) => {
+    let$m := a;
+    if$ b < m {
+        let$ m := b;
+    }
+    if$ c < m {
+        let$ m := c;
+    }
+    if$ d < m {
+        let$ m := d;
+    }
+    ::print  dm
+}
