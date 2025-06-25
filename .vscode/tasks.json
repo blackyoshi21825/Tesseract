@@ -15,6 +15,7 @@
                 "src/lexer.c",
                 "src/parser.c",
                 "src/ast.c",
+                "src/token.c",
                 "src/interpreter.c",
                 "src/variables.c",
                 "src/main.c"
