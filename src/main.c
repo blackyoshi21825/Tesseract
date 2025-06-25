@@ -4,7 +4,7 @@
 #include "interpreter.h"
 #include "ast.h"
 
-#define MAX_FILE_SIZE 1000000
+#define MAX_FILE_SIZE 1000000000
 
 // Read whole file into a dynamically allocated buffer
 char *read_file(const char *filename)
