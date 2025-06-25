@@ -1,0 +1,36 @@
+{
+    "name": "tesseract-language",
+    "displayName": "Tesseract Language Support",
+    "description": "Syntax highlighting and language support for Tesseract",
+    "version": "0.1.0",
+    "publisher": "your-name",
+    "engines": {
+        "vscode": "^1.50.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "tesseract",
+                "aliases": [
+                    "Tesseract",
+                    "tesseract"
+                ],
+                "extensions": [
+                    ".tesser",
+                    ".tesseract"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "tesseract",
+                "scopeName": "source.tesseract",
+                "path": "./syntaxes/tesseract.tmLanguage.json"
+            }
+        ]
+    }
+}
