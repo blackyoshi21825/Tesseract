@@ -63,7 +63,7 @@
         name(arg1, arg2)
 
 6. Import System
-    import$ "filename.beta"
+    import$ "filename.tesseract"
     
     -Imports and executes the specified file
      -Path is relative to the current file
