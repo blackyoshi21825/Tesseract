@@ -86,10 +86,33 @@ static ASTNode* parse_primary() {
         return node;
     }
 
-    if (current_token.type == TOK_ID) {
-        char fname[64];
-        strcpy(fname, current_token.text);
+    if (current_token.type == TOK_LBRACKET) {  // Assuming TOK_LBRACKET is the token type for '['
         next_token();
+        ASTNode* list = ast_new_list();
+        while (current_token.type != TOK_RBRACKET) {  // Assuming TOK_RBRACKET is the token type for ']'
+            ASTNode* element = parse_expression();
+            ast_list_add_element(list, element);
+            if (current_token.type == TOK_COMMA) {
+                next_token();
+            } else {
+                break;
+            }
+        }
+        expect(TOK_RBRACKET);
+        return list;
+    }
+
+    if (current_token.type == TOK_ID) {
+        char varname[64];
+        strcpy(varname, current_token.text);
+        next_token();
+
+        if (current_token.type == TOK_LBRACKET) {
+            next_token();
+            ASTNode* index = parse_expression();
+            expect(TOK_RBRACKET);
+            return ast_new_list_access(ast_new_var(varname), index);
+        }
 
         if (current_token.type == TOK_LPAREN) {
             next_token();
@@ -110,10 +133,10 @@ static ASTNode* parse_primary() {
             }
             expect(TOK_RPAREN);
 
-            return ast_new_func_call(fname, args, arg_count);
+            return ast_new_func_call(varname, args, arg_count);
         }
 
-        return ast_new_var(fname);
+        return ast_new_var(varname);
     }
 
     if (current_token.type == TOK_LPAREN) {

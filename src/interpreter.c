@@ -173,6 +173,21 @@ void interpret(ASTNode *root)
 
         interpret(fn->body);
     }
+    else if (root->type == NODE_LIST)
+    {
+        printf("[");
+        for (int i = 0; i < root->list.count; i++)
+        {
+            // Evaluate each element and print it
+            double val = eval_expression(root->list.elements[i]);
+            printf("%g", val);
+            if (i < root->list.count - 1)
+            {
+                printf(", ");
+            }
+        }
+        printf("]\n");
+    }
     else
     {
         printf("Error: Unknown AST node type in interpret()\n");
@@ -240,6 +255,35 @@ static double eval_expression(ASTNode *node)
             printf("Runtime error: Unknown operator in expression\n");
             exit(1);
         }
+    }
+    case NODE_LIST:
+    {
+        return 0.0;
+    }
+    case NODE_LIST_ACCESS:
+    {
+        double index = eval_expression(node->list_access.index);
+        int i = (int)index;
+        if (node->list_access.list->type != NODE_VAR)
+        {
+            printf("Runtime error: List access only supported on variables\n");
+            exit(1);
+        }
+        const char *list_name = node->list_access.list->varname;
+        const char *list_str = get_variable(list_name);
+        if (!list_str)
+        {
+            printf("Runtime error: Undefined variable '%s'\n", list_name);
+            exit(1);
+        }
+        ASTNode *list_node = (ASTNode *)list_str;
+
+        if (i < 0 || i >= list_node->list.count)
+        {
+            printf("Runtime error: List index out of bounds\n");
+            exit(1);
+        }
+        return eval_expression(list_node->list.elements[i]);
     }
     default:
         printf("Runtime error: Unexpected AST node type in eval_expression\n");

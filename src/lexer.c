@@ -248,10 +248,21 @@ Token lexer_next_token()
         token.text[1] = '\0';
         pos++;
         return token;
-
     case '}':
         token.type = TOK_RBRACE;
         token.text[0] = '}';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case '[':
+        token.type = TOK_LBRACKET;
+        token.text[0] = '[';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case ']':
+        token.type = TOK_RBRACKET;
+        token.text[0] = ']';
         token.text[1] = '\0';
         pos++;
         return token;
