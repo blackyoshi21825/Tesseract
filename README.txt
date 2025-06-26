@@ -107,3 +107,4 @@
         -Maximum of 4 function parameters
         -Maximum of 1024 variables
         -No error recovery - first error terminates execution
+        -No lists, dictionaries, or classes, yet...
