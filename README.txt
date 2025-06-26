@@ -5,6 +5,8 @@
     -Function definitions and calls
     -File imports
     -String and number support
+    -Libraries
+    -REPL
 
 2. General Syntax Rules
     -Statements end with semicolons (optional in most cases)
