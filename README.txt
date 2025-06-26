@@ -106,5 +106,4 @@
     Limitations
         -Maximum of 4 function parameters
         -Maximum of 1024 variables
-        -No support for floating point numbers in loops
         -No error recovery - first error terminates execution
