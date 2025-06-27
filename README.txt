@@ -84,12 +84,7 @@
     -The functions can be viewed by going to the file
     -Please note that when you use these functions you don't need to print, you can just use the function and it will print directly.
 
-9. REPL
-    -REPL may be accessed by running ./tesser into the terminal
-    -Please note that only Tesseract functions and exit work, no other things, such as help, or anything else work.
-    -Please note that even a single error will close the REPL, so don't try to make errors.
-
-10.Implementation Notes
+9.Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables
