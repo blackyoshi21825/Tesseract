@@ -350,7 +350,7 @@ static void print_node(ASTNode *node)
             }
             else
             {
-                printf("Undefined variable '%s'\n", node->varname);
+                printf("Runtime Error: Undefined variable '%s'\n", node->varname);
             }
         }
         break;
