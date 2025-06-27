@@ -68,20 +68,28 @@
     import$ "filename.tesseract"
     
     -Imports and executes the specified file
-     -Path is relative to the current file
+    -Path is relative to the current file
 
-7. Libraries
+7. Lists
+    -Lists can be made by declaring a list.
+        let$ myList := [1,2,3,4,5,6,7]
+        ::print myList (Prints the list)
+    -You can even index lists to get specific values
+        ::print mylist[2] (Prints 3)
+    List functions are not avaliable to date.
+
+8. Libraries
     -Until now, the only library that exists is math.
     -You may access this by typing import$ "lib/math.tesseract" at the top of your program
     -The functions can be viewed by going to the file
     -Please note that when you use these functions you don't need to print, you can just use the function and it will print directly.
 
-8. REPL
+9. REPL
     -REPL may be accessed by running ./tesser into the terminal
     -Please note that only Tesseract functions and exit work, no other things, such as help, or anything else work.
     -Please note that even a single error will close the REPL, so don't try to make errors.
 
-9.Implementation Notes
+10.Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables
@@ -107,4 +115,4 @@
         -Maximum of 4 function parameters
         -Maximum of 1024 variables
         -No error recovery - first error terminates execution
-        -No lists, dictionaries, or classes, yet...
+        -No dictionaries or classes, yet...

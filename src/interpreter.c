@@ -24,6 +24,9 @@ static double eval_expression(ASTNode *node);
 // Forward declaration for file reading
 char *read_file(const char *filename);
 
+// Forward declaration of print_node
+static void print_node(ASTNode *node);
+
 void register_function(const char *name, char params[][64], int param_count, ASTNode *body)
 {
     if (function_count >= MAX_FUNCTIONS)
@@ -69,6 +72,10 @@ void interpret(ASTNode *root)
         {
             set_variable(root->assign.varname, value_node->string);
         }
+        else if (value_node->type == NODE_LIST)
+        {
+            set_list_variable(root->assign.varname, value_node);
+        }
         else
         {
             double val = eval_expression(value_node);
@@ -79,28 +86,14 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_PRINT)
     {
-        ASTNode *expr = root->binop.left;
-        if (expr->type == NODE_STRING)
+        if (root->binop.left->type == NODE_LIST_ACCESS)
         {
-            printf("%s\n", expr->string);
-        }
-        else if (expr->type == NODE_VAR)
-        {
-            const char *val = get_variable(expr->varname);
-            if (val)
-            {
-                printf("%s\n", val);
-            }
-            else
-            {
-                printf("Runtime error: Undefined variable '%s'\n", expr->varname);
-                exit(1);
-            }
+            double result = eval_expression(root->binop.left);
+            printf("%g\n", result);
         }
         else
         {
-            double val = eval_expression(expr);
-            printf("%g\n", val);
+            print_node(root->binop.left);
         }
     }
     else if (root->type == NODE_IF)
@@ -175,18 +168,7 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_LIST)
     {
-        printf("[");
-        for (int i = 0; i < root->list.count; i++)
-        {
-            // Evaluate each element and print it
-            double val = eval_expression(root->list.elements[i]);
-            printf("%g", val);
-            if (i < root->list.count - 1)
-            {
-                printf(", ");
-            }
-        }
-        printf("]\n");
+        // Do nothing here, as lists are handled in print_node
     }
     else
     {
@@ -258,25 +240,32 @@ static double eval_expression(ASTNode *node)
     }
     case NODE_LIST:
     {
-        return 0.0;
+        print_node(node);
+        return 0;
     }
     case NODE_LIST_ACCESS:
     {
         double index = eval_expression(node->list_access.index);
         int i = (int)index;
-        if (node->list_access.list->type != NODE_VAR)
+        ASTNode *list_node = node->list_access.list;
+
+        // Handle variable list access
+        if (list_node->type == NODE_VAR)
         {
-            printf("Runtime error: List access only supported on variables\n");
+            ASTNode *list = get_list_variable(list_node->varname);
+            if (!list)
+            {
+                printf("Runtime error: Undefined list variable '%s'\n", list_node->varname);
+                exit(1);
+            }
+            list_node = list;
+        }
+
+        if (list_node->type != NODE_LIST)
+        {
+            printf("Runtime error: List access only supported on list nodes\n");
             exit(1);
         }
-        const char *list_name = node->list_access.list->varname;
-        const char *list_str = get_variable(list_name);
-        if (!list_str)
-        {
-            printf("Runtime error: Undefined variable '%s'\n", list_name);
-            exit(1);
-        }
-        ASTNode *list_node = (ASTNode *)list_str;
 
         if (i < 0 || i >= list_node->list.count)
         {
@@ -288,5 +277,86 @@ static double eval_expression(ASTNode *node)
     default:
         printf("Runtime error: Unexpected AST node type in eval_expression\n");
         exit(1);
+    }
+}
+
+// Function to convert a list to a string representation
+static char *list_to_string(ASTNode *list)
+{
+    if (list->type != NODE_LIST)
+    {
+        return strdup("Not a list");
+    }
+
+    // Start with an opening bracket
+    char *result = strdup("[");
+    for (int i = 0; i < list->list.count; i++)
+    {
+        // Evaluate each element and convert it to a string
+        double element_value = eval_expression(list->list.elements[i]);
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "%g", element_value);
+
+        // Append the element to the result
+        result = realloc(result, strlen(result) + strlen(buffer) + 3); // +3 for ", " or "]\0"
+        strcat(result, buffer);
+
+        // Add a comma and space if not the last element
+        if (i < list->list.count - 1)
+        {
+            strcat(result, ", ");
+        }
+    }
+
+    // Close the bracket
+    strcat(result, "]");
+    return result;
+}
+
+// Modify your print logic to handle lists
+static void print_node(ASTNode *node)
+{
+    switch (node->type)
+    {
+    case NODE_NUMBER:
+        printf("%g\n", node->number);
+        break;
+    case NODE_STRING:
+        printf("%s\n", node->string);
+        break;
+    case NODE_LIST:
+    {
+        char *list_str = list_to_string(node);
+        printf("%s\n", list_str);
+        free(list_str);
+        break;
+    }
+    case NODE_VAR:
+    {
+        // Check if it's a list variable
+        ASTNode *list = get_list_variable(node->varname);
+        if (list)
+        {
+            char *list_str = list_to_string(list);
+            printf("%s\n", list_str);
+            free(list_str);
+        }
+        else
+        {
+            const char *val = get_variable(node->varname);
+            if (val)
+            {
+                printf("%s\n", val);
+            }
+            else
+            {
+                printf("Undefined variable '%s'\n", node->varname);
+            }
+        }
+        break;
+    }
+    default:
+        printf("%g\n", eval_expression(node));
+        break;
     }
 }
