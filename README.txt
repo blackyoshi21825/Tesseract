@@ -81,8 +81,8 @@
         ::append(mylist,value) - Adds the value to the end of the list
         ::prepend(myList,value) - Adds the value to the starting of the list
         ::pop(myList) - Deletes the ending value of the list
-        ::insert(myList) - CURRENTLY NOT WORKING, PLEASE DON'T USE THIS FUNCTION
-        ::remove(myList, index) - Deletes the value of that list at that index
+        ::insert(myList, index, value) - CURRENTLY NOT WORKING, PLEASE DON'T USE THIS FUNCTION
+        ::remove(myList, index) - CURRENTLY NOT WORKING, PLEASE DON'T USE THIS FUNCTION
 
 
 8. Libraries

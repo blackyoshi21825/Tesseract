@@ -145,18 +145,14 @@ const char *get_variable(const char *name)
 
 ASTNode *get_list_variable(const char *name)
 {
-    printf("Debug: Attempting to get list variable: %s\n", name);
     VarEntry *entry = find_variable(name);
     if (!entry)
     {
-        fprintf(stderr, "Debug: Undefined variable: %s\n", name);
         return NULL;
     }
     if (!entry->is_list)
     {
-        fprintf(stderr, "Debug: Variable %s is not a list\n", name);
         return NULL;
     }
-    printf("Debug: Successfully retrieved list variable: %s\n", name);
     return entry->value.list_val;
 }
