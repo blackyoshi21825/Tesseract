@@ -200,6 +200,57 @@ static ASTNode *parse_primary()
         return parse_block();
     }
 
+    if (current_token.type == TOK_LIST_LEN ||
+        current_token.type == TOK_LIST_APPEND ||
+        current_token.type == TOK_LIST_PREPEND ||
+        current_token.type == TOK_LIST_POP ||
+        current_token.type == TOK_LIST_INSERT ||
+        current_token.type == TOK_LIST_REMOVE)
+    {
+        TokenType func_type = current_token.type;
+        next_token();
+
+        expect(TOK_LPAREN);
+        ASTNode *list = parse_expression();
+
+        if (func_type == TOK_LIST_LEN || func_type == TOK_LIST_POP)
+        {
+            expect(TOK_RPAREN);
+            if (func_type == TOK_LIST_LEN)
+                return ast_new_list_len(list);
+            else
+                return ast_new_list_pop(list);
+        }
+        else if (func_type == TOK_LIST_INSERT)
+        {
+            expect(TOK_COMMA);
+            ASTNode *index = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_list_insert(list, index, value);
+        }
+        else
+        {
+            expect(TOK_COMMA);
+            ASTNode *arg = parse_expression();
+            expect(TOK_RPAREN);
+
+            switch (func_type)
+            {
+            case TOK_LIST_APPEND:
+                return ast_new_list_append(list, arg);
+            case TOK_LIST_PREPEND:
+                return ast_new_list_prepend(list, arg);
+            case TOK_LIST_REMOVE:
+                return ast_new_list_remove(list, arg);
+            default:
+                printf("Parse error: Unknown list function\n");
+                exit(1);
+            }
+        }
+    }
+
     printf("Parse error: Unexpected token '%s' (type %d) in primary expression\n", current_token.text, current_token.type);
     exit(1);
 

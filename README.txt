@@ -76,7 +76,14 @@
         ::print myList (Prints the list)
     -You can even index lists to get specific values
         ::print mylist[2] (Prints 3)
-    List functions are not avaliable to date.
+    -List Functions
+        ::len(myList) - Gets the length of the list
+        ::append(mylist,value) - Adds the value to the end of the list
+        ::prepend(myList,value) - Adds the value to the starting of the list
+        ::pop(myList) - Deletes the ending value of the list
+        ::insert(myList) - CURRENTLY NOT WORKING, PLEASE DON'T USE THIS FUNCTION
+        ::remove(myList, index) - Deletes the value of that list at that index
+
 
 8. Libraries
     -Until now, the only library that exists is math.

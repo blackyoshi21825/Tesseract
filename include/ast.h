@@ -19,6 +19,12 @@ typedef enum
     NODE_FUNC_CALL,
     NODE_LIST,
     NODE_LIST_ACCESS,
+    NODE_LIST_LEN,
+    NODE_LIST_APPEND,
+    NODE_LIST_PREPEND,
+    NODE_LIST_POP,
+    NODE_LIST_INSERT,
+    NODE_LIST_REMOVE,
     NODE_NOP
 } NodeType;
 
@@ -107,6 +113,12 @@ ASTNode *ast_new_import(const char *filename);
 ASTNode *ast_new_func_def(const char *name, char params[][64], int param_count, ASTNode *body);
 ASTNode *ast_new_func_call(const char *name, ASTNode **args, int arg_count);
 ASTNode *ast_new_list();
+ASTNode *ast_new_list_len(ASTNode *list);
+ASTNode *ast_new_list_append(ASTNode *list, ASTNode *value);
+ASTNode *ast_new_list_prepend(ASTNode *list, ASTNode *value);
+ASTNode *ast_new_list_pop(ASTNode *list);
+ASTNode *ast_new_list_insert(ASTNode *list, ASTNode *index, ASTNode *value);
+ASTNode *ast_new_list_remove(ASTNode *list, ASTNode *value);
 void ast_list_add_element(ASTNode *list, ASTNode *element);
 ASTNode *ast_new_list_access(ASTNode *list, ASTNode *index);
 void ast_block_add_statement(ASTNode *block, ASTNode *statement);

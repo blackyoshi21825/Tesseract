@@ -183,6 +183,59 @@ ASTNode *ast_new_list_access(ASTNode *list, ASTNode *index)
     return node;
 }
 
+ASTNode *ast_new_list_len(ASTNode *list)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_LEN;
+    node->list_access.list = list;
+    return node;
+}
+
+ASTNode *ast_new_list_append(ASTNode *list, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_APPEND;
+    node->binop.left = list;
+    node->binop.right = value;
+    return node;
+}
+
+ASTNode *ast_new_list_prepend(ASTNode *list, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_PREPEND;
+    node->binop.left = list;
+    node->binop.right = value;
+    return node;
+}
+
+ASTNode *ast_new_list_pop(ASTNode *list)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_POP;
+    node->list_access.list = list;
+    return node;
+}
+
+ASTNode *ast_new_list_insert(ASTNode *list, ASTNode *index, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_INSERT;
+    node->list_access.list = list;
+    node->list_access.index = index;
+    node->binop.left = value; // Reusing binop.left for the value
+    return node;
+}
+
+ASTNode *ast_new_list_remove(ASTNode *list, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_REMOVE;
+    node->binop.left = list;
+    node->binop.right = value;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -316,8 +369,6 @@ double ast_eval(ASTNode *node)
     {
         double lhs = ast_eval(node->binop.left);
         double rhs = ast_eval(node->binop.right);
-
-        printf("[DEBUG] BINOP: lhs=%g, rhs=%g, op=%d\n", lhs, rhs, node->binop.op);
 
         switch (node->binop.op)
         {

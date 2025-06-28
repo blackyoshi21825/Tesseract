@@ -137,6 +137,49 @@ Token lexer_next_token()
         return token;
     }
 
+    if (starts_with("::len"))
+    {
+        token.type = TOK_LIST_LEN;
+        strcpy(token.text, "::len");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("::append"))
+    {
+        token.type = TOK_LIST_APPEND;
+        strcpy(token.text, "::append");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::prepend"))
+    {
+        token.type = TOK_LIST_PREPEND;
+        strcpy(token.text, "::prepend");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::pop"))
+    {
+        token.type = TOK_LIST_POP;
+        strcpy(token.text, "::pop");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("::insert"))
+    {
+        token.type = TOK_LIST_INSERT;
+        strcpy(token.text, "::insert");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::remove"))
+    {
+        token.type = TOK_LIST_REMOVE;
+        strcpy(token.text, "::remove");
+        pos += 8;
+        return token;
+    }
+
     // Single char tokens and operators
     switch (input[pos])
     {

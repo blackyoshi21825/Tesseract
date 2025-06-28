@@ -170,6 +170,12 @@ void interpret(ASTNode *root)
     {
         // Do nothing here, as lists are handled in print_node
     }
+    else if (root->type == NODE_LIST_APPEND || root->type == NODE_LIST_PREPEND ||
+             root->type == NODE_LIST_POP || root->type == NODE_LIST_INSERT ||
+             root->type == NODE_LIST_REMOVE)
+    {
+        eval_expression(root);
+    }
     else
     {
         printf("Error: Unknown AST node type in interpret()\n");
@@ -273,6 +279,207 @@ static double eval_expression(ASTNode *node)
             exit(1);
         }
         return eval_expression(list_node->list.elements[i]);
+    }
+
+    case NODE_LIST_LEN:
+    {
+        ASTNode *list_node = node->list_access.list;
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_list_variable(list_node->varname);
+            if (!list_node)
+            {
+                printf("Runtime error: Undefined list variable\n");
+                exit(1);
+            }
+        }
+        if (list_node->type != NODE_LIST)
+        {
+            printf("Runtime error: len() expects a list\n");
+            exit(1);
+        }
+        return list_node->list.count;
+    }
+
+    case NODE_LIST_APPEND:
+    {
+        ASTNode *list_node = node->binop.left;
+        ASTNode *value_node = node->binop.right;
+
+        if (list_node->type == NODE_VAR)
+        {
+            ASTNode *list = get_list_variable(list_node->varname);
+            if (!list)
+            {
+                printf("Runtime error: Undefined list variable\n");
+                exit(1);
+            }
+            list_node = list;
+        }
+
+        if (list_node->type != NODE_LIST)
+        {
+            printf("Runtime error: append() expects a list\n");
+            exit(1);
+        }
+
+        ast_list_add_element(list_node, value_node);
+        return 0; // Return success
+    }
+
+    case NODE_LIST_PREPEND:
+    {
+        ASTNode *list_node = node->binop.left;
+        ASTNode *value_node = node->binop.right;
+
+        if (list_node->type == NODE_VAR)
+        {
+            ASTNode *list = get_list_variable(list_node->varname);
+            if (!list)
+            {
+                printf("Runtime error: Undefined list variable\n");
+                exit(1);
+            }
+            list_node = list;
+        }
+
+        if (list_node->type != NODE_LIST)
+        {
+            printf("Runtime error: prepend() expects a list\n");
+            exit(1);
+        }
+
+        // Shift all elements to make room at the beginning
+        list_node->list.elements = realloc(list_node->list.elements,
+                                           sizeof(ASTNode *) * (list_node->list.count + 1));
+        for (int i = list_node->list.count; i > 0; i--)
+        {
+            list_node->list.elements[i] = list_node->list.elements[i - 1];
+        }
+        list_node->list.elements[0] = value_node;
+        list_node->list.count++;
+        return 0; // Return success
+    }
+
+    case NODE_LIST_POP:
+    {
+        ASTNode *list_node = node->list_access.list;
+        if (list_node->type == NODE_VAR)
+        {
+            ASTNode *list = get_list_variable(list_node->varname);
+            if (!list)
+            {
+                printf("Runtime error: Undefined list variable\n");
+                exit(1);
+            }
+            list_node = list;
+        }
+
+        if (list_node->type != NODE_LIST || list_node->list.count == 0)
+        {
+            printf("Runtime error: pop() expects a non-empty list\n");
+            exit(1);
+        }
+
+        double val = eval_expression(list_node->list.elements[list_node->list.count - 1]);
+        list_node->list.count--;
+        return val;
+    }
+
+    case NODE_LIST_INSERT:
+    {
+        ASTNode *list_node = node->list_access.list;
+        ASTNode *index_node = node->list_access.index;
+        ASTNode *value_node = node; // Use the current node as the value node
+
+        if (list_node->type != NODE_LIST)
+        {
+            fprintf(stderr, "Runtime error: insert() expects a list\n");
+            exit(1);
+        }
+
+        int index = (int)eval_expression(index_node);
+        if (index < 0 || index > list_node->list.count)
+        {
+            fprintf(stderr, "Runtime error: Index out of bounds in insert()\n");
+            exit(1);
+        }
+
+        ASTNode *new_value = ast_new_number(eval_expression(value_node));
+
+        // Create a new array with one extra element
+        ASTNode **new_elements = malloc(sizeof(ASTNode *) * (list_node->list.count + 1));
+
+        // Copy elements before the insertion point
+        for (int i = 0; i < index; i++)
+        {
+            new_elements[i] = list_node->list.elements[i];
+        }
+
+        // Insert the new value
+        new_elements[index] = new_value;
+
+        // Copy elements after the insertion point
+        for (int i = index; i < list_node->list.count; i++)
+        {
+            new_elements[i + 1] = list_node->list.elements[i];
+        }
+
+        // Free the old array and assign the new one
+        free(list_node->list.elements);
+        list_node->list.elements = new_elements;
+        list_node->list.count++;
+
+        return 0;
+    }
+
+    case NODE_LIST_REMOVE:
+    {
+        ASTNode *list_node = node->binop.left;
+        ASTNode *value_node = node->binop.right;
+
+        if (list_node->type == NODE_VAR)
+        {
+            ASTNode *list = get_list_variable(list_node->varname);
+            if (!list)
+            {
+                printf("Runtime error: Undefined list variable\n");
+                exit(1);
+            }
+            list_node = list;
+        }
+
+        if (list_node->type != NODE_LIST)
+        {
+            printf("Runtime error: remove() expects a list\n");
+            exit(1);
+        }
+
+        double value = eval_expression(value_node);
+        int found = 0;
+
+        for (int i = 0; i < list_node->list.count; i++)
+        {
+            double element = eval_expression(list_node->list.elements[i]);
+            if (element == value)
+            {
+                found = 1;
+                // Shift elements to fill the gap
+                for (int j = i; j < list_node->list.count - 1; j++)
+                {
+                    list_node->list.elements[j] = list_node->list.elements[j + 1];
+                }
+                list_node->list.count--;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            printf("Runtime error: Value not found in list\n");
+            exit(1);
+        }
+        return 0; // Return success
     }
     default:
         printf("Runtime error: Unexpected AST node type in eval_expression\n");

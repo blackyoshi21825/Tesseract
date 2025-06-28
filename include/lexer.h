@@ -37,6 +37,12 @@ typedef enum
     TOK_EOF,
     TOK_LBRACKET,
     TOK_RBRACKET,
+    TOK_LIST_LEN,
+    TOK_LIST_APPEND,
+    TOK_LIST_PREPEND,
+    TOK_LIST_POP,
+    TOK_LIST_INSERT,
+    TOK_LIST_REMOVE,
 } TokenType;
 
 typedef struct
