@@ -6,7 +6,7 @@
 #include "ast.h"
 #include "parser.h"
 
-#define MAX_FUNCTIONS 1000000000
+#define MAX_FUNCTIONS 1000000
 
 typedef struct
 {
