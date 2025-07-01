@@ -106,6 +106,8 @@
         -Blocks of code
         -Import statements
         -Print statements
+        -Lists
+        -Booleans
 
     Memory Management
         -The interpreter handles memory allocation and deallocation for AST nodes
