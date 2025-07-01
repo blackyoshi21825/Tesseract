@@ -29,7 +29,7 @@
     ()         - function calls and grouping
     {}         - code blocks
     ""         - string literals
-    ::         - built in functions(print is the only one to date)
+    ::         - built in functions
     $          - put after a statement or declaration
 
 3. Variables
