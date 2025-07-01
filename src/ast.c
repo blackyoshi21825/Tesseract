@@ -236,6 +236,32 @@ ASTNode *ast_new_list_remove(ASTNode *list, ASTNode *value)
     return node;
 }
 
+ASTNode *ast_new_and(ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_AND;
+    node->binop.left = left;
+    node->binop.right = right;
+    return node;
+}
+
+ASTNode *ast_new_or(ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_OR;
+    node->binop.left = left;
+    node->binop.right = right;
+    return node;
+}
+
+ASTNode *ast_new_not(ASTNode *operand)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_NOT;
+    node->unop.operand = operand;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -291,6 +317,9 @@ void ast_free(ASTNode *node)
     case NODE_LIST_ACCESS:
         ast_free(node->list_access.list);
         ast_free(node->list_access.index);
+        break;
+    case NODE_NOT:
+        ast_free(node->unop.operand);
         break;
     default:
         break;
@@ -406,6 +435,26 @@ double ast_eval(ASTNode *node)
             last = ast_eval(node->block.statements[i]);
         }
         return last;
+    }
+
+    case NODE_AND:
+    {
+        double lhs = ast_eval(node->binop.left);
+        double rhs = ast_eval(node->binop.right);
+        return lhs && rhs;
+    }
+
+    case NODE_OR:
+    {
+        double lhs = ast_eval(node->binop.left);
+        double rhs = ast_eval(node->binop.right);
+        return lhs || rhs;
+    }
+
+    case NODE_NOT:
+    {
+        double val = ast_eval(node->unop.operand);
+        return !val;
     }
 
         // TODO: Support other node types: IF, LOOP, FUNC_DEF, FUNC_CALL, IMPORT

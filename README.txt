@@ -6,7 +6,8 @@
     -File imports
     -String and number support
     -Libraries
-    -REPL
+    -Lists
+    -Booleans
 
 2. General Syntax Rules
     -Statements end with semicolons (optional in most cases)
@@ -88,7 +89,12 @@
     -The functions can be viewed by going to the file
     -Please note that when you use these functions you don't need to print, you can just use the function and it will print directly.
 
-9.Implementation Notes
+9. Booleans
+    -The Booleans that are avaliable are and, not, or, true, and false
+    -Please note that True returns 1 and False retunrs 0, so please keep that in mind.
+    -You can use true or false in only comparitive operators, so regular equal sign will not work.
+
+10.Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables

@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "interpreter.h"
 #include "variables.h"
 #include "ast.h"
 #include "parser.h"
 
 #define MAX_FUNCTIONS 1000000
+
+const char *bool_to_str(bool value);
 
 typedef struct
 {
@@ -481,8 +484,43 @@ static double eval_expression(ASTNode *node)
         }
         return 0; // Return success
     }
+
+    case NODE_AND:
+    {
+        bool left = eval_expression(node->binop.left) != 0;
+        bool right = eval_expression(node->binop.right) != 0;
+        return left && right;
+    }
+
+    case NODE_OR:
+    {
+        bool left = eval_expression(node->binop.left) != 0;
+        bool right = eval_expression(node->binop.right) != 0;
+        return left || right;
+    }
+
+    case NODE_NOT:
+    {
+        bool operand = eval_expression(node->unop.operand) != 0;
+        return !operand;
+    }
+
+    case NODE_PRINT:
+    {
+        double value = eval_expression(node->binop.left);
+        if (value == 0 || value == 1)
+        {
+            printf("%s\n", bool_to_str((bool)value));
+        }
+        else
+        {
+            printf("%g\n", value);
+        }
+        return value;
+    }
+
     default:
-        printf("Runtime error: Unexpected AST node type in eval_expression\n");
+        fprintf(stderr, "Unknown node type: %d\n", node->type);
         exit(1);
     }
 }
@@ -565,5 +603,25 @@ static void print_node(ASTNode *node)
     default:
         printf("%g\n", eval_expression(node));
         break;
+    }
+}
+
+// Helper function to convert boolean to string
+const char *bool_to_str(bool value)
+{
+    return value ? "true" : "false";
+}
+
+// Modify your print function (if you have one)
+void interpret_print(ASTNode *node)
+{
+    double value = eval_expression(node->binop.left);
+    if (value == 0 || value == 1)
+    {
+        printf("%s\n", bool_to_str((bool)value));
+    }
+    else
+    {
+        printf("%g\n", value);
     }
 }

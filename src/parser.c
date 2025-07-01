@@ -7,16 +7,18 @@
 
 static Token current_token;
 
+// Helper function to get the next token
 static void next_token()
 {
     current_token = lexer_next_token();
 }
 
+// Helper function to expect a specific token type
 static void expect(TokenType type)
 {
     if (current_token.type != type)
     {
-        printf("Parse error: Expected token %d but got %d ('%s')\n", type, current_token.type, current_token.text);
+        fprintf(stderr, "Expected token type %d, but got %d\n", type, current_token.type);
         exit(1);
     }
     next_token();
@@ -25,6 +27,9 @@ static void expect(TokenType type)
 // Forward declarations
 static ASTNode *parse_statement();
 static ASTNode *parse_expression();
+static ASTNode *parse_logical_expression();
+static ASTNode *parse_comparison();
+static ASTNode *parse_unary_expression();
 static ASTNode *parse_primary();
 static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs);
 static int get_token_precedence(TokenType tok);
@@ -33,7 +38,7 @@ static ASTNode *parse_block();
 void parser_init(const char *source)
 {
     lexer_init(source);
-    next_token();
+    next_token(); // Prime the first token
 }
 
 ASTNode *parse_program()
@@ -284,8 +289,54 @@ static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs)
 
 static ASTNode *parse_expression()
 {
-    ASTNode *lhs = parse_primary();
-    return parse_binop_rhs(0, lhs);
+    return parse_logical_expression();
+}
+
+static ASTNode *parse_logical_expression()
+{
+    ASTNode *left = parse_comparison();
+
+    while (current_token.type == TOK_AND || current_token.type == TOK_OR)
+    {
+        TokenType op = current_token.type;
+        next_token(); // Move past the operator
+        ASTNode *right = parse_comparison();
+
+        if (op == TOK_AND)
+            left = ast_new_and(left, right);
+        else // TOK_OR
+            left = ast_new_or(left, right);
+    }
+
+    return left;
+}
+
+static ASTNode *parse_comparison()
+{
+    ASTNode *left = parse_unary_expression();
+
+    while (current_token.type == TOK_EQ || current_token.type == TOK_NEQ ||
+           current_token.type == TOK_LT || current_token.type == TOK_GT ||
+           current_token.type == TOK_LTE || current_token.type == TOK_GTE)
+    {
+        TokenType op = current_token.type;
+        next_token(); // Move past the operator
+        ASTNode *right = parse_unary_expression();
+        left = ast_new_binop(left, right, op);
+    }
+
+    return left;
+}
+
+static ASTNode *parse_unary_expression()
+{
+    if (current_token.type == TOK_NOT)
+    {
+        next_token(); // Move past the 'not'
+        return ast_new_not(parse_unary_expression());
+    }
+
+    return parse_primary();
 }
 
 static ASTNode *parse_statement()

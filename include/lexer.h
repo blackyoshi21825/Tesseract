@@ -43,6 +43,9 @@ typedef enum
     TOK_LIST_POP,
     TOK_LIST_INSERT,
     TOK_LIST_REMOVE,
+    TOK_AND,
+    TOK_OR,
+    TOK_NOT
 } TokenType;
 
 typedef struct

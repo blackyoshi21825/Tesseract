@@ -25,6 +25,9 @@ typedef enum
     NODE_LIST_POP,
     NODE_LIST_INSERT,
     NODE_LIST_REMOVE,
+    NODE_AND,
+    NODE_OR,
+    NODE_NOT,
     NODE_NOP
 } NodeType;
 
@@ -44,6 +47,10 @@ struct ASTNode
             ASTNode *right;
             TokenType op;
         } binop;
+        struct
+        {
+            ASTNode *operand;
+        } unop;
         struct
         {
             char varname[64];
@@ -123,5 +130,9 @@ void ast_list_add_element(ASTNode *list, ASTNode *element);
 ASTNode *ast_new_list_access(ASTNode *list, ASTNode *index);
 void ast_block_add_statement(ASTNode *block, ASTNode *statement);
 void ast_free(ASTNode *node);
+
+ASTNode *ast_new_and(ASTNode *left, ASTNode *right);
+ASTNode *ast_new_or(ASTNode *left, ASTNode *right);
+ASTNode *ast_new_not(ASTNode *operand);
 
 #endif

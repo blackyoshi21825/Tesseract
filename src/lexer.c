@@ -110,6 +110,28 @@ Token lexer_next_token()
         return token;
     }
 
+    if (starts_with("and"))
+    {
+        token.type = TOK_AND;
+        strcpy(token.text, "and");
+        pos += 3;
+        return token;
+    }
+    if (starts_with("or"))
+    {
+        token.type = TOK_OR;
+        strcpy(token.text, "or");
+        pos += 2;
+        return token;
+    }
+    if (starts_with("not"))
+    {
+        token.type = TOK_NOT;
+        strcpy(token.text, "not");
+        pos += 3;
+        return token;
+    }
+
     // Assignment operator :=
     if (input[pos] == ':' && safe_peek(1) == '=')
     {
