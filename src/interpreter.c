@@ -258,7 +258,6 @@ static double eval_expression(ASTNode *node)
         int i = (int)index;
         ASTNode *list_node = node->list_access.list;
 
-        // Handle variable list access
         if (list_node->type == NODE_VAR)
         {
             ASTNode *list = get_list_variable(list_node->varname);
@@ -281,7 +280,22 @@ static double eval_expression(ASTNode *node)
             printf("Runtime error: List index out of bounds\n");
             exit(1);
         }
-        return eval_expression(list_node->list.elements[i]);
+
+        ASTNode *element = list_node->list.elements[i];
+        if (element->type == NODE_NUMBER)
+        {
+            return element->number;
+        }
+        else if (element->type == NODE_STRING)
+        {
+            printf("%s\n", element->string);
+            return 0; // Return 0 for string access
+        }
+        else
+        {
+            printf("Runtime error: Unsupported list element type\n");
+            exit(1);
+        }
     }
 
     case NODE_LIST_LEN:
@@ -533,27 +547,34 @@ static char *list_to_string(ASTNode *list)
         return strdup("Not a list");
     }
 
-    // Start with an opening bracket
     char *result = strdup("[");
     for (int i = 0; i < list->list.count; i++)
     {
-        // Evaluate each element and convert it to a string
-        double element_value = eval_expression(list->list.elements[i]);
-        char buffer[64];
-        snprintf(buffer, sizeof(buffer), "%g", element_value);
+        char buffer[256];
+        ASTNode *element = list->list.elements[i];
 
-        // Append the element to the result
-        result = realloc(result, strlen(result) + strlen(buffer) + 3); // +3 for ", " or "]\0"
+        if (element->type == NODE_NUMBER)
+        {
+            snprintf(buffer, sizeof(buffer), "%g", element->number);
+        }
+        else if (element->type == NODE_STRING)
+        {
+            snprintf(buffer, sizeof(buffer), "\"%s\"", element->string);
+        }
+        else
+        {
+            snprintf(buffer, sizeof(buffer), "Unknown");
+        }
+
+        result = realloc(result, strlen(result) + strlen(buffer) + 3);
         strcat(result, buffer);
 
-        // Add a comma and space if not the last element
         if (i < list->list.count - 1)
         {
             strcat(result, ", ");
         }
     }
 
-    // Close the bracket
     strcat(result, "]");
     return result;
 }
