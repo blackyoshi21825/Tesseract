@@ -97,7 +97,7 @@
 10. BitWise Operaters
     -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT)
     -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false)
-    -For example, 5 & 3 returns 1(NOT TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011
+    -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011
     -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary.
 
 11.Implementation Notes
