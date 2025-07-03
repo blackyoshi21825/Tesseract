@@ -130,3 +130,10 @@
         -Maximum of 1024 variables
         -No error recovery - first error terminates execution
         -No dictionaries or classes, yet...
+
+12. Running Tesseract
+    -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way.
+    -Install GCC and Make tools to run Tesseract.
+    -On Mac, use "make" and then "make clear" to use test.tesseract
+    -On Linux, if you get a segmentation fault, even though you know that your code is right run this command to debug your code
+    "gcc -g -o tesser src/*.c -Iinclude"
