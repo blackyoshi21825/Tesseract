@@ -18,7 +18,8 @@
                 "src/token.c",
                 "src/interpreter.c",
                 "src/variables.c",
-                "src/main.c"
+                "src/main.c",
+                "-lm"
             ],
             "group": "build"
         },

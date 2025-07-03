@@ -14,7 +14,7 @@ REPL_TARGET = tesser-repl
 
 all: $(TARGET)
 $(TARGET): $(filter-out $(REPL_OBJ), $(OBJS))
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
 $(REPL_TARGET): $(filter-out $(OBJ_DIR)/main.o, $(OBJS)) $(REPL_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
