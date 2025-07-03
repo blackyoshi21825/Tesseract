@@ -94,7 +94,13 @@
     -Please note that True returns 1 and False returns 0, so please keep that in mind.
     -You can use true or false in only comparitive operators, so regular equal sign will not work.
 
-10.Implementation Notes
+10. BitWise Operaters
+    -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT)
+    -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false)
+    -For example, 5 & 3 returns 1(NOT TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011
+    -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary.
+
+11.Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables
@@ -108,6 +114,7 @@
         -Print statements
         -Lists
         -Booleans
+        -BitWise Operators
 
     Memory Management
         -The interpreter handles memory allocation and deallocation for AST nodes

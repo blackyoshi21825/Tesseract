@@ -28,6 +28,10 @@ typedef enum
     NODE_AND,
     NODE_OR,
     NODE_NOT,
+    NODE_BITWISE_AND,
+    NODE_BITWISE_OR,
+    NODE_BITWISE_XOR,
+    NODE_BITWISE_NOT,
     NODE_NOP
 } NodeType;
 
@@ -38,7 +42,7 @@ struct ASTNode
     NodeType type;
     union
     {
-        double number;
+        double number; // Directly store the number here
         char string[64];
         char varname[64];
         struct
@@ -134,5 +138,10 @@ void ast_free(ASTNode *node);
 ASTNode *ast_new_and(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_or(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_not(ASTNode *operand);
+
+ASTNode *ast_new_bitwise_and(ASTNode *left, ASTNode *right);
+ASTNode *ast_new_bitwise_or(ASTNode *left, ASTNode *right);
+ASTNode *ast_new_bitwise_xor(ASTNode *left, ASTNode *right);
+ASTNode *ast_new_bitwise_not(ASTNode *operand);
 
 #endif

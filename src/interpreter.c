@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 #include "interpreter.h"
 #include "variables.h"
 #include "ast.h"
@@ -188,10 +189,17 @@ void interpret(ASTNode *root)
 
 static double eval_expression(ASTNode *node)
 {
+    if (!node)
+    {
+        fprintf(stderr, "Runtime error: Null AST node in eval\n");
+        exit(1);
+    }
+
     switch (node->type)
     {
     case NODE_NUMBER:
-        return node->number;
+        return node->number; // Directly access the number field
+
     case NODE_STRING:
     {
         char *endptr;
@@ -227,25 +235,24 @@ static double eval_expression(ASTNode *node)
         case TOK_MUL:
             return left * right;
         case TOK_DIV:
+            if (right == 0)
+            {
+                fprintf(stderr, "Runtime error: Division by zero\n");
+                exit(1);
+            }
             return left / right;
         case TOK_MOD:
-            return (int)left % (int)right;
-        case TOK_GT:
-            return left > right;
-        case TOK_LT:
-            return left < right;
-        case TOK_GTE:
-            return left >= right;
-        case TOK_LTE:
-            return left <= right;
-        case TOK_EQ:
-            return left == right;
-        case TOK_NEQ:
-            return left != right;
+            return fmod(left, right);
         default:
-            printf("Runtime error: Unknown operator in expression\n");
+            fprintf(stderr, "Runtime error: Unknown binary operator %d\n", node->binop.op);
             exit(1);
         }
+    }
+
+    case NODE_BITWISE_NOT:
+    {
+        double operand = eval_expression(node->unop.operand);
+        return (double)(~(int)operand);
     }
     case NODE_LIST:
     {
@@ -519,6 +526,27 @@ static double eval_expression(ASTNode *node)
         return !operand;
     }
 
+    case NODE_BITWISE_AND:
+    {
+        int lhs = (int)eval_expression(node->binop.left);
+        int rhs = (int)eval_expression(node->binop.right);
+        return (double)(lhs & rhs);
+    }
+
+    case NODE_BITWISE_OR:
+    {
+        int lhs = (int)eval_expression(node->binop.left);
+        int rhs = (int)eval_expression(node->binop.right);
+        return (double)(lhs | rhs);
+    }
+
+    case NODE_BITWISE_XOR:
+    {
+        int lhs = (int)eval_expression(node->binop.left);
+        int rhs = (int)eval_expression(node->binop.right);
+        return (double)(lhs ^ rhs);
+    }
+
     case NODE_PRINT:
     {
         double value = eval_expression(node->binop.left);
@@ -534,7 +562,7 @@ static double eval_expression(ASTNode *node)
     }
 
     default:
-        fprintf(stderr, "Unknown node type: %d\n", node->type);
+        fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
     }
 }
@@ -559,7 +587,7 @@ static char *list_to_string(ASTNode *list)
         }
         else if (element->type == NODE_STRING)
         {
-            snprintf(buffer, sizeof(buffer), "\"%s\"", element->string);
+            snprintf(buffer, sizeof(buffer), "%s", element->string);
         }
         else
         {

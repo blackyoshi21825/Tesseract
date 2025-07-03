@@ -34,7 +34,6 @@ typedef enum
     TOK_UNKNOWN,
     TOK_LBRACE,
     TOK_RBRACE,
-    TOK_EOF,
     TOK_LBRACKET,
     TOK_RBRACKET,
     TOK_LIST_LEN,
@@ -45,7 +44,12 @@ typedef enum
     TOK_LIST_REMOVE,
     TOK_AND,
     TOK_OR,
-    TOK_NOT
+    TOK_NOT,
+    TOK_BITWISE_AND,
+    TOK_BITWISE_OR,
+    TOK_BITWISE_XOR,
+    TOK_BITWISE_NOT,
+    TOK_EOF,
 } TokenType;
 
 typedef struct

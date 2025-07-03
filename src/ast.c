@@ -262,6 +262,44 @@ ASTNode *ast_new_not(ASTNode *operand)
     return node;
 }
 
+ASTNode *ast_new_bitwise_not(ASTNode *operand)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_BITWISE_NOT;
+    node->unop.operand = operand;
+    return node;
+}
+
+ASTNode *ast_new_bitwise_and(ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_BITWISE_AND;
+    node->binop.left = left;
+    node->binop.right = right;
+    node->binop.op = TOK_BITWISE_AND;
+    return node;
+}
+
+ASTNode *ast_new_bitwise_or(ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_BITWISE_OR;
+    node->binop.left = left;
+    node->binop.right = right;
+    node->binop.op = TOK_BITWISE_OR;
+    return node;
+}
+
+ASTNode *ast_new_bitwise_xor(ASTNode *left, ASTNode *right)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_BITWISE_XOR;
+    node->binop.left = left;
+    node->binop.right = right;
+    node->binop.op = TOK_BITWISE_XOR;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -319,6 +357,9 @@ void ast_free(ASTNode *node)
         ast_free(node->list_access.index);
         break;
     case NODE_NOT:
+        ast_free(node->unop.operand);
+        break;
+    case NODE_BITWISE_NOT:
         ast_free(node->unop.operand);
         break;
     default:
@@ -457,7 +498,11 @@ double ast_eval(ASTNode *node)
         return !val;
     }
 
-        // TODO: Support other node types: IF, LOOP, FUNC_DEF, FUNC_CALL, IMPORT
+    case NODE_BITWISE_NOT:
+    {
+        double val = ast_eval(node->unop.operand);
+        return ~(int)val; // Assuming the value is an integer for bitwise operations
+    }
 
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);

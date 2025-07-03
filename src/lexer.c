@@ -331,6 +331,30 @@ Token lexer_next_token()
         token.text[1] = '\0';
         pos++;
         return token;
+    case '&':
+        token.type = TOK_BITWISE_AND;
+        token.text[0] = '&';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case '|':
+        token.type = TOK_BITWISE_OR;
+        token.text[0] = '|';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case '^':
+        token.type = TOK_BITWISE_XOR;
+        token.text[0] = '^';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case '~':
+        token.type = TOK_BITWISE_NOT;
+        token.text[0] = '~';
+        token.text[1] = '\0';
+        pos++;
+        return token;
     }
 
     // String literal

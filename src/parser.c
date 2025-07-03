@@ -28,6 +28,7 @@ static void expect(TokenType type)
 static ASTNode *parse_statement();
 static ASTNode *parse_expression();
 static ASTNode *parse_logical_expression();
+static ASTNode *parse_bitwise_expression();
 static ASTNode *parse_comparison();
 static ASTNode *parse_unary_expression();
 static ASTNode *parse_primary();
@@ -58,19 +59,19 @@ static int get_token_precedence(TokenType tok)
     {
     case TOK_EQ:
     case TOK_NEQ:
-        return 10;
+        return 20;
     case TOK_LT:
     case TOK_LTE:
     case TOK_GT:
     case TOK_GTE:
-        return 20;
+        return 30;
     case TOK_PLUS:
     case TOK_MINUS:
-        return 30;
+        return 40;
     case TOK_MUL:
     case TOK_DIV:
     case TOK_MOD:
-        return 40;
+        return 50;
     default:
         return -1;
     }
@@ -267,13 +268,14 @@ static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs)
     while (1)
     {
         int tok_prec = get_token_precedence(current_token.type);
+
         if (tok_prec < expr_prec)
             return lhs;
 
-        TokenType bin_op = current_token.type;
+        TokenType binop = current_token.type;
         next_token();
 
-        ASTNode *rhs = parse_expression();
+        ASTNode *rhs = parse_logical_expression();
 
         int next_prec = get_token_precedence(current_token.type);
         if (tok_prec < next_prec)
@@ -281,7 +283,7 @@ static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs)
             rhs = parse_binop_rhs(tok_prec + 1, rhs);
         }
 
-        lhs = ast_new_binop(lhs, rhs, bin_op);
+        lhs = ast_new_binop(lhs, rhs, binop);
     }
 
     return lhs; // defensive
@@ -289,23 +291,53 @@ static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs)
 
 static ASTNode *parse_expression()
 {
-    return parse_logical_expression();
+    ASTNode *lhs = parse_logical_expression();
+    return parse_binop_rhs(0, lhs);
 }
 
 static ASTNode *parse_logical_expression()
 {
-    ASTNode *left = parse_comparison();
+    ASTNode *left = parse_bitwise_expression();
 
     while (current_token.type == TOK_AND || current_token.type == TOK_OR)
     {
         TokenType op = current_token.type;
         next_token(); // Move past the operator
-        ASTNode *right = parse_comparison();
+        ASTNode *right = parse_bitwise_expression();
 
         if (op == TOK_AND)
             left = ast_new_and(left, right);
         else // TOK_OR
             left = ast_new_or(left, right);
+    }
+
+    return left;
+}
+
+static ASTNode *parse_bitwise_expression()
+{
+    ASTNode *left = parse_comparison();
+
+    while (current_token.type == TOK_BITWISE_AND ||
+           current_token.type == TOK_BITWISE_OR ||
+           current_token.type == TOK_BITWISE_XOR)
+    {
+        TokenType op = current_token.type;
+        next_token(); // Move past the operator
+        ASTNode *right = parse_comparison();
+
+        switch (op)
+        {
+        case TOK_BITWISE_AND:
+            left = ast_new_bitwise_and(left, right);
+            break;
+        case TOK_BITWISE_OR:
+            left = ast_new_bitwise_or(left, right);
+            break;
+        case TOK_BITWISE_XOR:
+            left = ast_new_bitwise_xor(left, right);
+            break;
+        }
     }
 
     return left;
@@ -330,10 +362,19 @@ static ASTNode *parse_comparison()
 
 static ASTNode *parse_unary_expression()
 {
-    if (current_token.type == TOK_NOT)
+    if (current_token.type == TOK_NOT || current_token.type == TOK_BITWISE_NOT)
     {
-        next_token(); // Move past the 'not'
-        return ast_new_not(parse_unary_expression());
+        TokenType op = current_token.type;
+        next_token();
+        ASTNode *operand = parse_unary_expression();
+        if (op == TOK_NOT)
+        {
+            return ast_new_not(operand);
+        }
+        else if (op == TOK_BITWISE_NOT)
+        {
+            return ast_new_bitwise_not(operand);
+        }
     }
 
     return parse_primary();
