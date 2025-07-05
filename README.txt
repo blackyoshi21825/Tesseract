@@ -104,6 +104,7 @@
     -This function takes two arguments; first one is the pattern and the second one is the noise. Both of them have to be strings
     -This function finds the pattern in the noise and outputs a list with the starting indexes of where the pattern is in the noise
     -Please note that this function uses a naive algorithm, so expect delays or issues
+    -To call this function, ::pattern_match(pattern,noise)
 
 12.Implementation Notes
     AST Node Types
