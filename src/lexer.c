@@ -201,6 +201,13 @@ Token lexer_next_token()
         pos += 8;
         return token;
     }
+    if (starts_with("::pattern_match"))
+    {
+        token.type = TOK_PATTERN_MATCH;
+        strcpy(token.text, "::pattern_match");
+        pos += 15;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

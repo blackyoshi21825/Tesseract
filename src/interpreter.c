@@ -24,6 +24,7 @@ static Function function_table[MAX_FUNCTIONS];
 static int function_count = 0;
 
 static double eval_expression(ASTNode *node);
+static char *list_to_string(ASTNode *list);
 
 // Forward declaration for file reading
 char *read_file(const char *filename);
@@ -179,6 +180,10 @@ void interpret(ASTNode *root)
              root->type == NODE_LIST_REMOVE)
     {
         eval_expression(root);
+    }
+    else if (root->type == NODE_PATTERN_MATCH)
+    {
+        eval_expression(root); // Call eval_expression without expecting a return value
     }
     else
     {
@@ -561,6 +566,74 @@ static double eval_expression(ASTNode *node)
         return value;
     }
 
+    case NODE_PATTERN_MATCH:
+    {
+        // Get the pattern and noise strings
+        const char *pattern_str = NULL;
+        const char *noise_str = NULL;
+
+        if (node->pattern_match.pattern->type == NODE_STRING)
+        {
+            pattern_str = node->pattern_match.pattern->string;
+        }
+        else if (node->pattern_match.pattern->type == NODE_VAR)
+        {
+            pattern_str = get_variable(node->pattern_match.pattern->varname);
+        }
+
+        if (node->pattern_match.noise->type == NODE_STRING)
+        {
+            noise_str = node->pattern_match.noise->string;
+        }
+        else if (node->pattern_match.noise->type == NODE_VAR)
+        {
+            noise_str = get_variable(node->pattern_match.noise->varname);
+        }
+
+        if (!pattern_str || !noise_str)
+        {
+            printf("Runtime error: pattern_match expects string arguments\n");
+            exit(1);
+        }
+
+        int pattern_len = strlen(pattern_str);
+        int noise_len = strlen(noise_str);
+
+        if (pattern_len == 0 || noise_len == 0)
+        {
+            return 0; // No matches if either string is empty
+        }
+
+        // Create a list to store the match positions
+        ASTNode *result_list = ast_new_list();
+
+        // Naive pattern matching algorithm
+        for (int i = 0; i <= noise_len - pattern_len; i++)
+        {
+            int match = 1;
+            for (int j = 0; j < pattern_len; j++)
+            {
+                if (noise_str[i + j] != pattern_str[j])
+                {
+                    match = 0;
+                    break;
+                }
+            }
+            if (match)
+            {
+                // Add the position to the result list
+                ast_list_add_element(result_list, ast_new_number(i));
+            }
+        }
+
+        // Store the result in a special variable or print it directly
+        char *list_str = list_to_string(result_list);
+        printf("%s\n", list_str); // Print the result
+        free(list_str);
+        ast_free(result_list);
+        return 0;
+    }
+
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -650,7 +723,7 @@ static void print_node(ASTNode *node)
         break;
     }
     default:
-        printf("%g\n", eval_expression(node));
+        printf("", eval_expression(node));
         break;
     }
 }

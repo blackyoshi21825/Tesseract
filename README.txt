@@ -96,11 +96,16 @@
 
 10. BitWise Operaters
     -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT)
-    -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false)
-    -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011
+    -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false).
+    -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011.
     -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary.
 
-11.Implementation Notes
+11. Pattern Matching
+    -This function takes two arguments; first one is the pattern and the second one is the noise. Both of them have to be strings
+    -This function finds the pattern in the noise and outputs a list with the starting indexes of where the pattern is in the noise
+    -Please note that this function uses a naive algorithm, so expect delays or issues
+
+12.Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables
@@ -131,7 +136,7 @@
         -No error recovery - first error terminates execution
         -No dictionaries or classes, yet...
 
-12. Running Tesseract
+13. Running Tesseract
     -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way.
     -Install GCC and Make tools to run Tesseract.
     -On Mac, use "make" and then "make clear" to use test.tesseract

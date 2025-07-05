@@ -299,6 +299,14 @@ ASTNode *ast_new_bitwise_xor(ASTNode *left, ASTNode *right)
     node->binop.op = TOK_BITWISE_XOR;
     return node;
 }
+ASTNode *ast_new_pattern_match(ASTNode *pattern, ASTNode *noise)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_PATTERN_MATCH;
+    node->pattern_match.pattern = pattern;
+    node->pattern_match.noise = noise;
+    return node;
+}
 
 // --- AST Free ---
 

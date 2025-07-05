@@ -32,6 +32,7 @@ typedef enum
     NODE_BITWISE_OR,
     NODE_BITWISE_XOR,
     NODE_BITWISE_NOT,
+    NODE_PATTERN_MATCH,
     NODE_NOP
 } NodeType;
 
@@ -108,6 +109,11 @@ struct ASTNode
             ASTNode *start;
             ASTNode *end;
         } list_slice;
+        struct
+        {
+            ASTNode *pattern;
+            ASTNode *noise;
+        } pattern_match;
     };
 };
 
@@ -143,5 +149,6 @@ ASTNode *ast_new_bitwise_and(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_or(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_xor(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_not(ASTNode *operand);
+ASTNode *ast_new_pattern_match(ASTNode *pattern, ASTNode *noise);
 
 #endif

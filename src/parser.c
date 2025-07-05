@@ -205,6 +205,16 @@ static ASTNode *parse_primary()
     {
         return parse_block();
     }
+    if (current_token.type == TOK_PATTERN_MATCH)
+    {
+        next_token();
+        expect(TOK_LPAREN);
+        ASTNode *pattern = parse_expression();
+        expect(TOK_COMMA);
+        ASTNode *noise = parse_expression();
+        expect(TOK_RPAREN);
+        return ast_new_pattern_match(pattern, noise);
+    }
 
     if (current_token.type == TOK_LIST_LEN ||
         current_token.type == TOK_LIST_APPEND ||
