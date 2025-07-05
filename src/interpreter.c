@@ -723,7 +723,7 @@ static void print_node(ASTNode *node)
         break;
     }
     default:
-        printf("", eval_expression(node));
+        printf("%g\n", eval_expression(node));
         break;
     }
 }
