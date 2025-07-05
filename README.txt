@@ -121,6 +121,7 @@
         -Lists
         -Booleans
         -BitWise Operators
+        -Pattern Matching
 
     Memory Management
         -The interpreter handles memory allocation and deallocation for AST nodes
