@@ -16,24 +16,6 @@
     -Blocks are enclosed in curly braces {}
     -Comments: Are accessed by using a hashtag "#" and then typing the commented code
 
-    let$       - variable declaration
-    ::print    - print function
-    if$        - if statement
-    elseif$    - else-if statement
-    else       - else statement
-    loop$      - loop statement
-    import$    - import statement
-    func$      - function declaration
-    :=         - assignment operator
-    => or ⟶   - arrow operator (for ranges and function definitions)
-    + - * / %  - arithmetic operators
-    > < >= <= == != - comparison operators
-    ()         - function calls and grouping
-    {}         - code blocks
-    ""         - string literals
-    ::         - built in functions
-    $          - put after a statement or declaration
-
 3. Variables
     Declaration and Assignment
         let$var_name := value
