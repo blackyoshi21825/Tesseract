@@ -8,6 +8,8 @@
     -Libraries
     -Lists
     -Booleans
+    -BitWise Operators
+    -Pattern Matching
 
 2. General Syntax Rules
     -Statements end with semicolons (optional in most cases)
