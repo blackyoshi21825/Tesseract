@@ -248,6 +248,18 @@ static double eval_expression(ASTNode *node)
             return left / right;
         case TOK_MOD:
             return fmod(left, right);
+        case TOK_EQ:
+            return left == right;
+        case TOK_NEQ:
+            return left != right;
+        case TOK_LT:
+            return left < right;
+        case TOK_GT:
+            return left > right;
+        case TOK_LTE:
+            return left <= right;
+        case TOK_GTE:
+            return left >= right;
         default:
             fprintf(stderr, "Runtime error: Unknown binary operator %d\n", node->binop.op);
             exit(1);
