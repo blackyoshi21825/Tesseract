@@ -645,7 +645,6 @@ static double eval_expression(ASTNode *node)
         ast_free(result_list);
         return 0;
     }
-
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);

@@ -363,7 +363,6 @@ Token lexer_next_token()
         pos++;
         return token;
     }
-
     // String literal
     if (input[pos] == '"')
     {

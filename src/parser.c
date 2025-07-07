@@ -118,7 +118,6 @@ static ASTNode *parse_primary()
         next_token();
         return node;
     }
-
     if (current_token.type == TOK_LBRACKET)
     {
         next_token();

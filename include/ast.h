@@ -129,6 +129,7 @@ ASTNode *ast_new_block();
 ASTNode *ast_new_import(const char *filename);
 ASTNode *ast_new_func_def(const char *name, char params[][64], int param_count, ASTNode *body);
 ASTNode *ast_new_func_call(const char *name, ASTNode **args, int arg_count);
+
 ASTNode *ast_new_list();
 ASTNode *ast_new_list_len(ASTNode *list);
 ASTNode *ast_new_list_append(ASTNode *list, ASTNode *value);
@@ -138,6 +139,7 @@ ASTNode *ast_new_list_insert(ASTNode *list, ASTNode *index, ASTNode *value);
 ASTNode *ast_new_list_remove(ASTNode *list, ASTNode *value);
 void ast_list_add_element(ASTNode *list, ASTNode *element);
 ASTNode *ast_new_list_access(ASTNode *list, ASTNode *index);
+
 void ast_block_add_statement(ASTNode *block, ASTNode *statement);
 void ast_free(ASTNode *node);
 
@@ -149,6 +151,7 @@ ASTNode *ast_new_bitwise_and(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_or(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_xor(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_not(ASTNode *operand);
+
 ASTNode *ast_new_pattern_match(ASTNode *pattern, ASTNode *noise);
 
 #endif
