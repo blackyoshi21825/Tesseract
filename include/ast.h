@@ -33,6 +33,7 @@ typedef enum
     NODE_BITWISE_XOR,
     NODE_BITWISE_NOT,
     NODE_PATTERN_MATCH,
+    NODE_FORMAT_STRING,
     NODE_NOP
 } NodeType;
 
@@ -114,6 +115,12 @@ struct ASTNode
             ASTNode *pattern;
             ASTNode *noise;
         } pattern_match;
+        struct
+        {
+            char format[256];
+            ASTNode *args[4];
+            int arg_count;
+        } format_str;
     };
 };
 
@@ -153,5 +160,7 @@ ASTNode *ast_new_bitwise_xor(ASTNode *left, ASTNode *right);
 ASTNode *ast_new_bitwise_not(ASTNode *operand);
 
 ASTNode *ast_new_pattern_match(ASTNode *pattern, ASTNode *noise);
+
+ASTNode *ast_new_format_string(const char *format, ASTNode **args, int arg_count);
 
 #endif

@@ -362,6 +362,12 @@ Token lexer_next_token()
         token.text[1] = '\0';
         pos++;
         return token;
+    case '@':
+        token.type = TOK_FORMAT_SPECIFIER;
+        token.text[0] = '@';
+        token.text[1] = '\0';
+        pos++;
+        return token;
     }
     // String literal
     if (input[pos] == '"')
@@ -369,15 +375,25 @@ Token lexer_next_token()
         pos++;
         int start = pos;
         while (input[pos] != '"' && input[pos] != '\0')
-            pos++;
+        {
+            // Handle escaped quotes
+            if (input[pos] == '\\' && input[pos + 1] == '"')
+            {
+                pos += 2;
+            }
+            else
+            {
+                pos++;
+            }
+        }
         int len = pos - start;
-        if (input[pos] == '"')
-            pos++;
         if (len >= sizeof(token.text))
             len = sizeof(token.text) - 1;
         strncpy(token.text, &input[start], len);
         token.text[len] = '\0';
         token.type = TOK_STRING;
+        if (input[pos] == '"')
+            pos++;
         return token;
     }
 
