@@ -646,6 +646,80 @@ static double eval_expression(ASTNode *node)
         return 0;
     }
 
+    case NODE_FORMAT_STRING:
+    {
+        char buffer[1024];
+        char *dest = buffer;
+        const char *src = node->format_str.format;
+        int arg_index = 0;
+
+        while (*src && (dest - buffer) < sizeof(buffer) - 1)
+        {
+            if (*src == '@' && *(src + 1) != '\0')
+            {
+                src++; // skip '@'
+                if (arg_index >= node->format_str.arg_count)
+                {
+                    printf("Runtime error: Not enough arguments for format string\n");
+                    exit(1);
+                }
+
+                ASTNode *arg = node->format_str.args[arg_index++];
+                double val = eval_expression(arg);
+
+                switch (*src)
+                {
+                case 'd': // integer
+                    dest += sprintf(dest, "%d", (int)val);
+                    break;
+                case 'f': // float
+                    dest += sprintf(dest, "%g", val);
+                    break;
+                case 's': // string (from variable)
+                    if (arg->type == NODE_STRING)
+                    {
+                        dest += sprintf(dest, "%s", arg->string);
+                    }
+                    else if (arg->type == NODE_VAR)
+                    {
+                        const char *str = get_variable(arg->varname);
+                        if (str)
+                        {
+                            dest += sprintf(dest, "%s", str);
+                        }
+                        else
+                        {
+                            printf("Runtime error: Undefined string variable\n");
+                            exit(1);
+                        }
+                    }
+                    else
+                    {
+                        // For numbers, convert to string
+                        char num_str[64];
+                        snprintf(num_str, sizeof(num_str), "%g", val);
+                        dest += sprintf(dest, "%s", num_str);
+                    }
+                    break;
+                case '@': // literal '@'
+                    *dest++ = '@';
+                    break;
+                default:
+                    printf("Runtime error: Unknown format specifier @%c\n", *src);
+                    exit(1);
+                }
+                src++;
+            }
+            else
+            {
+                *dest++ = *src++;
+            }
+        }
+        *dest = '\0';
+        printf("%s\n", buffer);
+        return 0;
+    }
+
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -733,6 +807,79 @@ static void print_node(ASTNode *node)
             }
         }
         break;
+    }
+    case NODE_FORMAT_STRING:
+    {
+        char buffer[1024];
+        char *dest = buffer;
+        const char *src = node->format_str.format;
+        int arg_index = 0;
+
+        while (*src && (dest - buffer) < sizeof(buffer) - 1)
+        {
+            if (*src == '@' && *(src + 1) != '\0')
+            {
+                src++; // skip '@'
+                if (arg_index >= node->format_str.arg_count)
+                {
+                    printf("Runtime error: Not enough arguments for format string\n");
+                    exit(1);
+                }
+
+                ASTNode *arg = node->format_str.args[arg_index++];
+                double val = eval_expression(arg);
+
+                switch (*src)
+                {
+                case 'd': // integer
+                    dest += sprintf(dest, "%d", (int)val);
+                    break;
+                case 'f': // float
+                    dest += sprintf(dest, "%g", val);
+                    break;
+                case 's': // string (from variable)
+                    if (arg->type == NODE_STRING)
+                    {
+                        dest += sprintf(dest, "%s", arg->string);
+                    }
+                    else if (arg->type == NODE_VAR)
+                    {
+                        const char *str = get_variable(arg->varname);
+                        if (str)
+                        {
+                            dest += sprintf(dest, "%s", str);
+                        }
+                        else
+                        {
+                            printf("Runtime error: Undefined string variable\n");
+                            exit(1);
+                        }
+                    }
+                    else
+                    {
+                        // For numbers, convert to string
+                        char num_str[64];
+                        snprintf(num_str, sizeof(num_str), "%g", val);
+                        dest += sprintf(dest, "%s", num_str);
+                    }
+                    break;
+                case '@': // literal '@'
+                    *dest++ = '@';
+                    break;
+                default:
+                    printf("Runtime error: Unknown format specifier @%c\n", *src);
+                    exit(1);
+                }
+                src++;
+            }
+            else
+            {
+                *dest++ = *src++;
+            }
+        }
+        *dest = '\0';
+        printf("%s\n", buffer);
+        return 0;
     }
     default:
         printf("%g\n", eval_expression(node));

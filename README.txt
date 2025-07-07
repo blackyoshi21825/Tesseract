@@ -90,7 +90,14 @@
     -Please note that this function uses a naive algorithm, so expect delays or issues
     -To call this function, ::pattern_match(pattern,noise)
 
-12.Implementation Notes
+12. Formatting
+    -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations.
+    -To use formatting, use the @s for strings. @d and @f are for numbers and floats, respectively, but these currently raise errors. This error will be fixed ASAP.
+    -Usage
+            let$ name := "John"
+            ::print "Hello @s" (name) //Print Hello John
+
+13.Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables
@@ -122,7 +129,7 @@
         -No error recovery - first error terminates execution
         -No dictionaries or classes, yet...
 
-13. Running Tesseract
+14. Running Tesseract
     -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way.
     -Install GCC and Make tools to run Tesseract.
     -On Mac, use "make" and then "make clear" to use test.tesseract

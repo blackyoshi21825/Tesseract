@@ -308,6 +308,20 @@ ASTNode *ast_new_pattern_match(ASTNode *pattern, ASTNode *noise)
     return node;
 }
 
+ASTNode *ast_new_format_string(const char *format, ASTNode **args, int arg_count)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FORMAT_STRING;
+    strncpy(node->format_str.format, format, sizeof(node->format_str.format));
+    node->format_str.format[sizeof(node->format_str.format) - 1] = '\0';
+    node->format_str.arg_count = arg_count;
+    for (int i = 0; i < arg_count; i++)
+    {
+        node->format_str.args[i] = args[i];
+    }
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -369,6 +383,12 @@ void ast_free(ASTNode *node)
         break;
     case NODE_BITWISE_NOT:
         ast_free(node->unop.operand);
+        break;
+    case NODE_FORMAT_STRING:
+        for (int i = 0; i < node->format_str.arg_count; i++)
+        {
+            ast_free(node->format_str.args[i]);
+        }
         break;
     default:
         break;

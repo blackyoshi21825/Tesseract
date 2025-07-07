@@ -109,16 +109,54 @@ static ASTNode *parse_primary()
         double val = strtod(current_token.text, NULL);
         ASTNode *node = ast_new_number(val);
         next_token();
-        return node;
+        Token saved_token = current_token;
+        next_token();
     }
 
     if (current_token.type == TOK_STRING)
     {
-        ASTNode *node = ast_new_string(current_token.text);
-        next_token();
-        return node;
-    }
+        // Check if this is a format string (contains @)
+        if (strchr(current_token.text, '@') != NULL)
+        {
+            char format[256];
+            strncpy(format, current_token.text, sizeof(format));
+            format[sizeof(format) - 1] = '\0';
 
+            next_token();
+
+            // Parse format arguments if present
+            ASTNode *args[4] = {NULL};
+            int arg_count = 0;
+
+            if (current_token.type == TOK_LPAREN)
+            {
+                next_token();
+                while (current_token.type != TOK_RPAREN && current_token.type != TOK_EOF)
+                {
+                    if (arg_count >= 4)
+                    {
+                        printf("Parse error: Too many format arguments (max 4)\n");
+                        exit(1);
+                    }
+                    args[arg_count++] = parse_expression();
+                    if (current_token.type == TOK_COMMA)
+                    {
+                        next_token();
+                    }
+                }
+                expect(TOK_RPAREN);
+            }
+
+            return ast_new_format_string(format, args, arg_count);
+        }
+        else
+        {
+            // Regular string without formatting
+            ASTNode *node = ast_new_string(current_token.text);
+            next_token();
+            return node;
+        }
+    }
     if (current_token.type == TOK_LBRACKET)
     {
         next_token();

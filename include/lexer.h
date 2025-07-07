@@ -50,6 +50,7 @@ typedef enum
     TOK_BITWISE_XOR,
     TOK_BITWISE_NOT,
     TOK_PATTERN_MATCH,
+    TOK_FORMAT_SPECIFIER,
     TOK_EOF,
 } TokenType;
 
