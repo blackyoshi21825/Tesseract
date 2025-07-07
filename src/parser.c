@@ -109,8 +109,7 @@ static ASTNode *parse_primary()
         double val = strtod(current_token.text, NULL);
         ASTNode *node = ast_new_number(val);
         next_token();
-        Token saved_token = current_token;
-        next_token();
+        return node;
     }
 
     if (current_token.type == TOK_STRING)
