@@ -439,6 +439,8 @@ static ASTNode *parse_statement()
     while (current_token.type == TOK_SEMICOLON)
     {
         next_token();
+        // Return NULL for empty statement so it is not added to block
+        return NULL;
     }
 
     if (current_token.type == TOK_LET)

@@ -12,6 +12,7 @@
     -Pattern Matching
 
 2. General Syntax Rules
+    -Statements end with semicolons (optional in most cases)
     -Blocks are enclosed in curly braces {}
     -Comments: Are accessed by using a hashtag "#" and then typing the commented code
 

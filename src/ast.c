@@ -95,6 +95,14 @@ void ast_block_add_statement(ASTNode *block, ASTNode *statement)
 {
     if (block->type != NODE_BLOCK)
         return;
+    if (statement == NULL) {
+        // Optionally, add a NOP node for empty statements, or just skip
+        // ASTNode *nop = malloc(sizeof(ASTNode));
+        // nop->type = NODE_NOP;
+        // block->block.statements = realloc(block->block.statements, sizeof(ASTNode *) * (block->block.count + 1));
+        // block->block.statements[block->block.count++] = nop;
+        return;
+    }
     block->block.statements = realloc(block->block.statements, sizeof(ASTNode *) * (block->block.count + 1));
     block->block.statements[block->block.count++] = statement;
 }
