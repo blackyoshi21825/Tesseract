@@ -103,16 +103,26 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_IF)
     {
-        double cond = eval_expression(root->if_stmt.condition);
-        if (cond != 0)
+        ASTNode *current = root;
+        while (current)
         {
-            interpret(root->if_stmt.then_branch);
+            double cond = eval_expression(current->if_stmt.condition);
+            if (cond != 0)
+            {
+                interpret(current->if_stmt.then_branch);
+                return;
+            }
+            if (current->if_stmt.elseif_branch)
+            {
+                current = current->if_stmt.elseif_branch;
+            }
+            else
+            {
+                break;
+            }
         }
-        else if (root->if_stmt.elseif_branch)
-        {
-            interpret(root->if_stmt.elseif_branch);
-        }
-        else if (root->if_stmt.else_branch)
+        // If we reach here, none of the conditions matched; execute else_branch of the top-level if
+        if (root->if_stmt.else_branch)
         {
             interpret(root->if_stmt.else_branch);
         }
@@ -185,9 +195,15 @@ void interpret(ASTNode *root)
     {
         eval_expression(root); // Call eval_expression without expecting a return value
     }
+    else if (root->type == NODE_BINOP || root->type == NODE_VAR || root->type == NODE_NUMBER || root->type == NODE_STRING)
+    {
+        // Evaluate top-level expressions (no side effects, but avoids error)
+        eval_expression(root);
+    }
     else
     {
-        printf("Error: Unknown AST node type in interpret()\n");
+        // Print the node type for easier debugging
+        printf("Error: Unknown AST node type %d in interpret()\n", root->type);
         exit(1);
     }
 }

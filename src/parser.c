@@ -472,11 +472,16 @@ static ASTNode *parse_statement()
         ASTNode *cond = parse_expression();
         ASTNode *then_branch = parse_statement();
 
-        ASTNode *elseif_branch = NULL;
-        if (current_token.type == TOK_ELSEIF)
+        ASTNode *elseif_chain = NULL;
+        ASTNode **elseif_chain_ptr = &elseif_chain;
+        while (current_token.type == TOK_ELSEIF)
         {
             next_token();
-            elseif_branch = parse_statement();
+            ASTNode *elseif_cond = parse_expression();
+            ASTNode *elseif_then = parse_statement();
+            ASTNode *new_elseif = ast_new_if(elseif_cond, elseif_then, NULL, NULL);
+            *elseif_chain_ptr = new_elseif;
+            elseif_chain_ptr = &new_elseif->if_stmt.elseif_branch;
         }
 
         ASTNode *else_branch = NULL;
@@ -486,7 +491,8 @@ static ASTNode *parse_statement()
             else_branch = parse_statement();
         }
 
-        return ast_new_if(cond, then_branch, elseif_branch, else_branch);
+        // Attach the elseif_chain to the main if node
+        return ast_new_if(cond, then_branch, elseif_chain, else_branch);
     }
 
     if (current_token.type == TOK_LOOP)
