@@ -135,7 +135,7 @@
         acc.withdraw(500)
         acc.withdraw(1000)
         acc.show()
-    -As i said above, init functions do not support string yet, but without an init function like the example below, strings will work.
+    -As I said above, init functions do not support string yet, but without an init function like the example below, strings will work.
         class$Person {
             let$name := "John"
             let$age := 30
