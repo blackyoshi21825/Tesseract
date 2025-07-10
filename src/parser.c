@@ -35,6 +35,34 @@ static ASTNode *parse_primary();
 static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs);
 static int get_token_precedence(TokenType tok);
 static ASTNode *parse_block();
+static ASTNode *parse_class_def();
+static ASTNode *parse_member_access(ASTNode *object);
+static ASTNode *parse_method_def();
+static ASTNode *parse_method_call(ASTNode *object);
+
+// --- Class name tracking for parser ---
+#define MAX_CLASS_NAMES 128
+static char class_names[MAX_CLASS_NAMES][64];
+static int class_name_count = 0;
+
+static void parser_register_class_name(const char *name)
+{
+    if (class_name_count < MAX_CLASS_NAMES)
+    {
+        strncpy(class_names[class_name_count++], name, 63);
+        class_names[class_name_count - 1][63] = '\0';
+    }
+}
+
+static int parser_is_class_name(const char *name)
+{
+    for (int i = 0; i < class_name_count; i++)
+    {
+        if (strcmp(class_names[i], name) == 0)
+            return 1;
+    }
+    return 0;
+}
 
 void parser_init(const char *source)
 {
@@ -47,8 +75,15 @@ ASTNode *parse_program()
     ASTNode *block = ast_new_block();
     while (current_token.type != TOK_EOF)
     {
-        ASTNode *stmt = parse_statement();
-        ast_block_add_statement(block, stmt);
+        if (current_token.type == TOK_CLASS)
+        {
+            ASTNode *class_node = parse_class_def();
+            ast_block_add_statement(block, class_node);
+        }
+        else
+        {
+            ast_block_add_statement(block, parse_statement());
+        }
     }
     return block;
 }
@@ -212,7 +247,7 @@ static ASTNode *parse_primary()
                 {
                     if (arg_count >= 4)
                     {
-                        printf("Parse error: Too many function call arguments (max 4)\n");
+                        printf("Parse error: Too many function/class call arguments (max 4)\n");
                         exit(1);
                     }
                     args[arg_count++] = parse_expression();
@@ -224,10 +259,39 @@ static ASTNode *parse_primary()
             }
             expect(TOK_RPAREN);
 
-            return ast_new_func_call(varname, args, arg_count);
+            // Check if this is a class instantiation
+            if (parser_is_class_name(varname))
+            {
+                return ast_new_class_instance(varname, args, arg_count);
+            }
+            else
+            {
+                return ast_new_func_call(varname, args, arg_count);
+            }
         }
 
-        return ast_new_var(varname);
+        ASTNode *node = ast_new_var(varname);
+        // Check for member access
+        if (current_token.type == TOK_DOT)
+        {
+            node = parse_member_access(node);
+        }
+        return node;
+    }
+
+    // Handle 'self' as a variable (like TOK_ID)
+    if (current_token.type == TOK_SELF)
+    {
+        char varname[64];
+        strcpy(varname, current_token.text);
+        next_token();
+        ASTNode *node = ast_new_var(varname);
+        // Check for member access
+        if (current_token.type == TOK_DOT)
+        {
+            node = parse_member_access(node);
+        }
+        return node;
     }
 
     if (current_token.type == TOK_LPAREN)
@@ -446,14 +510,54 @@ static ASTNode *parse_statement()
     if (current_token.type == TOK_LET)
     {
         next_token();
-        if (current_token.type != TOK_ID)
+        if (current_token.type != TOK_ID && current_token.type != TOK_SELF)
         {
             printf("Parse error: Expected variable name after let$\n");
             exit(1);
         }
+
+        // Handle both regular variables and self.member
         char varname[64];
-        strcpy(varname, current_token.text);
-        next_token();
+        if (current_token.type == TOK_SELF)
+        {
+            // Handle self.member case
+            strcpy(varname, current_token.text);
+            next_token();
+            if (current_token.type == TOK_DOT)
+            {
+                // This is a member access (self.member)
+                ASTNode *self_node = ast_new_var(varname);
+                ASTNode *member_access = parse_member_access(self_node);
+
+                expect(TOK_ASSIGN);
+                ASTNode *val = parse_expression();
+
+                // Create a special assignment node for member access
+                ASTNode *assign = malloc(sizeof(ASTNode));
+                assign->type = NODE_MEMBER_ASSIGN;
+                assign->member_assign.object = member_access->member_access.object;
+                strncpy(assign->member_assign.member_name,
+                        member_access->member_access.member_name,
+                        sizeof(assign->member_assign.member_name));
+                assign->member_assign.value = val;
+
+                ast_free(member_access);
+                return assign;
+            }
+            else
+            {
+                // Just regular self variable
+                strcpy(varname, current_token.text);
+                next_token();
+            }
+        }
+        else
+        {
+            // Regular variable
+            strcpy(varname, current_token.text);
+            next_token();
+        }
+
         expect(TOK_ASSIGN);
         ASTNode *val = parse_expression();
         return ast_new_assign(varname, val);
@@ -555,7 +659,7 @@ static ASTNode *parse_statement()
                     printf("Parse error: Too many function parameters (max 4)\n");
                     exit(1);
                 }
-                if (current_token.type != TOK_ID)
+                if (current_token.type != TOK_ID && current_token.type != TOK_SELF)
                 {
                     printf("Parse error: Expected parameter name\n");
                     exit(1);
@@ -582,4 +686,128 @@ static ASTNode *parse_statement()
     }
     ASTNode *expr = parse_expression();
     return expr;
+}
+
+ASTNode *parse_class_def()
+{
+    expect(TOK_CLASS);
+    if (current_token.type != TOK_ID)
+    {
+        printf("Parse error: Expected class name after class$\n");
+        exit(1);
+    }
+    char class_name[64];
+    strncpy(class_name, current_token.text, 64);
+    class_name[63] = '\0';
+    next_token();
+    expect(TOK_LBRACE); // Start of class body
+
+    ASTNode *block = ast_new_block();
+    while (current_token.type != TOK_RBRACE && current_token.type != TOK_EOF)
+    {
+        if (current_token.type == TOK_FUNC)
+        {
+            ASTNode *method = parse_method_def();
+            ast_block_add_statement(block, method);
+        }
+        else
+        {
+            ASTNode *stmt = parse_statement();
+            if (stmt != NULL)
+            {
+                ast_block_add_statement(block, stmt);
+            }
+        }
+    }
+    expect(TOK_RBRACE); // End of class body
+
+    parser_register_class_name(class_name); // Register the class name
+    return ast_new_class_def(class_name, block);
+}
+
+ASTNode *parse_member_access(ASTNode *object)
+{
+    while (current_token.type == TOK_DOT)
+    {
+        next_token();
+        if (current_token.type != TOK_ID)
+        {
+            printf("Parse error: Expected member name after '.'\n");
+            exit(1);
+        }
+        char member_name[64];
+        strncpy(member_name, current_token.text, 64);
+        member_name[63] = '\0';
+        next_token();
+        if (current_token.type == TOK_LPAREN)
+        {
+            // Method call
+            ASTNode **args = malloc(sizeof(ASTNode *) * 8);
+            int arg_count = 0;
+            next_token(); // consume '('
+            if (current_token.type != TOK_RPAREN)
+            {
+                do
+                {
+                    args[arg_count++] = parse_expression();
+                    if (current_token.type == TOK_COMMA)
+                        next_token();
+                } while (current_token.type != TOK_RPAREN);
+            }
+            expect(TOK_RPAREN);
+            object = ast_new_method_call(object, member_name, args, arg_count);
+        }
+        else
+        {
+            // Field access
+            object = ast_new_member_access(object, member_name);
+        }
+    }
+    return object;
+}
+
+ASTNode *parse_method_def()
+{
+    // Assumes current_token is TOK_FUNC
+    expect(TOK_FUNC);
+    if (current_token.type != TOK_ID)
+    {
+        printf("Parse error: Expected method name after func$\n");
+        exit(1);
+    }
+    char method_name[64];
+    strncpy(method_name, current_token.text, 64);
+    method_name[63] = '\0';
+    next_token();
+
+    expect(TOK_LPAREN);
+    char params[4][64];
+    int param_count = 0;
+    if (current_token.type != TOK_RPAREN)
+    {
+        while (1)
+        {
+            if (param_count >= 4)
+            {
+                printf("Parse error: Too many method parameters (max 4)\n");
+                exit(1);
+            }
+            if (current_token.type != TOK_ID && current_token.type != TOK_SELF)
+            {
+                printf("Parse error: Expected parameter name in method\n");
+                exit(1);
+            }
+            strncpy(params[param_count++], current_token.text, 64);
+            params[param_count - 1][63] = '\0';
+            next_token();
+            if (current_token.type == TOK_COMMA)
+                next_token();
+            else
+                break;
+        }
+    }
+    expect(TOK_RPAREN);
+    expect(TOK_ARROW);
+    ASTNode *body = parse_statement();
+    return ast_new_method_def(method_name, params, param_count, body);
 }

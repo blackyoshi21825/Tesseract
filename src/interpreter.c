@@ -7,8 +7,12 @@
 #include "variables.h"
 #include "ast.h"
 #include "parser.h"
+#include "object.h"
 
 #define MAX_FUNCTIONS 1000000
+#define MAX_CLASSES 256
+
+typedef struct ObjectInstance ObjectInstance;
 
 const char *bool_to_str(bool value);
 
@@ -20,8 +24,17 @@ typedef struct
     int param_count;
 } Function;
 
+typedef struct
+{
+    char name[64];
+    ASTNode *class_node;
+} ClassEntry;
+
 static Function function_table[MAX_FUNCTIONS];
 static int function_count = 0;
+
+static ClassEntry class_table[MAX_CLASSES];
+static int class_count = 0;
 
 static double eval_expression(ASTNode *node);
 static char *list_to_string(ASTNode *list);
@@ -31,6 +44,39 @@ char *read_file(const char *filename);
 
 // Forward declaration of print_node
 static void print_node(ASTNode *node);
+
+static FieldEntry *object_get_field(ObjectInstance *obj, const char *field);
+
+ObjectInstance *object_new(const char *class_name)
+{
+    ObjectInstance *obj = malloc(sizeof(ObjectInstance));
+    if (!obj)
+    {
+        printf("Memory error: Could not allocate object\n");
+        exit(1);
+    }
+
+    strncpy(obj->class_name, class_name, sizeof(obj->class_name));
+    obj->class_name[sizeof(obj->class_name) - 1] = '\0';
+    obj->fields = NULL;
+    return obj;
+}
+
+void object_free(ObjectInstance *obj)
+{
+    if (!obj)
+        return;
+
+    FieldEntry *entry = obj->fields;
+    while (entry)
+    {
+        FieldEntry *next = entry->next;
+        free(entry);
+        entry = next;
+    }
+
+    free(obj);
+}
 
 void register_function(const char *name, char params[][64], int param_count, ASTNode *body)
 {
@@ -61,14 +107,105 @@ Function *find_function(const char *name)
     return NULL;
 }
 
+void register_class(const char *name, ASTNode *class_node)
+{
+    for (int i = 0; i < class_count; i++)
+    {
+        if (strcmp(class_table[i].name, name) == 0)
+        {
+            class_table[i].class_node = class_node;
+            return;
+        }
+    }
+    if (class_count < MAX_CLASSES)
+    {
+        strncpy(class_table[class_count].name, name, 64);
+        class_table[class_count].name[63] = '\0';
+        class_table[class_count].class_node = class_node;
+        class_count++;
+    }
+}
+
+ASTNode *get_class(const char *name)
+{
+    for (int i = 0; i < class_count; i++)
+    {
+        if (strcmp(class_table[i].name, name) == 0)
+        {
+            return class_table[i].class_node;
+        }
+    }
+    return NULL;
+}
+
+ASTNode *instantiate_class(const char *name, ASTNode **args, int arg_count)
+{
+    ASTNode *class_node = get_class(name);
+    if (!class_node)
+        return NULL;
+    // For now, just create a class instance node
+    return ast_new_class_instance(name, args, arg_count);
+}
+
+// Helper to set a field on an object
+static void object_set_field(ObjectInstance *obj, const char *field, double number_value, const char *string_value, FieldType type)
+{
+    FieldEntry *entry = object_get_field(obj, field);
+    if (!entry)
+    {
+        entry = malloc(sizeof(FieldEntry));
+        strcpy(entry->name, field);
+        entry->next = obj->fields;
+        obj->fields = entry;
+    }
+    entry->type = type;
+    if (type == FIELD_STRING)
+    {
+        if (string_value)
+        {
+            strncpy(entry->string_value, string_value, sizeof(entry->string_value));
+            entry->string_value[sizeof(entry->string_value) - 1] = '\0';
+        }
+        else
+        {
+            entry->string_value[0] = '\0';
+        }
+    }
+    else
+    {
+        entry->number_value = number_value;
+    }
+}
+
+// Helper to get a field from an object
+static FieldEntry *object_get_field(ObjectInstance *obj, const char *field)
+{
+    FieldEntry *entry = obj->fields;
+    while (entry)
+    {
+        if (strcmp(entry->name, field) == 0)
+        {
+            return entry;
+        }
+        entry = entry->next;
+    }
+    return NULL;
+}
+// Store the current self object (for method calls)
+static ObjectInstance *current_self = NULL;
+
 void interpret(ASTNode *root)
 {
+    if (!root)
+        return;
     if (root->type == NODE_BLOCK)
     {
         for (int i = 0; i < root->block.count; i++)
         {
-            interpret(root->block.statements[i]);
+            if (root->block.statements[i]) // Only interpret non-NULL statements
+                interpret(root->block.statements[i]);
         }
+        return;
     }
     else if (root->type == NODE_ASSIGN)
     {
@@ -80,6 +217,37 @@ void interpret(ASTNode *root)
         else if (value_node->type == NODE_LIST)
         {
             set_list_variable(root->assign.varname, value_node);
+        }
+        else if (value_node->type == NODE_CLASS_INSTANCE)
+        {
+            // Create the object instance
+            ObjectInstance *obj = object_new(value_node->class_instance.class_name);
+            // Initialize fields from class definition
+            ASTNode *class_node = get_class(value_node->class_instance.class_name);
+            if (class_node)
+            {
+                ASTNode *body = class_node->class_def.body;
+                for (int i = 0; i < body->block.count; i++)
+                {
+                    ASTNode *stmt = body->block.statements[i];
+                    if (stmt->type == NODE_ASSIGN)
+                    {
+                        if (stmt->assign.value->type == NODE_STRING)
+                        {
+                            object_set_field(obj, stmt->assign.varname, 0, stmt->assign.value->string, FIELD_STRING);
+                        }
+                        else
+                        {
+                            double val = eval_expression(stmt->assign.value);
+                            object_set_field(obj, stmt->assign.varname, val, NULL, FIELD_NUMBER);
+                        }
+                    }
+                }
+            }
+            // Store the pointer as a string in the variable table under the correct variable name
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%p", (void *)obj);
+            set_variable(root->assign.varname, buf);
         }
         else
         {
@@ -181,6 +349,161 @@ void interpret(ASTNode *root)
 
         interpret(fn->body);
     }
+    else if (root->type == NODE_CLASS_DEF)
+    {
+        // Register the class
+        register_class(root->class_def.class_name, root);
+    }
+    else if (root->type == NODE_CLASS_INSTANCE)
+    {
+        // On assignment: create a new object instance and initialize fields
+        ObjectInstance *obj = object_new(root->class_instance.class_name);
+        // Initialize fields from class definition
+        ASTNode *class_node = get_class(root->class_instance.class_name);
+        if (class_node)
+        {
+            ASTNode *body = class_node->class_def.body;
+            for (int i = 0; i < body->block.count; i++)
+            {
+                ASTNode *stmt = body->block.statements[i];
+                if (stmt->type == NODE_ASSIGN)
+                {
+                    if (stmt->assign.value->type == NODE_STRING)
+                    {
+                        object_set_field(obj, stmt->assign.varname, 0, stmt->assign.value->string, FIELD_STRING);
+                    }
+                    else
+                    {
+                        double val = eval_expression(stmt->assign.value);
+                        object_set_field(obj, stmt->assign.varname, val, NULL, FIELD_NUMBER);
+                    }
+                }
+            }
+        }
+        // Store the pointer as a string in the variable table
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%p", (void *)obj);
+        set_variable("__last_object_ptr", buf); // Used for assignment
+    }
+    else if (root->type == NODE_MEMBER_ACCESS)
+    {
+        // Evaluate the object (left side)
+        ASTNode *object = root->member_access.object;
+        const char *member_name = root->member_access.member_name;
+        // Evaluate the object to get the instance
+        // For now, assume object is a variable referring to an ObjectInstance
+        // (You may need to adapt this if your object system is more complex)
+        if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
+        {
+            // Accessing self.field
+            return object_get_field(current_self, member_name);
+        }
+        else if (object->type == NODE_VAR)
+        {
+            // Try to get the object instance from a variable table (not implemented in this stub)
+            fprintf(stderr, "Error: Only 'self' member access is supported in this stub.\n");
+            exit(1);
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unsupported object type for member access.\n");
+            exit(1);
+        }
+    }
+    else if (root->type == NODE_METHOD_CALL)
+    {
+        // Evaluate a method call: object.method(args)
+        ASTNode *object_node = root->method_call.object;
+        ObjectInstance *obj = NULL;
+        if (object_node->type == NODE_VAR)
+        {
+            const char *obj_ptr_str = get_variable(object_node->varname);
+            sscanf(obj_ptr_str, "%p", (void **)&obj);
+        }
+        if (!obj)
+        {
+            printf("Runtime error: Method call on non-object\n");
+            exit(1);
+        }
+        const char *class_name = obj->class_name;
+        ASTNode *class_node = get_class(class_name);
+        if (!class_node)
+        {
+            printf("Runtime error: Class '%s' not found\n", class_name);
+            exit(1);
+        }
+        // Search for the method in the class body
+        ASTNode *body = class_node->class_def.body;
+        ASTNode *method_def = NULL;
+        for (int i = 0; i < body->block.count; i++)
+        {
+            ASTNode *stmt = body->block.statements[i];
+            if (stmt->type == NODE_METHOD_DEF && strcmp(stmt->method_def.method_name, root->method_call.method_name) == 0)
+            {
+                method_def = stmt;
+                break;
+            }
+        }
+        if (!method_def)
+        {
+            printf("Runtime error: Method '%s' not found in class '%s'\n", root->method_call.method_name, class_name);
+            exit(1);
+        }
+        // Set current self
+        current_self = obj;
+        // Bind self and arguments
+        set_variable("self", "__self__"); // Dummy, real access is via current_self
+        for (int i = 0; i < method_def->method_def.param_count && i < root->method_call.arg_count; i++)
+        {
+            double val = eval_expression(root->method_call.args[i]);
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", val);
+            set_variable(method_def->method_def.params[i], buf);
+        }
+        interpret(method_def->method_def.body);
+        current_self = NULL;
+        return 0;
+    }
+    else if (root->type == NODE_MEMBER_ASSIGN)
+    {
+        // Assignment to an object member: obj.field = value
+        ASTNode *object_node = root->member_assign.object;
+        const char *member_name = root->member_assign.member_name;
+        ASTNode *value_node = root->member_assign.value;
+        ObjectInstance *obj = NULL;
+        if (object_node->type == NODE_VAR)
+        {
+            if (strcmp(object_node->varname, "self") == 0 && current_self)
+            {
+                obj = current_self;
+            }
+            else
+            {
+                const char *obj_ptr_str = get_variable(object_node->varname);
+                if (!obj_ptr_str)
+                {
+                    printf("Runtime error: Undefined object variable '%s'\n", object_node->varname);
+                    exit(1);
+                }
+                sscanf(obj_ptr_str, "%p", (void **)&obj);
+            }
+        }
+        if (!obj)
+        {
+            printf("Runtime error: Member assignment on non-object\n");
+            exit(1);
+        }
+        if (value_node->type == NODE_STRING)
+        {
+            object_set_field(obj, member_name, 0, value_node->string, FIELD_STRING);
+        }
+        else
+        {
+            double val = eval_expression(value_node);
+            object_set_field(obj, member_name, val, NULL, FIELD_NUMBER);
+        }
+        return 0;
+    }
     else if (root->type == NODE_LIST)
     {
         // Do nothing here, as lists are handled in print_node
@@ -231,6 +554,11 @@ static double eval_expression(ASTNode *node)
     }
     case NODE_VAR:
     {
+        if (strcmp(node->varname, "self") == 0 && current_self)
+        {
+            // Return dummy value for self
+            return 0;
+        }
         const char *val = get_variable(node->varname);
         if (!val)
         {
@@ -451,14 +779,14 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST)
         {
-            fprintf(stderr, "Runtime error: insert() expects a list\n");
+            fprintf(stderr, "runtime error: insert() expects a list\n");
             exit(1);
         }
 
         int index = (int)eval_expression(index_node);
         if (index < 0 || index > list_node->list.count)
         {
-            fprintf(stderr, "Runtime error: Index out of bounds in insert()\n");
+            fprintf(stderr, "runtime error: Index out of bounds in insert()\n");
             exit(1);
         }
 
@@ -736,6 +1064,62 @@ static double eval_expression(ASTNode *node)
         return 0;
     }
 
+    case NODE_CLASS_DEF:
+        // Register the class (if not already done in interpret)
+        register_class(node->class_def.class_name, node);
+        return 0;
+    case NODE_CLASS_INSTANCE:
+        // Create a new object instance (if used as an expression, return 0 for now)
+        // In interpret(), the actual instance is created and stored
+        return 0;
+    case NODE_METHOD_DEF:
+        // Method definitions are handled during class registration, nothing to do at runtime
+        return 0;
+    case NODE_METHOD_CALL:
+        // Evaluate a method call: object.method(args)
+        // This is handled in interpret(), but if called here, do nothing
+        interpret(node);
+        return 0;
+
+    case NODE_MEMBER_ACCESS:
+    {
+        ASTNode *object = node->member_access.object;
+        const char *member_name = node->member_access.member_name;
+        ObjectInstance *obj = NULL;
+
+        if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
+        {
+            obj = current_self;
+        }
+        else if (object->type == NODE_VAR)
+        {
+            const char *obj_ptr_str = get_variable(object->varname);
+            if (obj_ptr_str)
+            {
+                sscanf(obj_ptr_str, "%p", (void **)&obj);
+            }
+        }
+
+        if (!obj)
+        {
+            printf("Runtime error: Member access on non-object\n");
+            exit(1);
+        }
+
+        FieldEntry *field = object_get_field(obj, member_name);
+        if (!field)
+        {
+            printf("Runtime error: Field '%s' not found\n", member_name);
+            exit(1);
+        }
+
+        if (field->type == FIELD_NUMBER)
+        {
+            return field->number_value;
+        }
+        // For string fields, we return 0 but handle printing in print_node
+        return 0;
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -838,7 +1222,7 @@ static void print_node(ASTNode *node)
                 src++; // skip '@'
                 if (arg_index >= node->format_str.arg_count)
                 {
-                    printf("Runtime error: Not enough arguments for format string\n");
+                    printf("runtime error: Not enough arguments for format string\n");
                     exit(1);
                 }
 
@@ -867,7 +1251,7 @@ static void print_node(ASTNode *node)
                         }
                         else
                         {
-                            printf("Runtime error: Undefined string variable\n");
+                            printf("runtime error: Undefined string variable\n");
                             exit(1);
                         }
                     }
@@ -883,7 +1267,7 @@ static void print_node(ASTNode *node)
                     *dest++ = '@';
                     break;
                 default:
-                    printf("Runtime error: Unknown format specifier @%c\n", *src);
+                    printf("runtime error: Unknown format specifier @%c\n", *src);
                     exit(1);
                 }
                 src++;
@@ -896,6 +1280,47 @@ static void print_node(ASTNode *node)
         *dest = '\0';
         printf("%s\n", buffer);
         return 0;
+    }
+    case NODE_MEMBER_ACCESS:
+    {
+        ASTNode *object = node->member_access.object;
+        const char *member_name = node->member_access.member_name;
+        ObjectInstance *obj = NULL;
+
+        // Handle self.member access
+        if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
+        {
+            obj = current_self;
+        }
+        // Handle obj.member access
+        else if (object->type == NODE_VAR)
+        {
+            const char *obj_ptr_str = get_variable(object->varname);
+            if (obj_ptr_str)
+            {
+                sscanf(obj_ptr_str, "%p", (void **)&obj);
+            }
+        }
+
+        if (obj)
+        {
+            FieldEntry *field = object_get_field(obj, member_name);
+            if (field)
+            {
+                if (field->type == FIELD_STRING)
+                {
+                    printf("%s\n", field->string_value);
+                    return;
+                }
+                else if (field->type == FIELD_NUMBER)
+                {
+                    printf("%g\n", field->number_value);
+                    return;
+                }
+            }
+        }
+        printf("(unknown member)\n");
+        break;
     }
     default:
         printf("%g\n", eval_expression(node));

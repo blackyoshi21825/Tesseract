@@ -95,7 +95,8 @@ void ast_block_add_statement(ASTNode *block, ASTNode *statement)
 {
     if (block->type != NODE_BLOCK)
         return;
-    if (statement == NULL) {
+    if (statement == NULL)
+    {
         // Optionally, add a NOP node for empty statements, or just skip
         // ASTNode *nop = malloc(sizeof(ASTNode));
         // nop->type = NODE_NOP;
@@ -330,6 +331,79 @@ ASTNode *ast_new_format_string(const char *format, ASTNode **args, int arg_count
     return node;
 }
 
+ASTNode *ast_new_class_def(const char *class_name, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_CLASS_DEF;
+    strncpy(node->class_def.class_name, class_name, sizeof(node->class_def.class_name));
+    node->class_def.class_name[sizeof(node->class_def.class_name) - 1] = '\0';
+    node->class_def.body = body;
+    return node;
+}
+
+ASTNode *ast_new_class_instance(const char *class_name, ASTNode **args, int arg_count)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_CLASS_INSTANCE;
+    strncpy(node->class_instance.class_name, class_name, sizeof(node->class_instance.class_name));
+    node->class_instance.class_name[sizeof(node->class_instance.class_name) - 1] = '\0';
+    for (int i = 0; i < arg_count && i < 8; i++)
+    {
+        node->class_instance.args[i] = args[i];
+    }
+    node->class_instance.arg_count = arg_count;
+    return node;
+}
+
+ASTNode *ast_new_member_access(ASTNode *object, const char *member_name)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_MEMBER_ACCESS;
+    node->member_access.object = object;
+    strncpy(node->member_access.member_name, member_name, sizeof(node->member_access.member_name));
+    node->member_access.member_name[sizeof(node->member_access.member_name) - 1] = '\0';
+    return node;
+}
+
+ASTNode *ast_new_method_def(const char *method_name, char params[][64], int param_count, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_METHOD_DEF;
+    strncpy(node->method_def.method_name, method_name, sizeof(node->method_def.method_name));
+    node->method_def.method_name[sizeof(node->method_def.method_name) - 1] = '\0';
+    for (int i = 0; i < param_count && i < 4; i++)
+    {
+        strncpy(node->method_def.params[i], params[i], 64);
+        node->method_def.params[i][63] = '\0';
+    }
+    node->method_def.param_count = param_count;
+    node->method_def.body = body;
+    return node;
+}
+
+ASTNode *ast_new_method_call(ASTNode *object, const char *method_name, ASTNode **args, int arg_count)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_METHOD_CALL;
+    node->method_call.object = object;
+    strncpy(node->method_call.method_name, method_name, sizeof(node->method_call.method_name));
+    node->method_call.method_name[sizeof(node->method_call.method_name) - 1] = '\0';
+    node->method_call.args = args;
+    node->method_call.arg_count = arg_count;
+    return node;
+}
+
+ASTNode *ast_new_member_assign(ASTNode *object, const char *member_name, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_MEMBER_ASSIGN;
+    node->member_assign.object = object;
+    strncpy(node->member_assign.member_name, member_name, sizeof(node->member_assign.member_name));
+    node->member_assign.member_name[sizeof(node->member_assign.member_name) - 1] = '\0';
+    node->member_assign.value = value;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -397,6 +471,10 @@ void ast_free(ASTNode *node)
         {
             ast_free(node->format_str.args[i]);
         }
+        break;
+    case NODE_MEMBER_ASSIGN:
+        ast_free(node->member_assign.object);
+        ast_free(node->member_assign.value);
         break;
     default:
         break;
@@ -540,6 +618,11 @@ double ast_eval(ASTNode *node)
         return ~(int)val; // Assuming the value is an integer for bitwise operations
     }
 
+    case NODE_CLASS_DEF:
+    {
+        // Ignore class definitions in ast_eval
+        return 0;
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);

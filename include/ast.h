@@ -34,7 +34,13 @@ typedef enum
     NODE_BITWISE_NOT,
     NODE_PATTERN_MATCH,
     NODE_FORMAT_STRING,
-    NODE_NOP
+    NODE_NOP,
+    NODE_CLASS_DEF,      // Class definition
+    NODE_CLASS_INSTANCE, // Class instance (object)
+    NODE_MEMBER_ACCESS,  // Accessing a member (field or method)
+    NODE_METHOD_DEF,     // Method definition inside a class
+    NODE_METHOD_CALL,    // Method call on an object
+    NODE_MEMBER_ASSIGN,
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -59,7 +65,7 @@ struct ASTNode
         } unop;
         struct
         {
-            char varname[64];
+            char varname[256];
             ASTNode *value;
         } assign;
         struct
@@ -121,6 +127,42 @@ struct ASTNode
             ASTNode *args[4];
             int arg_count;
         } format_str;
+        struct
+        {
+            char class_name[64];
+            ASTNode *body; // Block of class body (fields, methods)
+        } class_def;
+        struct
+        {
+            char class_name[64];
+            ASTNode *args[8]; // Arguments for constructor (if any)
+            int arg_count;
+        } class_instance;
+        struct
+        {
+            ASTNode *object;
+            char member_name[64];
+        } member_access;
+        struct
+        {
+            char method_name[64];
+            char params[4][64];
+            int param_count;
+            ASTNode *body;
+        } method_def;
+        struct
+        {
+            ASTNode *object;
+            char method_name[64];
+            ASTNode **args;
+            int arg_count;
+        } method_call;
+        struct
+        {
+            ASTNode *object;
+            char member_name[64];
+            ASTNode *value;
+        } member_assign;
     };
 };
 
@@ -162,5 +204,11 @@ ASTNode *ast_new_bitwise_not(ASTNode *operand);
 ASTNode *ast_new_pattern_match(ASTNode *pattern, ASTNode *noise);
 
 ASTNode *ast_new_format_string(const char *format, ASTNode **args, int arg_count);
+
+ASTNode *ast_new_class_def(const char *class_name, ASTNode *body);
+ASTNode *ast_new_class_instance(const char *class_name, ASTNode **args, int arg_count);
+ASTNode *ast_new_member_access(ASTNode *object, const char *member_name);
+ASTNode *ast_new_method_def(const char *method_name, char params[][64], int param_count, ASTNode *body);
+ASTNode *ast_new_method_call(ASTNode *object, const char *method_name, ASTNode **args, int arg_count);
 
 #endif

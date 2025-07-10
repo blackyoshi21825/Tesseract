@@ -109,6 +109,20 @@ Token lexer_next_token()
         pos += 5;
         return token;
     }
+    if (starts_with("class$"))
+    {
+        pos += 6;
+        token.type = TOK_CLASS;
+        strcpy(token.text, "class$");
+        return token;
+    }
+    if (starts_with("self"))
+    {
+        pos += 4;
+        token.type = TOK_SELF;
+        strcpy(token.text, "self");
+        return token;
+    }
 
     if (starts_with("and"))
     {
@@ -365,6 +379,12 @@ Token lexer_next_token()
     case '@':
         token.type = TOK_FORMAT_SPECIFIER;
         token.text[0] = '@';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case '.':
+        token.type = TOK_DOT;
+        token.text[0] = '.';
         token.text[1] = '\0';
         pos++;
         return token;

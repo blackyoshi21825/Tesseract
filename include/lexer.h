@@ -52,6 +52,9 @@ typedef enum
     TOK_PATTERN_MATCH,
     TOK_FORMAT_SPECIFIER,
     TOK_EOF,
+    TOK_CLASS, // class$
+    TOK_DOT,   // .
+    TOK_SELF,  // self
 } TokenType;
 
 typedef struct

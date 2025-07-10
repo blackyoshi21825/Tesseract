@@ -97,7 +97,55 @@
             let$ name := "John"
             ::print "Hello @s" (name) //Print Hello John
 
-13.Implementation Notes
+13. Classes
+    -In classes, you first have to use an init function(THIS DOES NOT CURRENTLY WORK WITH STRINGS, THIS ISSUE WILL BE FIXED ASAP)
+        class$ BankAccount {
+            let$ balance := 0;
+
+            func$ init(initial) => {
+                let$ self.balance := initial;
+            }
+
+            func$ deposit(amount) => {
+                let$ self.balance := self.balance + amount;
+                ::print "Deposited: @s" (amount)
+                ::print "New balance: @s" (self.balance)
+            }
+
+            func$ withdraw(amount) => {
+                if$ self.balance >= amount {
+                    let$ self.balance := self.balance - amount;
+                    ::print "Withdrew: @s" (amount)
+                }
+                else {
+                    ::print "Insufficient funds!"
+                }
+                ::print "Balance: @s" (self.balance)
+            }
+
+            func$ show() => {
+                ::print "Balance: @s" (self.balance)
+            }
+        }
+
+        let$ acc := BankAccount()
+        acc.init(1000)
+        acc.show()
+        acc.deposit(250)
+        acc.withdraw(500)
+        acc.withdraw(1000)
+        acc.show()
+    -As i said above, init functions do not support string yet, but without an init function like the example below, strings will work.
+        class$Person {
+            let$name := "John"
+            let$age := 30
+        }
+
+        let$p := Person()
+        ::print p.name
+        ::print p.age 
+
+14. Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
         -Numbers, Strings, Variables
@@ -113,6 +161,8 @@
         -Booleans
         -BitWise Operators
         -Pattern Matching
+        -Formatting
+        -Classes
 
     Memory Management
         -The interpreter handles memory allocation and deallocation for AST nodes
@@ -127,9 +177,9 @@
         -Maximum of 4 function parameters
         -Maximum of 1024 variables
         -No error recovery - first error terminates execution
-        -No dictionaries or classes, yet...
+        -No dictionaries yet...
 
-14. Running Tesseract
+15. Running Tesseract
     -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way.
     -Install GCC and Make tools to run Tesseract.
     -On Mac, use "make" and then "make clear" to use test.tesseract
