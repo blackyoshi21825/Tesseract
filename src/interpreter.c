@@ -10,7 +10,7 @@
 #include "object.h"
 
 #define MAX_FUNCTIONS 1000000
-#define MAX_CLASSES 256
+#define MAX_CLASSES 1000000
 
 typedef struct ObjectInstance ObjectInstance;
 
@@ -390,9 +390,6 @@ void interpret(ASTNode *root)
         // Evaluate the object (left side)
         ASTNode *object = root->member_access.object;
         const char *member_name = root->member_access.member_name;
-        // Evaluate the object to get the instance
-        // For now, assume object is a variable referring to an ObjectInstance
-        // (You may need to adapt this if your object system is more complex)
         if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
         {
             // Accessing self.field
@@ -1117,8 +1114,6 @@ static double eval_expression(ASTNode *node)
         {
             return field->number_value;
         }
-        // For string fields, we return 0 but handle printing in print_node
-        return 0;
     }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
