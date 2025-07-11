@@ -341,10 +341,18 @@ void interpret(ASTNode *root)
 
         for (int i = 0; i < fn->param_count; i++)
         {
-            double val = eval_expression(root->func_call.args[i]);
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%g", val);
-            set_variable(fn->params[i], buf);
+            ASTNode *arg = root->func_call.args[i];
+            if (arg->type == NODE_STRING)
+            {
+                set_variable(fn->params[i], arg->string);
+            }
+            else
+            {
+                double val = eval_expression(arg);
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", val);
+                set_variable(fn->params[i], buf);
+            }
         }
 
         interpret(fn->body);
@@ -452,10 +460,18 @@ void interpret(ASTNode *root)
         set_variable("self", "__self__"); // Dummy, real access is via current_self
         for (int i = 0; i < method_def->method_def.param_count && i < root->method_call.arg_count; i++)
         {
-            double val = eval_expression(root->method_call.args[i]);
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%g", val);
-            set_variable(method_def->method_def.params[i], buf);
+            ASTNode *arg = root->method_call.args[i];
+            if (arg->type == NODE_STRING)
+            {
+                set_variable(method_def->method_def.params[i], arg->string);
+            }
+            else
+            {
+                double val = eval_expression(arg);
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", val);
+                set_variable(method_def->method_def.params[i], buf);
+            }
         }
         interpret(method_def->method_def.body);
         current_self = NULL;
@@ -493,6 +509,26 @@ void interpret(ASTNode *root)
         if (value_node->type == NODE_STRING)
         {
             object_set_field(obj, member_name, 0, value_node->string, FIELD_STRING);
+        }
+        else if (value_node->type == NODE_VAR)
+        {
+            const char *str_val = get_variable(value_node->varname);
+            if (str_val)
+            {
+                // Try to parse as number first
+                char *endptr;
+                double num_val = strtod(str_val, &endptr);
+                if (endptr != str_val && *endptr == '\0')
+                {
+                    // It's a valid number
+                    object_set_field(obj, member_name, num_val, NULL, FIELD_NUMBER);
+                }
+                else
+                {
+                    // It's a string
+                    object_set_field(obj, member_name, 0, str_val, FIELD_STRING);
+                }
+            }
         }
         else
         {
@@ -1034,6 +1070,46 @@ static double eval_expression(ASTNode *node)
                             exit(1);
                         }
                     }
+                    else if (arg->type == NODE_MEMBER_ACCESS)
+                    {
+                        ASTNode *object = arg->member_access.object;
+                        const char *member_name = arg->member_access.member_name;
+                        ObjectInstance *obj = NULL;
+                        
+                        if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
+                        {
+                            obj = current_self;
+                        }
+                        else if (object->type == NODE_VAR)
+                        {
+                            const char *obj_ptr_str = get_variable(object->varname);
+                            if (obj_ptr_str)
+                            {
+                                sscanf(obj_ptr_str, "%p", (void **)&obj);
+                            }
+                        }
+                        
+                        if (obj)
+                        {
+                            FieldEntry *field = object_get_field(obj, member_name);
+                            if (field && field->type == FIELD_STRING)
+                            {
+                                dest += sprintf(dest, "%s", field->string_value);
+                            }
+                            else if (field && field->type == FIELD_NUMBER)
+                            {
+                                dest += sprintf(dest, "%g", field->number_value);
+                            }
+                            else
+                            {
+                                dest += sprintf(dest, "(unknown)");
+                            }
+                        }
+                        else
+                        {
+                            dest += sprintf(dest, "(null object)");
+                        }
+                    }
                     else
                     {
                         // For numbers, convert to string
@@ -1114,6 +1190,13 @@ static double eval_expression(ASTNode *node)
         {
             return field->number_value;
         }
+        else if (field->type == FIELD_STRING)
+        {
+            // For string fields, we can't return the string directly in eval_expression
+            // since it returns double. Return 0 to indicate successful access.
+            return 0;
+        }
+        return 0;
     }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
@@ -1248,6 +1331,46 @@ static void print_node(ASTNode *node)
                         {
                             printf("runtime error: Undefined string variable\n");
                             exit(1);
+                        }
+                    }
+                    else if (arg->type == NODE_MEMBER_ACCESS)
+                    {
+                        ASTNode *object = arg->member_access.object;
+                        const char *member_name = arg->member_access.member_name;
+                        ObjectInstance *obj = NULL;
+                        
+                        if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
+                        {
+                            obj = current_self;
+                        }
+                        else if (object->type == NODE_VAR)
+                        {
+                            const char *obj_ptr_str = get_variable(object->varname);
+                            if (obj_ptr_str)
+                            {
+                                sscanf(obj_ptr_str, "%p", (void **)&obj);
+                            }
+                        }
+                        
+                        if (obj)
+                        {
+                            FieldEntry *field = object_get_field(obj, member_name);
+                            if (field && field->type == FIELD_STRING)
+                            {
+                                dest += sprintf(dest, "%s", field->string_value);
+                            }
+                            else if (field && field->type == FIELD_NUMBER)
+                            {
+                                dest += sprintf(dest, "%g", field->number_value);
+                            }
+                            else
+                            {
+                                dest += sprintf(dest, "(unknown)");
+                            }
+                        }
+                        else
+                        {
+                            dest += sprintf(dest, "(null object)");
                         }
                     }
                     else

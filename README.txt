@@ -97,13 +97,14 @@
     -Usage
             let$ name := "John"
             ::print "Hello @s" (name) //Print Hello John
-
 13. Classes
-    -In classes, you first have to use an init function(THIS DOES NOT CURRENTLY WORK WITH STRINGS, THIS ISSUE WILL BE FIXED ASAP)
+    -In classes, you first have to use an init function.
         class$ BankAccount {
+            let$ owner := "";
             let$ balance := 0;
 
-            func$ init(initial) => {
+            func$ init(owner, initial) => {
+                let$ self.owner := owner;
                 let$ self.balance := initial;
             }
 
@@ -125,27 +126,18 @@
             }
 
             func$ show() => {
+                ::print "Account owner: @s" (self.owner)
                 ::print "Balance: @s" (self.balance)
             }
         }
 
         let$ acc := BankAccount()
-        acc.init(1000)
+        acc.init("John", 1000)
         acc.show()
         acc.deposit(250)
         acc.withdraw(500)
         acc.withdraw(1000)
         acc.show()
-    -As I said above, init functions do not support string yet, but without an init function like the example below, strings will work.
-        class$Person {
-            let$name := "John"
-            let$age := 30
-        }
-
-        let$p := Person()
-        ::print p.name
-        ::print p.age 
-
 14. Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
