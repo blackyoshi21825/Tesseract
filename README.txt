@@ -10,6 +10,7 @@
     -Booleans
     -BitWise Operators
     -Pattern Matching
+    -Classes
 
 2. General Syntax Rules
     -Statements end with semicolons (optional in most cases)
