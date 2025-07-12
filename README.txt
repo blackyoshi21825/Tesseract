@@ -178,3 +178,9 @@
     -On Mac, use "make" and then "make clear" to use test.tesseract
     -On Linux, if you get a segmentation fault, even though you know that your code is right run this command to debug your code
     "gcc -g -o tesser src/*.c -Iinclude -lm"
+
+16. Things That Will Be Added
+    -Dictionaries
+    -File Handling
+    -Data structures
+    -Algorithms
