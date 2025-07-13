@@ -42,12 +42,14 @@
         }
         ```
     Loop Statements
+
         ```
         loop$i := start => end {
             // loop body
             // i will take values from start to end (inclusive)
         }
         ```
+        
 5. Functions
     Function Definitions
         ```
