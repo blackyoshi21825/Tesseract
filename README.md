@@ -112,7 +112,7 @@
     -Please note that this function uses a naive algorithm, so expect delays or issues
     -To call this function use the floowing syntax
     
-    ::pattern_match(pattern,noise)
+        ::pattern_match(pattern,noise)
 
 12. Formatting
     -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations.
