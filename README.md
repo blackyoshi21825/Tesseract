@@ -1,9 +1,9 @@
 1. Tesseract is a simple interpreted programming language with dynamic typing, basic arithmetic operations, control structures (if/else, loops), function definitions and calls, file imports, string and number support, libraries, lists, booleans, bitWise operators, pattern matching, and classes
 
-2. General Syntax Rules
-    -Statements end with semicolons (optional in most cases)
-    -Blocks are enclosed in curly braces {}
-    -Comments: Are accessed by using a hashtag "#" and then typing the commented code
+2. General Syntax Rules <br>
+    -Statements end with semicolons (optional in most cases) <br>
+    -Blocks are enclosed in curly braces {} <br>
+    -Comments: Are accessed by using a hashtag "#" and then typing the commented code <br>
 
 3. Variables
     Declaration and Assignment
@@ -89,34 +89,34 @@
         ::pop(myList) - Deletes the ending value of the list
         
 
-8. Libraries
-    -Until now, the only library that exists is math.
-    -You may access this by typing import$ "lib/math.tesseract" at the top of your program
-    -The functions can be viewed by going to the file
-    -Please note that when you use these functions you don't need to print, you can just use the function and it will print directly.
+8. Libraries <br>
+    -Until now, the only library that exists is math. <br>
+    -You may access this by typing import$ "lib/math.tesseract" at the top of your program <br>
+    -The functions can be viewed by going to the file <br>
+    -Please note that when you use these functions you don't need to print, you can just use the function and it will print directly. <br>
 
-9. Booleans
-    -The Booleans that are avaliable are and, not, or, true, and false
-    -Please note that True returns 1 and False returns 0, so please keep that in mind.
-    -You can use true or false in only comparitive operators, so regular equal sign will not work.
+9. Booleans <br>
+    -The Booleans that are avaliable are and, not, or, true, and false <br>
+    -Please note that True returns 1 and False returns 0, so please keep that in mind. <br>
+    -You can use true or false in only comparitive operators, so regular equal sign will not work. <br>
 
-10. BitWise Operaters
-    -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT)
-    -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false).
-    -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011.
-    -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary.
+10. BitWise Operaters <br>
+    -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT) <br>
+    -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false). <br>
+    -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011. <br>
+    -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary. <br>
 
-11. Pattern Matching
-    -This function takes two arguments; first one is the pattern and the second one is the noise. Both of them have to be strings
-    -This function finds the pattern in the noise and outputs a list with the starting indexes of where the pattern is in the noise
-    -Please note that this function uses a naive algorithm, so expect delays or issues
-    -To call this function use the floowing syntax
+11. Pattern Matching <br>
+    -This function takes two arguments; first one is the pattern and the second one is the noise. Both of them have to be strings <br>
+    -This function finds the pattern in the noise and outputs a list with the starting indexes of where the pattern is in the noise <br>
+    -Please note that this function uses a naive algorithm, so expect delays or issues <br>
+    -To call this function use the floowing syntax <br>
     
         ::pattern_match(pattern,noise)
 
-12. Formatting
-    -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations.
-    -To use formatting, use the @s for strings. @d and @f are for numbers and floats, respectively, but these currently raise errors. This error will be fixed ASAP.
+12. Formatting <br> 
+    -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations. <br>
+    -To use formatting, use the @s for strings. @d and @f are for numbers and floats, respectively, but these currently raise errors. This error will be fixed ASAP. <br>
     -Usage
 
         
@@ -125,7 +125,7 @@
         
 
 13. Classes
-    -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below.
+    -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below
 
     
         let$ variable := myClass()
@@ -181,50 +181,50 @@
         acc.show()
         
 
-14. Implementation Notes
-    AST Node Types
-        -The language supports the following AST node types:
-        -Numbers, Strings, Variables
-        -Binary operations (+, -, *, /, %, comparisons)
-        -Assignments
-        -If/elseif/else statements
-        -Loops
-        -Function definitions and calls
-        -Blocks of code
-        -Import statements
-        -Print statements
-        -Lists
-        -Booleans
-        -BitWise Operators
-        -Pattern Matching
-        -Formatting
-        -Classes
+14. Implementation Notes <br>
+    AST Node Types <br>
+        -The language supports the following AST node types: <br>
+        -Numbers, Strings, Variables <br>
+        -Binary operations (+, -, *, /, %, comparisons) <br>
+        -Assignments <br>
+        -If/elseif/else statements <br>
+        -Loops <br>
+        -Function definitions and calls <br>
+        -Blocks of code <br>
+        -Import statements <br>
+        -Print statements <br>
+        -Lists <br>
+        -Booleans <br>
+        -BitWise Operators <br>
+        -Pattern Matching <br>
+        -Formatting <br>
+        -Classes <br>
 
-    Memory Management
-        -The interpreter handles memory allocation and deallocation for AST nodes
-        -Variables are stored in a symbol table
-        -Functions are stored in a function table
+    Memory Management <br>
+        -The interpreter handles memory allocation and deallocation for AST nodes <br>
+        -Variables are stored in a symbol table <br>
+        -Functions are stored in a function table <br>
 
-    Error Handling
-        -Syntax errors cause immediate termination with error messages
-        -Runtime errors (like undefined variables) also terminate execution with messages
+    Error Handling <br>
+        -Syntax errors cause immediate termination with error messages <br>
+        -Runtime errors (like undefined variables) also terminate execution with messages <br>
 
-    Limitations
-        -Maximum of 4 function parameters
-        -Maximum of 1024 variables
-        -No error recovery - first error terminates execution
-        -No dictionaries yet...
+    Limitations <br>
+        -Maximum of 4 function parameters <br>
+        -Maximum of 1024 variables <br>
+        -No error recovery - first error terminates execution <br>
+        -No dictionaries yet... <br>
 
 15. Running Tesseract
-    -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way.
-    -Install GCC and Make tools to run Tesseract.
-    -On Mac, use "make" and then "make clear" to use test.tesseract
-    -On Linux, if you get a segmentation fault, even though you know that your code is right run this command to debug your code
+    -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way. <br>
+    -Install GCC and Make tools to run Tesseract. <br>
+    -On Mac, use "make" and then "make clear" to use test.tesseract <br>
+    -On Linux, if you get a segmentation fault, even though you know that your code is right run this command to debug your code <br>
     ```
     gcc -g -o tesser src/*.c -Iinclude -lm
-
-16. Things That Will Be Added
-    -Dictionaries
-    -File Handling
-    -Data structures
-    -Algorithms
+    ```
+16. Things That Will Be Added <br>
+    -Dictionaries <br>
+    -File Handling <br>
+    -Data structures <br>
+    -Algorithms <br>
