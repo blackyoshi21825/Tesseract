@@ -58,9 +58,11 @@
         
 
 6. Import System
+
     ```
     import$ "filename.tesseract"
     ```
+
     -Imports and executes the specified file
     -Path is relative to the current file
 
@@ -74,9 +76,9 @@
 
     -You can even index lists to get specific values
 
-        
+        ```
         ::print mylist[2] (Prints 3)
-        
+        ```
 
     -List Functions
 
