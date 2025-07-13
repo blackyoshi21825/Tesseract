@@ -1,16 +1,4 @@
-1. Tesseract is a simple interpreted programming language with:
-    -Dynamic typing
-    -Basic arithmetic operations
-    -Control structures (if/else, loops)
-    -Function definitions and calls
-    -File imports
-    -String and number support
-    -Libraries
-    -Lists
-    -Booleans
-    -BitWise Operators
-    -Pattern Matching
-    -Classes
+1. Tesseract is a simple interpreted programming language with dynamic typing, basic arithmetic operations, control structures (if/else, loops), function definitions and calls, file imports, string and number support, libraries, lists, booleans, bitWise operators, pattern matching, and classes
 
 2. General Syntax Rules
     -Statements end with semicolons (optional in most cases)
@@ -77,22 +65,27 @@
     -Path is relative to the current file
 
 7. Lists
-    -Lists can be made by declaring a list.
+    -Lists can be made by declaring a lists
+
         ```
         let$ myList := [1,2,3,4,5,6,7]
         ::print myList (Prints the list)
         ```
+
     -You can even index lists to get specific values
-        ```
+
+        
         ::print mylist[2] (Prints 3)
-        ```
+        
+
     -List Functions
-        ```
+
+        
         ::len(myList) - Gets the length of the list
         ::append(mylist,value) - Adds the value to the end of the list
         ::prepend(myList,value) - Adds the value to the starting of the list
         ::pop(myList) - Deletes the ending value of the list
-        ```
+        
 
 8. Libraries
     -Until now, the only library that exists is math.
@@ -115,27 +108,36 @@
     -This function takes two arguments; first one is the pattern and the second one is the noise. Both of them have to be strings
     -This function finds the pattern in the noise and outputs a list with the starting indexes of where the pattern is in the noise
     -Please note that this function uses a naive algorithm, so expect delays or issues
-    -To call this function, ::pattern_match(pattern,noise)
+    -To call this function use the floowing syntax
+    
+    ::pattern_match(pattern,noise)
 
 12. Formatting
     -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations.
     -To use formatting, use the @s for strings. @d and @f are for numbers and floats, respectively, but these currently raise errors. This error will be fixed ASAP.
     -Usage
-        ```
+
+        
         let$ name := "John"
         ::print "Hello @s" (name) // Prints Hello John
-        ```
+        
+
 13. Classes
     -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below.
-    ```
+
+    
     let$ variable := myClass()
-    ```
+    
+
     Then, you may call the functions created in the class by calling it using the variable.
-    ```
+
+    
     variable.function("param1","param2")
-    ```
+    
+
     A full class is shows below
-        ```
+
+        
         class$ BankAccount {
             let$ owner := "";
             let$ balance := 0;
@@ -175,7 +177,8 @@
         acc.withdraw(500)
         acc.withdraw(1000)
         acc.show()
-        ```
+        
+
 14. Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
