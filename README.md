@@ -30,7 +30,8 @@
 
 4. Control structures
     If-Else Statements
-        ```
+
+        
         if$ condition {
             // then branch
         } 
@@ -52,16 +53,19 @@
 
 5. Functions
     Function Definitions
-        ```
+
+        
         func$name(param1, param2) => {
             (function body)
             (last expression is return value)
         }
-        ```
+        
+
     Function Call
-        ```
+
         name(arg1, arg2)
-        ```
+        
+
 6. Import System
     ```
     import$ "filename.tesseract"
