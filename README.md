@@ -19,15 +19,18 @@
 
 3. Variables
     Declaration and Assignment
-    ```
+        ```
         let$var_name := value
-    ```
+        ```
     Usage
+        ```
         let$x := 10
         ::print x  (prints 10)
+        ```
 
 4. Control structures
     If-Else Statements
+        ```
         if$ condition {
             // then branch
         } 
@@ -37,38 +40,50 @@
         else {
             // else branch
         }
+        ```
     Loop Statements
+        ```
         loop$i := start => end {
             // loop body
             // i will take values from start to end (inclusive)
         }
-
+        ```
 5. Functions
     Function Definitions
+        ```
         func$name(param1, param2) => {
             (function body)
             (last expression is return value)
         }
+        ```
     Function Call
+        ```
         name(arg1, arg2)
-
+        ```
 6. Import System
+    ```
     import$ "filename.tesseract"
-    
+    ```
     -Imports and executes the specified file
     -Path is relative to the current file
 
 7. Lists
     -Lists can be made by declaring a list.
+        ```
         let$ myList := [1,2,3,4,5,6,7]
         ::print myList (Prints the list)
+        ```
     -You can even index lists to get specific values
+        ```
         ::print mylist[2] (Prints 3)
+        ```
     -List Functions
+        ```
         ::len(myList) - Gets the length of the list
         ::append(mylist,value) - Adds the value to the end of the list
         ::prepend(myList,value) - Adds the value to the starting of the list
         ::pop(myList) - Deletes the ending value of the list
+        ```
 
 8. Libraries
     -Until now, the only library that exists is math.
@@ -97,10 +112,21 @@
     -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations.
     -To use formatting, use the @s for strings. @d and @f are for numbers and floats, respectively, but these currently raise errors. This error will be fixed ASAP.
     -Usage
-            let$ name := "John"
-            ::print "Hello @s" (name) //Print Hello John
+        ```
+        let$ name := "John"
+        ::print "Hello @s" (name) // Prints Hello John
+        ```
 13. Classes
-    -In classes, you first have to use an init function.
+    -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below.
+    ```
+    let$ variable := myClass()
+    ```
+    Then, you may call the functions created in the class by calling it using the variable.
+    ```
+    variable.function("param1","param2")
+    ```
+    A full class is shows below
+        ```
         class$ BankAccount {
             let$ owner := "";
             let$ balance := 0;
@@ -140,6 +166,7 @@
         acc.withdraw(500)
         acc.withdraw(1000)
         acc.show()
+        ```
 14. Implementation Notes
     AST Node Types
         -The language supports the following AST node types:
@@ -179,7 +206,9 @@
     -Install GCC and Make tools to run Tesseract.
     -On Mac, use "make" and then "make clear" to use test.tesseract
     -On Linux, if you get a segmentation fault, even though you know that your code is right run this command to debug your code
-    "gcc -g -o tesser src/*.c -Iinclude -lm"
+    ```
+    gcc -g -o tesser src/*.c -Iinclude -lm
+    ```
 
 16. Things That Will Be Added
     -Dictionaries
