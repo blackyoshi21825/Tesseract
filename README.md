@@ -218,9 +218,11 @@ Tesseract is a simple interpreted programming language with dynamic typing, basi
     -Install GCC and Make tools to run Tesseract. <br>
     -On Mac, use "make" and then "make clear" to use test.tesseract <br>
     -On Linux, if you get a segmentation fault, even though you know that your code is right run this command to debug your code <br>
-    ```
+
+    
     gcc -g -o tesser src/*.c -Iinclude -lm
-    ```
+    
+
 <h2>16. Things That Will Be Added </h2><br>
     -Dictionaries <br>
     -File Handling <br>
