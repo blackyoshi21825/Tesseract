@@ -200,16 +200,13 @@ Tesseract is a simple interpreted programming language with dynamic typing, basi
         -Pattern Matching <br>
         -Formatting <br>
         -Classes <br>
-
     Memory Management <br>
         -The interpreter handles memory allocation and deallocation for AST nodes <br>
         -Variables are stored in a symbol table <br>
         -Functions are stored in a function table <br>
-
     Error Handling <br>
         -Syntax errors cause immediate termination with error messages <br>
         -Runtime errors (like undefined variables) also terminate execution with messages <br>
-
     Limitations <br>
         -Maximum of 4 function parameters <br>
         -Maximum of 1024 variables <br>
