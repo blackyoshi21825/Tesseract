@@ -128,19 +128,17 @@ Tesseract is a simple interpreted programming language with dynamic typing, basi
 <h2>13. Classes</h2>
     -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below
 
-    
+    ```
         let$ variable := myClass()
-    
-
+    ```
     Then, you may call the functions created in the class by calling it using the variable.
-
-    
+    ```
         variable.function("param1","param2")
-    
+    ```
 
     A full class is shows below
 
-        
+    ```
         class$ BankAccount {
             let$ owner := "";
             let$ balance := 0;
@@ -180,7 +178,7 @@ Tesseract is a simple interpreted programming language with dynamic typing, basi
         acc.withdraw(500)
         acc.withdraw(1000)
         acc.show()
-        
+    ```
 
 <h2>14. Implementation Notes</h2> <br>
     AST Node Types <br>
