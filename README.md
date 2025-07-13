@@ -1,11 +1,11 @@
 1. Tesseract is a simple interpreted programming language with dynamic typing, basic arithmetic operations, control structures (if/else, loops), function definitions and calls, file imports, string and number support, libraries, lists, booleans, bitWise operators, pattern matching, and classes
 
-2. General Syntax Rules <br>
+<h2>2. General Syntax Rules</h2> <br>
     -Statements end with semicolons (optional in most cases) <br>
     -Blocks are enclosed in curly braces {} <br>
     -Comments: Are accessed by using a hashtag "#" and then typing the commented code <br>
 
-3. Variables
+<h2>3. Variables</h2>
     Declaration and Assignment
 
         
@@ -19,7 +19,7 @@
         ::print x  (prints 10)
         
 
-4. Control structures
+<h2>4. Control structures</h2>
     If-Else Statements
 
         
@@ -42,7 +42,7 @@
         }
         
 
-5. Functions
+<h2>5. Functions</h2>
     Function Definitions
 
         
@@ -57,7 +57,7 @@
         name(arg1, arg2)
         
 
-6. Import System
+<h2>6. Import System</h2>
 
     ```
     import$ "filename.tesseract"
@@ -66,7 +66,7 @@
     -Imports and executes the specified file
     -Path is relative to the current file
 
-7. Lists
+<h2>7. Lists</h2>
     -Lists can be made by declaring a lists
 
         ```
@@ -89,24 +89,24 @@
         ::pop(myList) - Deletes the ending value of the list
         
 
-8. Libraries <br>
+<h2>8. Libraries</h2> <br>
     -Until now, the only library that exists is math. <br>
     -You may access this by typing import$ "lib/math.tesseract" at the top of your program <br>
     -The functions can be viewed by going to the file <br>
     -Please note that when you use these functions you don't need to print, you can just use the function and it will print directly. <br>
 
-9. Booleans <br>
+<h2>9. Booleans</h2> <br>
     -The Booleans that are avaliable are and, not, or, true, and false <br>
     -Please note that True returns 1 and False returns 0, so please keep that in mind. <br>
     -You can use true or false in only comparitive operators, so regular equal sign will not work. <br>
 
-10. BitWise Operaters <br>
+<h2>10. BitWise Operaters</h2> <br>
     -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT) <br>
     -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false). <br>
     -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011. <br>
     -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary. <br>
 
-11. Pattern Matching <br>
+<h2>11. Pattern Matching</h2> <br>
     -This function takes two arguments; first one is the pattern and the second one is the noise. Both of them have to be strings <br>
     -This function finds the pattern in the noise and outputs a list with the starting indexes of where the pattern is in the noise <br>
     -Please note that this function uses a naive algorithm, so expect delays or issues <br>
@@ -114,7 +114,7 @@
     
         ::pattern_match(pattern,noise)
 
-12. Formatting <br> 
+<h2>12. Formatting</h2> <br> 
     -Currently, formatting only works with strings, not numbers or floats, if you would like to use numebrs, enclose them in quotations. <br>
     -To use formatting, use the @s for strings. @d and @f are for numbers and floats, respectively, but these currently raise errors. This error will be fixed ASAP. <br>
     -Usage
@@ -124,7 +124,7 @@
         ::print "Hello @s" (name) // Prints Hello John
         
 
-13. Classes
+<h2>13. Classes</h2>
     -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below
 
     
@@ -181,7 +181,7 @@
         acc.show()
         
 
-14. Implementation Notes <br>
+<h2>14. Implementation Notes</h2> <br>
     AST Node Types <br>
         -The language supports the following AST node types: <br>
         -Numbers, Strings, Variables <br>
@@ -215,7 +215,7 @@
         -No error recovery - first error terminates execution <br>
         -No dictionaries yet... <br>
 
-15. Running Tesseract
+<h2>15. Running Tesseract</h2> <br>
     -This language can only be run on a Mac or Linux computer, if you have a Windows, install WSL and run it that way. <br>
     -Install GCC and Make tools to run Tesseract. <br>
     -On Mac, use "make" and then "make clear" to use test.tesseract <br>
@@ -223,7 +223,7 @@
     ```
     gcc -g -o tesser src/*.c -Iinclude -lm
     ```
-16. Things That Will Be Added <br>
+<h2>16. Things That Will Be Added </h2><br>
     -Dictionaries <br>
     -File Handling <br>
     -Data structures <br>
