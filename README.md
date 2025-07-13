@@ -19,14 +19,17 @@
 
 3. Variables
     Declaration and Assignment
-        ```
+
+        
         let$var_name := value
-        ```
+        
+
     Usage
-        ```
+
+       
         let$x := 10
         ::print x  (prints 10)
-        ```
+        
 
 4. Control structures
     If-Else Statements
