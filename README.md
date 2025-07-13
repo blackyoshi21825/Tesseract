@@ -128,13 +128,13 @@
     -In classes, you first have to use an init function. Then, you may create functions and then call these fucntions by assigning the class to a variable, as shown in the example below.
 
     
-    let$ variable := myClass()
+        let$ variable := myClass()
     
 
     Then, you may call the functions created in the class by calling it using the variable.
 
     
-    variable.function("param1","param2")
+        variable.function("param1","param2")
     
 
     A full class is shows below
