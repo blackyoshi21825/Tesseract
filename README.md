@@ -1,4 +1,5 @@
-1. Tesseract is a simple interpreted programming language with dynamic typing, basic arithmetic operations, control structures (if/else, loops), function definitions and calls, file imports, string and number support, libraries, lists, booleans, bitWise operators, pattern matching, and classes
+<h2>Overview</h2><br>
+Tesseract is a simple interpreted programming language with dynamic typing, basic arithmetic operations, control structures (if/else, loops), function definitions and calls, file imports, string and number support, libraries, lists, booleans, bitWise operators, pattern matching, and classes
 
 <h2>2. General Syntax Rules</h2> <br>
     -Statements end with semicolons (optional in most cases) <br>
