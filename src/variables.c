@@ -4,9 +4,9 @@
 #include "variables.h"
 #include "ast.h"
 
-#define MAX_VARS 1000000
-#define MAX_VAR_NAME_LEN 4095
-#define MAX_STRING_LEN 4095
+#define MAX_VARS 10000
+#define MAX_VAR_NAME_LEN 1000
+#define MAX_STRING_LEN 1000
 
 typedef struct
 {
