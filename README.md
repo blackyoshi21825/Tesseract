@@ -172,7 +172,7 @@ Available operators: `and`, `not`, `or`, `true`, `false`
 
 ### String Formatting
 
-Currently supports string formatting with `@s`:
+Currently supports formatting with `@s`:
 ```tesseract
 let$ name := "John"
 ::print "Hello @s" (name)  # prints "Hello John"
