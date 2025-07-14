@@ -221,8 +221,21 @@ Tesseract is a simple interpreted programming language with dynamic typing, basi
     gcc -g -o tesser src/*.c -Iinclude -lm
     
 
-<h2>16. Things That Will Be Added </h2><br>
-    -Dictionaries <br>
+<h2>16. Dictionaries</h2><br>
+    -Dictionaries can be created using dict{} syntax with key := value pairs<br>
+    -Access values with ::get(dict, key)<br>
+    -Set values with ::set(dict, key, value)<br>
+    -Get all keys with ::keys(dict)<br>
+    -Get all values with ::values(dict)<br>
+    
+        ```
+        let$ myDict := dict{"name" := "John", "age" := 25}
+        ::print ::get(myDict, "name")  # Prints John
+        ::set(myDict, "city", "NYC")
+        ::keys(myDict)  # Prints all keys
+        ```
+
+<h2>17. Things That Will Be Added </h2><br>
     -File Handling <br>
     -Data structures <br>
     -Algorithms <br>

@@ -404,6 +404,61 @@ ASTNode *ast_new_member_assign(ASTNode *object, const char *member_name, ASTNode
     return node;
 }
 
+ASTNode *ast_new_dict()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DICT;
+    node->dict.keys = NULL;
+    node->dict.values = NULL;
+    node->dict.count = 0;
+    return node;
+}
+
+void ast_dict_add_pair(ASTNode *dict, ASTNode *key, ASTNode *value)
+{
+    if (dict->type != NODE_DICT) return;
+    dict->dict.keys = realloc(dict->dict.keys, sizeof(ASTNode *) * (dict->dict.count + 1));
+    dict->dict.values = realloc(dict->dict.values, sizeof(ASTNode *) * (dict->dict.count + 1));
+    dict->dict.keys[dict->dict.count] = key;
+    dict->dict.values[dict->dict.count] = value;
+    dict->dict.count++;
+}
+
+ASTNode *ast_new_dict_get(ASTNode *dict, ASTNode *key)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DICT_GET;
+    node->dict_get.dict = dict;
+    node->dict_get.key = key;
+    return node;
+}
+
+ASTNode *ast_new_dict_set(ASTNode *dict, ASTNode *key, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DICT_SET;
+    node->dict_set.dict = dict;
+    node->dict_set.key = key;
+    node->dict_set.value = value;
+    return node;
+}
+
+ASTNode *ast_new_dict_keys(ASTNode *dict)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DICT_KEYS;
+    node->dict_get.dict = dict;
+    return node;
+}
+
+ASTNode *ast_new_dict_values(ASTNode *dict)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DICT_VALUES;
+    node->dict_get.dict = dict;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -475,6 +530,27 @@ void ast_free(ASTNode *node)
     case NODE_MEMBER_ASSIGN:
         ast_free(node->member_assign.object);
         ast_free(node->member_assign.value);
+        break;
+    case NODE_DICT:
+        for (int i = 0; i < node->dict.count; i++)
+        {
+            ast_free(node->dict.keys[i]);
+            ast_free(node->dict.values[i]);
+        }
+        free(node->dict.keys);
+        free(node->dict.values);
+        break;
+    case NODE_DICT_GET:
+    case NODE_DICT_KEYS:
+    case NODE_DICT_VALUES:
+        ast_free(node->dict_get.dict);
+        if (node->type == NODE_DICT_GET)
+            ast_free(node->dict_get.key);
+        break;
+    case NODE_DICT_SET:
+        ast_free(node->dict_set.dict);
+        ast_free(node->dict_set.key);
+        ast_free(node->dict_set.value);
         break;
     default:
         break;

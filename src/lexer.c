@@ -222,6 +222,41 @@ Token lexer_next_token()
         pos += 15;
         return token;
     }
+    if (starts_with("::get"))
+    {
+        token.type = TOK_DICT_GET;
+        strcpy(token.text, "::get");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("::set"))
+    {
+        token.type = TOK_DICT_SET;
+        strcpy(token.text, "::set");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("::keys"))
+    {
+        token.type = TOK_DICT_KEYS;
+        strcpy(token.text, "::keys");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::values"))
+    {
+        token.type = TOK_DICT_VALUES;
+        strcpy(token.text, "::values");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("dict"))
+    {
+        token.type = TOK_DICT_NEW;
+        strcpy(token.text, "dict");
+        pos += 4;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

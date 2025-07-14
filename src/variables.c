@@ -15,8 +15,9 @@ typedef struct
     {
         char *string_val;  // For string values
         ASTNode *list_val; // For list values
+        ASTNode *dict_val; // For dict values
     } value;
-    int is_list; // Flag to indicate if this is a list
+    int type; // 0=string, 1=list, 2=dict
 } VarEntry;
 
 static VarEntry vars[MAX_VARS];
@@ -46,12 +47,9 @@ void set_variable(const char *name, const char *value)
     if (entry)
     {
         // Existing variable
-        if (entry->is_list)
-        {
-            ast_free(entry->value.list_val);
-            entry->is_list = 0;
-        }
-        free(entry->value.string_val); // Free old string if it exists
+        if (entry->type == 1) ast_free(entry->value.list_val);
+        else if (entry->type == 2) ast_free(entry->value.dict_val);
+        else if (entry->type == 0) free(entry->value.string_val);
 
         entry->value.string_val = strdup(value);
         if (!entry->value.string_val)
@@ -59,7 +57,7 @@ void set_variable(const char *name, const char *value)
             perror("Failed to allocate string value");
             exit(EXIT_FAILURE);
         }
-        entry->is_list = 0;
+        entry->type = 0;
         return;
     }
 
@@ -78,7 +76,7 @@ void set_variable(const char *name, const char *value)
         perror("Failed to allocate string value");
         exit(EXIT_FAILURE);
     }
-    vars[var_count].is_list = 0;
+    vars[var_count].type = 0;
     var_count++;
 }
 
@@ -100,16 +98,11 @@ void set_list_variable(const char *name, ASTNode *list)
     if (entry)
     {
         // Existing variable
-        if (!entry->is_list)
-        {
-            free(entry->value.string_val);
-        }
-        else
-        {
-            ast_free(entry->value.list_val);
-        }
+        if (entry->type == 0) free(entry->value.string_val);
+        else if (entry->type == 1) ast_free(entry->value.list_val);
+        else if (entry->type == 2) ast_free(entry->value.dict_val);
         entry->value.list_val = list;
-        entry->is_list = 1;
+        entry->type = 1;
         return;
     }
 
@@ -123,7 +116,47 @@ void set_list_variable(const char *name, ASTNode *list)
     strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
     vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
     vars[var_count].value.list_val = list;
-    vars[var_count].is_list = 1;
+    vars[var_count].type = 1;
+    var_count++;
+}
+
+void set_dict_variable(const char *name, ASTNode *dict)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (dict->type != NODE_DICT)
+    {
+        fprintf(stderr, "Attempt to set non-dict value as dict variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        // Existing variable
+        if (entry->type == 0) free(entry->value.string_val);
+        else if (entry->type == 1) ast_free(entry->value.list_val);
+        else if (entry->type == 2) ast_free(entry->value.dict_val);
+        entry->value.dict_val = dict;
+        entry->type = 2;
+        return;
+    }
+
+    // New variable
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.dict_val = dict;
+    vars[var_count].type = 2;
     var_count++;
 }
 
@@ -135,9 +168,9 @@ const char *get_variable(const char *name)
         fprintf(stderr, "Undefined variable: %s\n", name);
         return NULL;
     }
-    if (entry->is_list)
+    if (entry->type != 0)
     {
-        fprintf(stderr, "Variable %s is a list, not a string\n", name);
+        fprintf(stderr, "Variable %s is not a string\n", name);
         return NULL;
     }
     return entry->value.string_val;
@@ -146,13 +179,19 @@ const char *get_variable(const char *name)
 ASTNode *get_list_variable(const char *name)
 {
     VarEntry *entry = find_variable(name);
-    if (!entry)
-    {
-        return NULL;
-    }
-    if (!entry->is_list)
+    if (!entry || entry->type != 1)
     {
         return NULL;
     }
     return entry->value.list_val;
+}
+
+ASTNode *get_dict_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 2)
+    {
+        return NULL;
+    }
+    return entry->value.dict_val;
 }

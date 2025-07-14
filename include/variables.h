@@ -4,7 +4,9 @@
 
 void set_variable(const char *name, const char *value);
 void set_list_variable(const char *name, ASTNode *list);
+void set_dict_variable(const char *name, ASTNode *dict);
 const char *get_variable(const char *name);
 ASTNode *get_list_variable(const char *name);
+ASTNode *get_dict_variable(const char *name);
 
 #endif
