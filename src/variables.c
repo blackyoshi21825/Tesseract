@@ -4,9 +4,9 @@
 #include "variables.h"
 #include "ast.h"
 
-#define MAX_VARS 1024
-#define MAX_VAR_NAME_LEN 63
-#define MAX_STRING_LEN 1023
+#define MAX_VARS 1000000
+#define MAX_VAR_NAME_LEN 4095
+#define MAX_STRING_LEN 4095
 
 typedef struct
 {
@@ -47,9 +47,12 @@ void set_variable(const char *name, const char *value)
     if (entry)
     {
         // Existing variable
-        if (entry->type == 1) ast_free(entry->value.list_val);
-        else if (entry->type == 2) ast_free(entry->value.dict_val);
-        else if (entry->type == 0) free(entry->value.string_val);
+        if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 0)
+            free(entry->value.string_val);
 
         entry->value.string_val = strdup(value);
         if (!entry->value.string_val)
@@ -98,9 +101,12 @@ void set_list_variable(const char *name, ASTNode *list)
     if (entry)
     {
         // Existing variable
-        if (entry->type == 0) free(entry->value.string_val);
-        else if (entry->type == 1) ast_free(entry->value.list_val);
-        else if (entry->type == 2) ast_free(entry->value.dict_val);
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
         entry->value.list_val = list;
         entry->type = 1;
         return;
@@ -138,9 +144,12 @@ void set_dict_variable(const char *name, ASTNode *dict)
     if (entry)
     {
         // Existing variable
-        if (entry->type == 0) free(entry->value.string_val);
-        else if (entry->type == 1) ast_free(entry->value.list_val);
-        else if (entry->type == 2) ast_free(entry->value.dict_val);
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
         entry->value.dict_val = dict;
         entry->type = 2;
         return;

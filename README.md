@@ -222,9 +222,7 @@ import$ "lib/math.tesseract"
 
 ### Current Limitations
 - Maximum 4 function parameters
-- Maximum 1024 variables
 - No error recovery
-- String formatting limited to strings only
 
 ## Roadmap
 
