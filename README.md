@@ -108,19 +108,11 @@ class$ BankAccount {
         ::print "Deposited: @s" (amount)
     }
 
-<<<<<<< HEAD
-<h2>10. BitWise Operaters</h2> <br>
-    -The BitWise operators are &(Logical AND), |(Logical OR), ^(Bitwise XOR), and ~(Bitwise NOT) <br>
-    -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false). <br>
-    -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011. <br>
-    -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary. <br>
-=======
     func$ show() => {
         ::print "Account owner: @s" (self.owner)
         ::print "Balance: @s" (self.balance)
     }
 }
->>>>>>> 8d49aa5fc433cd5dc7cc7270080703a7fed48268
 
 # Usage
 let$ acc := BankAccount()
