@@ -274,7 +274,8 @@ void interpret(ASTNode *root)
         }
         else if (root->binop.left->type == NODE_STACK_POP || root->binop.left->type == NODE_STACK_PEEK)
         {
-            eval_expression(root->binop.left);
+            double result = eval_expression(root->binop.left);
+            printf("%g\n", result);
         }
         else
         {
@@ -1464,10 +1465,9 @@ static double eval_expression(ASTNode *node)
         
         ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
         stack_node->stack.count--;
-        if (top_element->type == NODE_STRING)
+        if (top_element->type == NODE_NUMBER)
         {
-            printf("%s\n", top_element->string);
-            return 0;
+            return top_element->number;
         }
         return eval_expression(top_element);
     }
