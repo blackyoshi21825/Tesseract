@@ -158,10 +158,10 @@ Available operators: `and`, `not`, `or`, `true`, `false`
 
 ### Bitwise Operators
 
-- `&` (AND)
-- `|` (OR) 
-- `^` (XOR)
-- `~` (NOT)
+- `&` (Logical AND)
+- `|` (Logical OR) 
+- `^` (Bitwise XOR)
+- `~` (Bitwise NOT)
 
 **Example:**
 ```tesseract
