@@ -102,7 +102,7 @@ Tesseract is a simple interpreted programming language with dynamic typing, basi
     -You can use true or false in only comparitive operators, so regular equal sign will not work. <br>
 
 <h2>10. BitWise Operaters</h2> <br>
-    -The BitWise operators are &(AND), |(OR), ^(XOR), and ~(NOT) <br>
+    -The BitWise operators are &(Logical AND), |(Logical OR), ^(Bitwise XOR), and ~(Bitwise NOT) <br>
     -These do not behave like regular booleans, but they return values instead of 1(true) or 0(false). <br>
     -For example, 5 & 3 returns 1(NOT BOOLEAN TRUE BY THE WAY), because 5 is 101 in binary, and 3 is 011. <br>
     -Then, each digit is compared with AND, and then the outputted value is 001, which is one in binary. <br>
