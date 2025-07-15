@@ -31,7 +31,6 @@ void run_repl()
         if (root)
         {
             interpret(root);
-            ast_free(root);
         }
         printf("> ");
     }
@@ -82,7 +81,6 @@ int main(int argc, char **argv)
         interpret(root);
 
         free(source);
-        ast_free(root);
     }
     else
     {

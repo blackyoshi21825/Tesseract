@@ -55,6 +55,11 @@ typedef enum
     TOK_CLASS, // class$
     TOK_DOT,   // .
     TOK_SELF,  // self
+    TOK_DICT_NEW, // dict
+    TOK_DICT_GET, // ::get
+    TOK_DICT_SET, // ::set
+    TOK_DICT_KEYS, // ::keys
+    TOK_DICT_VALUES, // ::values
 } TokenType;
 
 typedef struct

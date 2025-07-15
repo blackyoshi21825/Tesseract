@@ -218,6 +218,10 @@ void interpret(ASTNode *root)
         {
             set_list_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_DICT)
+        {
+            set_dict_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -541,9 +545,18 @@ void interpret(ASTNode *root)
     {
         // Do nothing here, as lists are handled in print_node
     }
+    else if (root->type == NODE_DICT)
+    {
+        // Do nothing here, as dicts are handled in print_node
+    }
     else if (root->type == NODE_LIST_APPEND || root->type == NODE_LIST_PREPEND ||
              root->type == NODE_LIST_POP || root->type == NODE_LIST_INSERT ||
              root->type == NODE_LIST_REMOVE)
+    {
+        eval_expression(root);
+    }
+    else if (root->type == NODE_DICT_GET || root->type == NODE_DICT_SET ||
+             root->type == NODE_DICT_KEYS || root->type == NODE_DICT_VALUES)
     {
         eval_expression(root);
     }
@@ -1042,7 +1055,9 @@ static double eval_expression(ASTNode *node)
                 }
 
                 ASTNode *arg = node->format_str.args[arg_index++];
-                double val = eval_expression(arg);
+                double val = 0;
+                if (*src != 's' || arg->type != NODE_DICT_GET)
+                    val = eval_expression(arg);
 
                 switch (*src)
                 {
@@ -1068,6 +1083,38 @@ static double eval_expression(ASTNode *node)
                         {
                             printf("Runtime error: Undefined string variable\n");
                             exit(1);
+                        }
+                    }
+                    else if (arg->type == NODE_DICT_GET)
+                    {
+                        ASTNode *dict_node = arg->dict_get.dict;
+                        if (dict_node->type == NODE_VAR)
+                        {
+                            dict_node = get_dict_variable(dict_node->varname);
+                        }
+                        if (dict_node && dict_node->type == NODE_DICT)
+                        {
+                            ASTNode *key = arg->dict_get.key;
+                            int found = 0;
+                            for (int i = 0; i < dict_node->dict.count; i++)
+                            {
+                                if (dict_node->dict.keys[i]->type == NODE_STRING && key->type == NODE_STRING)
+                                {
+                                    if (strcmp(dict_node->dict.keys[i]->string, key->string) == 0)
+                                    {
+                                        if (dict_node->dict.values[i]->type == NODE_STRING)
+                                            dest += sprintf(dest, "%s", dict_node->dict.values[i]->string);
+                                        else if (dict_node->dict.values[i]->type == NODE_NUMBER)
+                                            dest += sprintf(dest, "%g", dict_node->dict.values[i]->number);
+                                        found = 1;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!found)
+                            {
+                                dest += sprintf(dest, "(not found)");
+                            }
                         }
                     }
                     else if (arg->type == NODE_MEMBER_ACCESS)
@@ -1154,6 +1201,139 @@ static double eval_expression(ASTNode *node)
         interpret(node);
         return 0;
 
+    case NODE_DICT:
+        print_node(node);
+        return 0;
+    case NODE_DICT_GET:
+    {
+        ASTNode *dict_node = node->dict_get.dict;
+        if (dict_node->type == NODE_VAR)
+        {
+            dict_node = get_dict_variable(dict_node->varname);
+            if (!dict_node)
+            {
+                printf("Runtime error: Undefined dict variable\n");
+                exit(1);
+            }
+        }
+        if (dict_node->type != NODE_DICT)
+        {
+            printf("Runtime error: get() expects a dictionary\n");
+            exit(1);
+        }
+        
+        ASTNode *key = node->dict_get.key;
+        for (int i = 0; i < dict_node->dict.count; i++)
+        {
+            if (dict_node->dict.keys[i]->type == NODE_STRING && key->type == NODE_STRING)
+            {
+                if (strcmp(dict_node->dict.keys[i]->string, key->string) == 0)
+                {
+                    if (dict_node->dict.values[i]->type == NODE_NUMBER)
+                        return dict_node->dict.values[i]->number;
+                    else if (dict_node->dict.values[i]->type == NODE_STRING)
+                        return 0;
+                    return 0;
+                }
+            }
+        }
+        printf("Runtime error: Key not found in dictionary\n");
+        exit(1);
+    }
+    case NODE_DICT_SET:
+    {
+        ASTNode *dict_node = node->dict_set.dict;
+        if (dict_node->type == NODE_VAR)
+        {
+            dict_node = get_dict_variable(dict_node->varname);
+            if (!dict_node)
+            {
+                printf("Runtime error: Undefined dict variable\n");
+                exit(1);
+            }
+        }
+        if (dict_node->type != NODE_DICT)
+        {
+            printf("Runtime error: set() expects a dictionary\n");
+            exit(1);
+        }
+        
+        ASTNode *key = node->dict_set.key;
+        ASTNode *value = node->dict_set.value;
+        
+        // Find existing key or add new one
+        for (int i = 0; i < dict_node->dict.count; i++)
+        {
+            if (dict_node->dict.keys[i]->type == NODE_STRING && key->type == NODE_STRING)
+            {
+                if (strcmp(dict_node->dict.keys[i]->string, key->string) == 0)
+                {
+                    dict_node->dict.values[i] = value;
+                    return 0;
+                }
+            }
+        }
+        ast_dict_add_pair(dict_node, key, value);
+        return 0;
+    }
+    case NODE_DICT_KEYS:
+    {
+        ASTNode *dict_node = node->dict_get.dict;
+        if (dict_node->type == NODE_VAR)
+        {
+            dict_node = get_dict_variable(dict_node->varname);
+            if (!dict_node)
+            {
+                printf("Runtime error: Undefined dict variable\n");
+                exit(1);
+            }
+        }
+        if (dict_node->type != NODE_DICT)
+        {
+            printf("Runtime error: keys() expects a dictionary\n");
+            exit(1);
+        }
+        printf("[");
+        for (int i = 0; i < dict_node->dict.count; i++)
+        {
+            if (dict_node->dict.keys[i]->type == NODE_STRING)
+                printf("%s", dict_node->dict.keys[i]->string);
+            else if (dict_node->dict.keys[i]->type == NODE_NUMBER)
+                printf("%g", dict_node->dict.keys[i]->number);
+            if (i < dict_node->dict.count - 1) printf(", ");
+        }
+        printf("]\n");
+        return 0;
+    }
+    case NODE_DICT_VALUES:
+    {
+        ASTNode *dict_node = node->dict_get.dict;
+        if (dict_node->type == NODE_VAR)
+        {
+            dict_node = get_dict_variable(dict_node->varname);
+            if (!dict_node)
+            {
+                printf("Runtime error: Undefined dict variable\n");
+                exit(1);
+            }
+        }
+        if (dict_node->type != NODE_DICT)
+        {
+            printf("Runtime error: values() expects a dictionary\n");
+            exit(1);
+        }
+        printf("[");
+        for (int i = 0; i < dict_node->dict.count; i++)
+        {
+            if (dict_node->dict.values[i]->type == NODE_STRING)
+                printf("%s", dict_node->dict.values[i]->string);
+            else if (dict_node->dict.values[i]->type == NODE_NUMBER)
+                printf("%g", dict_node->dict.values[i]->number);
+            if (i < dict_node->dict.count - 1) printf(", ");
+        }
+        printf("]\n");
+        return 0;
+    }
     case NODE_MEMBER_ACCESS:
     {
         ASTNode *object = node->member_access.object;
@@ -1262,13 +1442,37 @@ static void print_node(ASTNode *node)
         free(list_str);
         break;
     }
+    case NODE_DICT:
+    {
+        printf("{");
+        for (int i = 0; i < node->dict.count; i++)
+        {
+            if (node->dict.keys[i]->type == NODE_STRING)
+                printf("\"%s\"", node->dict.keys[i]->string);
+            else if (node->dict.keys[i]->type == NODE_NUMBER)
+                printf("%g", node->dict.keys[i]->number);
+            printf(" := ");
+            if (node->dict.values[i]->type == NODE_STRING)
+                printf("\"%s\"", node->dict.values[i]->string);
+            else if (node->dict.values[i]->type == NODE_NUMBER)
+                printf("%g", node->dict.values[i]->number);
+            if (i < node->dict.count - 1) printf(", ");
+        }
+        printf("}\n");
+        break;
+    }
     case NODE_VAR:
     {
-        // Check if it's a list variable
-        ASTNode *list = get_list_variable(node->varname);
-        if (list)
+        // Check if it's a dict variable
+        ASTNode *dict = get_dict_variable(node->varname);
+        if (dict)
         {
-            char *list_str = list_to_string(list);
+            print_node(dict);
+        }
+        // Check if it's a list variable
+        else if ((dict = get_list_variable(node->varname)))
+        {
+            char *list_str = list_to_string(dict);
             printf("%s\n", list_str);
             free(list_str);
         }
@@ -1287,117 +1491,35 @@ static void print_node(ASTNode *node)
         break;
     }
     case NODE_FORMAT_STRING:
+        eval_expression(node);
+        break;
+    case NODE_DICT_GET:
     {
-        char buffer[1024];
-        char *dest = buffer;
-        const char *src = node->format_str.format;
-        int arg_index = 0;
-
-        while (*src && (dest - buffer) < sizeof(buffer) - 1)
+        ASTNode *dict_node = node->dict_get.dict;
+        if (dict_node->type == NODE_VAR)
         {
-            if (*src == '@' && *(src + 1) != '\0')
+            dict_node = get_dict_variable(dict_node->varname);
+        }
+        if (dict_node && dict_node->type == NODE_DICT)
+        {
+            ASTNode *key = node->dict_get.key;
+            for (int i = 0; i < dict_node->dict.count; i++)
             {
-                src++; // skip '@'
-                if (arg_index >= node->format_str.arg_count)
+                if (dict_node->dict.keys[i]->type == NODE_STRING && key->type == NODE_STRING)
                 {
-                    printf("runtime error: Not enough arguments for format string\n");
-                    exit(1);
+                    if (strcmp(dict_node->dict.keys[i]->string, key->string) == 0)
+                    {
+                        if (dict_node->dict.values[i]->type == NODE_STRING)
+                            printf("%s\n", dict_node->dict.values[i]->string);
+                        else if (dict_node->dict.values[i]->type == NODE_NUMBER)
+                            printf("%g\n", dict_node->dict.values[i]->number);
+                        return;
+                    }
                 }
-
-                ASTNode *arg = node->format_str.args[arg_index++];
-                double val = eval_expression(arg);
-
-                switch (*src)
-                {
-                case 'd': // integer
-                    dest += sprintf(dest, "%d", (int)val);
-                    break;
-                case 'f': // float
-                    dest += sprintf(dest, "%g", val);
-                    break;
-                case 's': // string (from variable)
-                    if (arg->type == NODE_STRING)
-                    {
-                        dest += sprintf(dest, "%s", arg->string);
-                    }
-                    else if (arg->type == NODE_VAR)
-                    {
-                        const char *str = get_variable(arg->varname);
-                        if (str)
-                        {
-                            dest += sprintf(dest, "%s", str);
-                        }
-                        else
-                        {
-                            printf("runtime error: Undefined string variable\n");
-                            exit(1);
-                        }
-                    }
-                    else if (arg->type == NODE_MEMBER_ACCESS)
-                    {
-                        ASTNode *object = arg->member_access.object;
-                        const char *member_name = arg->member_access.member_name;
-                        ObjectInstance *obj = NULL;
-                        
-                        if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
-                        {
-                            obj = current_self;
-                        }
-                        else if (object->type == NODE_VAR)
-                        {
-                            const char *obj_ptr_str = get_variable(object->varname);
-                            if (obj_ptr_str)
-                            {
-                                sscanf(obj_ptr_str, "%p", (void **)&obj);
-                            }
-                        }
-                        
-                        if (obj)
-                        {
-                            FieldEntry *field = object_get_field(obj, member_name);
-                            if (field && field->type == FIELD_STRING)
-                            {
-                                dest += sprintf(dest, "%s", field->string_value);
-                            }
-                            else if (field && field->type == FIELD_NUMBER)
-                            {
-                                dest += sprintf(dest, "%g", field->number_value);
-                            }
-                            else
-                            {
-                                dest += sprintf(dest, "(unknown)");
-                            }
-                        }
-                        else
-                        {
-                            dest += sprintf(dest, "(null object)");
-                        }
-                    }
-                    else
-                    {
-                        // For numbers, convert to string
-                        char num_str[64];
-                        snprintf(num_str, sizeof(num_str), "%g", val);
-                        dest += sprintf(dest, "%s", num_str);
-                    }
-                    break;
-                case '@': // literal '@'
-                    *dest++ = '@';
-                    break;
-                default:
-                    printf("runtime error: Unknown format specifier @%c\n", *src);
-                    exit(1);
-                }
-                src++;
-            }
-            else
-            {
-                *dest++ = *src++;
             }
         }
-        *dest = '\0';
-        printf("%s\n", buffer);
-        return 0;
+        printf("(not found)\n");
+        break;
     }
     case NODE_MEMBER_ACCESS:
     {

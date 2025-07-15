@@ -317,6 +317,66 @@ static ASTNode *parse_primary()
         return ast_new_pattern_match(pattern, noise);
     }
 
+    if (current_token.type == TOK_DICT_NEW)
+    {
+        next_token();
+        expect(TOK_LBRACE);
+        ASTNode *dict = ast_new_dict();
+        while (current_token.type != TOK_RBRACE)
+        {
+            ASTNode *key = parse_expression();
+            expect(TOK_ASSIGN);
+            ASTNode *value = parse_expression();
+            ast_dict_add_pair(dict, key, value);
+            if (current_token.type == TOK_COMMA)
+            {
+                next_token();
+            }
+            else
+            {
+                break;
+            }
+        }
+        expect(TOK_RBRACE);
+        return dict;
+    }
+
+    if (current_token.type == TOK_DICT_GET ||
+        current_token.type == TOK_DICT_SET ||
+        current_token.type == TOK_DICT_KEYS ||
+        current_token.type == TOK_DICT_VALUES)
+    {
+        TokenType func_type = current_token.type;
+        next_token();
+        expect(TOK_LPAREN);
+        ASTNode *dict = parse_expression();
+        
+        if (func_type == TOK_DICT_KEYS || func_type == TOK_DICT_VALUES)
+        {
+            expect(TOK_RPAREN);
+            if (func_type == TOK_DICT_KEYS)
+                return ast_new_dict_keys(dict);
+            else
+                return ast_new_dict_values(dict);
+        }
+        else if (func_type == TOK_DICT_GET)
+        {
+            expect(TOK_COMMA);
+            ASTNode *key = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_dict_get(dict, key);
+        }
+        else // TOK_DICT_SET
+        {
+            expect(TOK_COMMA);
+            ASTNode *key = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_dict_set(dict, key, value);
+        }
+    }
+
     if (current_token.type == TOK_LIST_LEN ||
         current_token.type == TOK_LIST_APPEND ||
         current_token.type == TOK_LIST_PREPEND ||

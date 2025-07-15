@@ -41,6 +41,11 @@ typedef enum
     NODE_METHOD_DEF,     // Method definition inside a class
     NODE_METHOD_CALL,    // Method call on an object
     NODE_MEMBER_ASSIGN,
+    NODE_DICT,           // Dictionary literal
+    NODE_DICT_GET,       // Dictionary get operation
+    NODE_DICT_SET,       // Dictionary set operation
+    NODE_DICT_KEYS,      // Dictionary keys operation
+    NODE_DICT_VALUES,    // Dictionary values operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -163,6 +168,23 @@ struct ASTNode
             char member_name[64];
             ASTNode *value;
         } member_assign;
+        struct
+        {
+            ASTNode **keys;
+            ASTNode **values;
+            int count;
+        } dict;
+        struct
+        {
+            ASTNode *dict;
+            ASTNode *key;
+        } dict_get;
+        struct
+        {
+            ASTNode *dict;
+            ASTNode *key;
+            ASTNode *value;
+        } dict_set;
     };
 };
 
@@ -210,5 +232,12 @@ ASTNode *ast_new_class_instance(const char *class_name, ASTNode **args, int arg_
 ASTNode *ast_new_member_access(ASTNode *object, const char *member_name);
 ASTNode *ast_new_method_def(const char *method_name, char params[][64], int param_count, ASTNode *body);
 ASTNode *ast_new_method_call(ASTNode *object, const char *method_name, ASTNode **args, int arg_count);
+
+ASTNode *ast_new_dict();
+ASTNode *ast_new_dict_get(ASTNode *dict, ASTNode *key);
+ASTNode *ast_new_dict_set(ASTNode *dict, ASTNode *key, ASTNode *value);
+ASTNode *ast_new_dict_keys(ASTNode *dict);
+ASTNode *ast_new_dict_values(ASTNode *dict);
+void ast_dict_add_pair(ASTNode *dict, ASTNode *key, ASTNode *value);
 
 #endif
