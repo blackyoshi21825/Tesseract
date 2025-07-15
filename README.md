@@ -194,8 +194,8 @@ let$ myQueue := <queue>
 let$ queue := <queue>
 ::enqueue(queue, 10)
 ::enqueue(queue, 20)
-::print ::front(queue)   # prints 10
-::print ::dequeue(queue) # prints 10
+::front(queue)   # prints 10
+::dequeue(queue) # prints 10
 ::print ::qsize(queue)   # prints 1
 ```
 
