@@ -194,6 +194,48 @@ Token lexer_next_token()
         pos += 6;
         return token;
     }
+    if (starts_with("::enqueue"))
+    {
+        token.type = TOK_QUEUE_ENQUEUE;
+        strcpy(token.text, "::enqueue");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::dequeue"))
+    {
+        token.type = TOK_QUEUE_DEQUEUE;
+        strcpy(token.text, "::dequeue");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::front"))
+    {
+        token.type = TOK_QUEUE_FRONT;
+        strcpy(token.text, "::front");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::back"))
+    {
+        token.type = TOK_QUEUE_BACK;
+        strcpy(token.text, "::back");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::isEmpty"))
+    {
+        token.type = TOK_QUEUE_ISEMPTY;
+        strcpy(token.text, "::isEmpty");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::qsize"))
+    {
+        token.type = TOK_QUEUE_SIZE;
+        strcpy(token.text, "::qsize");
+        pos += 7;
+        return token;
+    }
     if (starts_with("::size"))
     {
         token.type = TOK_STACK_SIZE;
@@ -289,6 +331,13 @@ Token lexer_next_token()
     {
         token.type = TOK_STACK_NEW;
         strcpy(token.text, "<stack>");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("<queue>"))
+    {
+        token.type = TOK_QUEUE_NEW;
+        strcpy(token.text, "<queue>");
         pos += 7;
         return token;
     }

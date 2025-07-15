@@ -347,6 +347,12 @@ static ASTNode *parse_primary()
         return ast_new_stack();
     }
 
+    if (current_token.type == TOK_QUEUE_NEW)
+    {
+        next_token();
+        return ast_new_queue();
+    }
+
     if (current_token.type == TOK_DICT_GET ||
         current_token.type == TOK_DICT_SET ||
         current_token.type == TOK_DICT_KEYS ||
@@ -416,6 +422,47 @@ static ASTNode *parse_primary()
                 return ast_new_stack_empty(stack);
             default:
                 printf("Parse error: Unknown stack function\n");
+                exit(1);
+            }
+        }
+    }
+
+    if (current_token.type == TOK_QUEUE_ENQUEUE ||
+        current_token.type == TOK_QUEUE_DEQUEUE ||
+        current_token.type == TOK_QUEUE_FRONT ||
+        current_token.type == TOK_QUEUE_BACK ||
+        current_token.type == TOK_QUEUE_ISEMPTY ||
+        current_token.type == TOK_QUEUE_SIZE)
+    {
+        TokenType func_type = current_token.type;
+        next_token();
+        expect(TOK_LPAREN);
+        ASTNode *queue = parse_expression();
+        
+        if (func_type == TOK_QUEUE_ENQUEUE)
+        {
+            expect(TOK_COMMA);
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_queue_enqueue(queue, value);
+        }
+        else
+        {
+            expect(TOK_RPAREN);
+            switch (func_type)
+            {
+            case TOK_QUEUE_DEQUEUE:
+                return ast_new_queue_dequeue(queue);
+            case TOK_QUEUE_FRONT:
+                return ast_new_queue_front(queue);
+            case TOK_QUEUE_BACK:
+                return ast_new_queue_back(queue);
+            case TOK_QUEUE_ISEMPTY:
+                return ast_new_queue_isempty(queue);
+            case TOK_QUEUE_SIZE:
+                return ast_new_queue_size(queue);
+            default:
+                printf("Parse error: Unknown queue function\n");
                 exit(1);
             }
         }

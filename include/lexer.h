@@ -66,6 +66,13 @@ typedef enum
     TOK_STACK_PEEK, // ::peek
     TOK_STACK_SIZE, // ::size
     TOK_STACK_EMPTY, // ::empty
+    TOK_QUEUE_NEW, // <queue>
+    TOK_QUEUE_ENQUEUE, // ::enqueue
+    TOK_QUEUE_DEQUEUE, // ::dequeue
+    TOK_QUEUE_FRONT, // ::front
+    TOK_QUEUE_BACK, // ::back
+    TOK_QUEUE_ISEMPTY, // ::isEmpty
+    TOK_QUEUE_SIZE, // ::qsize
 } TokenType;
 
 typedef struct

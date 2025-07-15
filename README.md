@@ -174,6 +174,31 @@ let$ stack := <stack>
 ::print ::size(stack)  # prints 1
 ```
 
+### Queues
+
+**Creation:**
+```tesseract
+let$ myQueue := <queue>
+```
+
+**Operations:**
+- `::enqueue(queue, value)` - Add value to back
+- `::dequeue(queue)` - Remove and return front value
+- `::front(queue)` - Return front value without removing
+- `::back(queue)` - Return back value
+- `::isEmpty(queue)` - Check if queue is empty (returns 1 for empty, 0 for non-empty)
+- `::qsize(queue)` - Get number of elements
+
+**Example:**
+```tesseract
+let$ queue := <queue>
+::enqueue(queue, 10)
+::enqueue(queue, 20)
+::print ::front(queue)   # prints 10
+::print ::dequeue(queue) # prints 10
+::print ::qsize(queue)   # prints 1
+```
+
 ### Booleans
 
 Available operators: `and`, `not`, `or`, `true`, `false`

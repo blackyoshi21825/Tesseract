@@ -226,6 +226,10 @@ void interpret(ASTNode *root)
         {
             set_stack_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_QUEUE)
+        {
+            set_queue_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -272,7 +276,8 @@ void interpret(ASTNode *root)
             double result = eval_expression(root->binop.left);
             printf("%g\n", result);
         }
-        else if (root->binop.left->type == NODE_STACK_POP || root->binop.left->type == NODE_STACK_PEEK)
+        else if (root->binop.left->type == NODE_STACK_POP || root->binop.left->type == NODE_STACK_PEEK ||
+                 root->binop.left->type == NODE_QUEUE_DEQUEUE || root->binop.left->type == NODE_QUEUE_FRONT)
         {
             double result = eval_expression(root->binop.left);
             printf("%g\n", result);
@@ -572,6 +577,12 @@ void interpret(ASTNode *root)
     else if (root->type == NODE_STACK_PUSH || root->type == NODE_STACK_POP ||
              root->type == NODE_STACK_PEEK || root->type == NODE_STACK_SIZE ||
              root->type == NODE_STACK_EMPTY)
+    {
+        eval_expression(root);
+    }
+    else if (root->type == NODE_QUEUE_ENQUEUE || root->type == NODE_QUEUE_DEQUEUE ||
+             root->type == NODE_QUEUE_FRONT || root->type == NODE_QUEUE_BACK ||
+             root->type == NODE_QUEUE_ISEMPTY || root->type == NODE_QUEUE_SIZE)
     {
         eval_expression(root);
     }
@@ -1193,6 +1204,34 @@ static double eval_expression(ASTNode *node)
                             }
                         }
                     }
+                    else if (arg->type == NODE_QUEUE_DEQUEUE || arg->type == NODE_QUEUE_FRONT)
+                    {
+                        ASTNode *queue_node = arg->queue_op.queue;
+                        if (queue_node->type == NODE_VAR)
+                        {
+                            queue_node = get_queue_variable(queue_node->varname);
+                        }
+                        if (queue_node && queue_node->type == NODE_QUEUE && queue_node->queue.count > 0)
+                        {
+                            ASTNode *front_element = queue_node->queue.elements[0];
+                            if (arg->type == NODE_QUEUE_DEQUEUE)
+                            {
+                                for (int i = 0; i < queue_node->queue.count - 1; i++)
+                                {
+                                    queue_node->queue.elements[i] = queue_node->queue.elements[i + 1];
+                                }
+                                queue_node->queue.count--;
+                            }
+                            if (front_element->type == NODE_STRING)
+                            {
+                                dest += sprintf(dest, "%s", front_element->string);
+                            }
+                            else if (front_element->type == NODE_NUMBER)
+                            {
+                                dest += sprintf(dest, "%g", front_element->number);
+                            }
+                        }
+                    }
                     else
                     {
                         // For numbers, convert to string
@@ -1551,6 +1590,113 @@ static double eval_expression(ASTNode *node)
         
         return stack_node->stack.count == 0 ? 1 : 0;
     }
+    case NODE_QUEUE:
+        print_node(node);
+        return 0;
+    case NODE_QUEUE_ENQUEUE:
+    {
+        ASTNode *queue_node = node->queue_enqueue.queue;
+        ASTNode *value_node = node->queue_enqueue.value;
+        if (queue_node->type == NODE_VAR)
+        {
+            queue_node = get_queue_variable(queue_node->varname);
+        }
+        if (queue_node && queue_node->type == NODE_QUEUE)
+        {
+            ast_queue_add_element(queue_node, value_node);
+        }
+        return 0;
+    }
+    case NODE_QUEUE_DEQUEUE:
+    {
+        ASTNode *queue_node = node->queue_op.queue;
+        if (queue_node->type == NODE_VAR)
+        {
+            queue_node = get_queue_variable(queue_node->varname);
+        }
+        if (queue_node && queue_node->type == NODE_QUEUE && queue_node->queue.count > 0)
+        {
+            ASTNode *front = queue_node->queue.elements[0];
+            for (int i = 0; i < queue_node->queue.count - 1; i++)
+            {
+                queue_node->queue.elements[i] = queue_node->queue.elements[i + 1];
+            }
+            queue_node->queue.count--;
+            if (front->type == NODE_STRING)
+            {
+                printf("%s\n", front->string);
+                return 0;
+            }
+            else if (front->type == NODE_NUMBER)
+            {
+                return front->number;
+            }
+            return eval_expression(front);
+        }
+        return 0;
+    }
+    case NODE_QUEUE_FRONT:
+    {
+        ASTNode *queue_node = node->queue_op.queue;
+        if (queue_node->type == NODE_VAR)
+        {
+            queue_node = get_queue_variable(queue_node->varname);
+        }
+        if (queue_node && queue_node->type == NODE_QUEUE && queue_node->queue.count > 0)
+        {
+            ASTNode *front = queue_node->queue.elements[0];
+            if (front->type == NODE_STRING)
+            {
+                printf("%s\n", front->string);
+                return 0;
+            }
+            else if (front->type == NODE_NUMBER)
+            {
+                return front->number;
+            }
+            return eval_expression(front);
+        }
+        return 0;
+    }
+    case NODE_QUEUE_BACK:
+    {
+        ASTNode *queue_node = node->queue_op.queue;
+        if (queue_node->type == NODE_VAR)
+        {
+            queue_node = get_queue_variable(queue_node->varname);
+        }
+        if (queue_node && queue_node->type == NODE_QUEUE && queue_node->queue.count > 0)
+        {
+            return eval_expression(queue_node->queue.elements[queue_node->queue.count - 1]);
+        }
+        return 0;
+    }
+    case NODE_QUEUE_ISEMPTY:
+    {
+        ASTNode *queue_node = node->queue_op.queue;
+        if (queue_node->type == NODE_VAR)
+        {
+            queue_node = get_queue_variable(queue_node->varname);
+        }
+        if (queue_node && queue_node->type == NODE_QUEUE)
+        {
+            return queue_node->queue.count == 0 ? 1 : 0;
+        }
+        return 1;
+    }
+    case NODE_QUEUE_SIZE:
+    {
+        ASTNode *queue_node = node->queue_op.queue;
+        if (queue_node->type == NODE_VAR)
+        {
+            queue_node = get_queue_variable(queue_node->varname);
+        }
+        if (queue_node && queue_node->type == NODE_QUEUE)
+        {
+            return queue_node->queue.count;
+        }
+        return 0;
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -1648,6 +1794,20 @@ static void print_node(ASTNode *node)
         printf(">\n");
         break;
     }
+    case NODE_QUEUE:
+    {
+        printf("<");
+        for (int i = 0; i < node->queue.count; i++)
+        {
+            if (node->queue.elements[i]->type == NODE_STRING)
+                printf("%s", node->queue.elements[i]->string);
+            else if (node->queue.elements[i]->type == NODE_NUMBER)
+                printf("%g", node->queue.elements[i]->number);
+            if (i < node->queue.count - 1) printf(", ");
+        }
+        printf(">\n");
+        break;
+    }
     case NODE_VAR:
     {
         // Check if it's a dict variable
@@ -1668,18 +1828,28 @@ static void print_node(ASTNode *node)
         {
             print_node(dict);
         }
+        // Check if it's a queue variable
         else
         {
-            const char *val = get_variable(node->varname);
-            if (val)
+            ASTNode *queue = get_queue_variable(node->varname);
+            if (queue)
             {
-                printf("%s\n", val);
+                print_node(queue);
             }
             else
             {
-                printf("Runtime Error: Undefined variable '%s'\n", node->varname);
+                const char *val = get_variable(node->varname);
+                if (val)
+                {
+                    printf("%s\n", val);
+                }
+                else
+                {
+                    printf("Runtime Error: Undefined variable '%s'\n", node->varname);
+                }
             }
         }
+
         break;
     }
     case NODE_FORMAT_STRING:

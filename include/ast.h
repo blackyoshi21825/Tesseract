@@ -52,6 +52,13 @@ typedef enum
     NODE_STACK_PEEK,     // Stack peek operation
     NODE_STACK_SIZE,     // Stack size operation
     NODE_STACK_EMPTY,    // Stack empty check
+    NODE_QUEUE,          // Queue literal
+    NODE_QUEUE_ENQUEUE,  // Queue enqueue operation
+    NODE_QUEUE_DEQUEUE,  // Queue dequeue operation
+    NODE_QUEUE_FRONT,    // Queue front operation
+    NODE_QUEUE_BACK,     // Queue back operation
+    NODE_QUEUE_ISEMPTY,  // Queue isEmpty check
+    NODE_QUEUE_SIZE,     // Queue size operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -205,6 +212,20 @@ struct ASTNode
         {
             ASTNode *stack;
         } stack_op;
+        struct
+        {
+            ASTNode **elements;
+            int count;
+        } queue;
+        struct
+        {
+            ASTNode *queue;
+            ASTNode *value;
+        } queue_enqueue;
+        struct
+        {
+            ASTNode *queue;
+        } queue_op;
     };
 };
 
@@ -267,5 +288,14 @@ ASTNode *ast_new_stack_peek(ASTNode *stack);
 ASTNode *ast_new_stack_size(ASTNode *stack);
 ASTNode *ast_new_stack_empty(ASTNode *stack);
 void ast_stack_add_element(ASTNode *stack, ASTNode *element);
+
+ASTNode *ast_new_queue();
+ASTNode *ast_new_queue_enqueue(ASTNode *queue, ASTNode *value);
+ASTNode *ast_new_queue_dequeue(ASTNode *queue);
+ASTNode *ast_new_queue_front(ASTNode *queue);
+ASTNode *ast_new_queue_back(ASTNode *queue);
+ASTNode *ast_new_queue_isempty(ASTNode *queue);
+ASTNode *ast_new_queue_size(ASTNode *queue);
+void ast_queue_add_element(ASTNode *queue, ASTNode *element);
 
 #endif

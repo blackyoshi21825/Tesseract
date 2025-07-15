@@ -516,6 +516,71 @@ ASTNode *ast_new_stack_empty(ASTNode *stack)
     return node;
 }
 
+ASTNode *ast_new_queue()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE;
+    node->queue.elements = NULL;
+    node->queue.count = 0;
+    return node;
+}
+
+void ast_queue_add_element(ASTNode *queue, ASTNode *element)
+{
+    if (queue->type != NODE_QUEUE) return;
+    queue->queue.elements = realloc(queue->queue.elements, sizeof(ASTNode *) * (queue->queue.count + 1));
+    queue->queue.elements[queue->queue.count++] = element;
+}
+
+ASTNode *ast_new_queue_enqueue(ASTNode *queue, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE_ENQUEUE;
+    node->queue_enqueue.queue = queue;
+    node->queue_enqueue.value = value;
+    return node;
+}
+
+ASTNode *ast_new_queue_dequeue(ASTNode *queue)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE_DEQUEUE;
+    node->queue_op.queue = queue;
+    return node;
+}
+
+ASTNode *ast_new_queue_front(ASTNode *queue)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE_FRONT;
+    node->queue_op.queue = queue;
+    return node;
+}
+
+ASTNode *ast_new_queue_back(ASTNode *queue)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE_BACK;
+    node->queue_op.queue = queue;
+    return node;
+}
+
+ASTNode *ast_new_queue_isempty(ASTNode *queue)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE_ISEMPTY;
+    node->queue_op.queue = queue;
+    return node;
+}
+
+ASTNode *ast_new_queue_size(ASTNode *queue)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_QUEUE_SIZE;
+    node->queue_op.queue = queue;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -625,6 +690,24 @@ void ast_free(ASTNode *node)
     case NODE_STACK_SIZE:
     case NODE_STACK_EMPTY:
         ast_free(node->stack_op.stack);
+        break;
+    case NODE_QUEUE:
+        for (int i = 0; i < node->queue.count; i++)
+        {
+            ast_free(node->queue.elements[i]);
+        }
+        free(node->queue.elements);
+        break;
+    case NODE_QUEUE_ENQUEUE:
+        ast_free(node->queue_enqueue.queue);
+        ast_free(node->queue_enqueue.value);
+        break;
+    case NODE_QUEUE_DEQUEUE:
+    case NODE_QUEUE_FRONT:
+    case NODE_QUEUE_BACK:
+    case NODE_QUEUE_ISEMPTY:
+    case NODE_QUEUE_SIZE:
+        ast_free(node->queue_op.queue);
         break;
     default:
         break;
