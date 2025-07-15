@@ -222,6 +222,10 @@ void interpret(ASTNode *root)
         {
             set_dict_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_STACK)
+        {
+            set_stack_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -267,6 +271,10 @@ void interpret(ASTNode *root)
         {
             double result = eval_expression(root->binop.left);
             printf("%g\n", result);
+        }
+        else if (root->binop.left->type == NODE_STACK_POP || root->binop.left->type == NODE_STACK_PEEK)
+        {
+            eval_expression(root->binop.left);
         }
         else
         {
@@ -557,6 +565,12 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_DICT_GET || root->type == NODE_DICT_SET ||
              root->type == NODE_DICT_KEYS || root->type == NODE_DICT_VALUES)
+    {
+        eval_expression(root);
+    }
+    else if (root->type == NODE_STACK_PUSH || root->type == NODE_STACK_POP ||
+             root->type == NODE_STACK_PEEK || root->type == NODE_STACK_SIZE ||
+             root->type == NODE_STACK_EMPTY)
     {
         eval_expression(root);
     }
@@ -1157,6 +1171,27 @@ static double eval_expression(ASTNode *node)
                             dest += sprintf(dest, "(null object)");
                         }
                     }
+                    else if (arg->type == NODE_STACK_POP || arg->type == NODE_STACK_PEEK)
+                    {
+                        ASTNode *stack_node = arg->stack_op.stack;
+                        if (stack_node->type == NODE_VAR)
+                        {
+                            stack_node = get_stack_variable(stack_node->varname);
+                        }
+                        if (stack_node && stack_node->type == NODE_STACK && stack_node->stack.count > 0)
+                        {
+                            ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
+                            if (arg->type == NODE_STACK_POP) stack_node->stack.count--;
+                            if (top_element->type == NODE_STRING)
+                            {
+                                dest += sprintf(dest, "%s", top_element->string);
+                            }
+                            else if (top_element->type == NODE_NUMBER)
+                            {
+                                dest += sprintf(dest, "%g", top_element->number);
+                            }
+                        }
+                    }
                     else
                     {
                         // For numbers, convert to string
@@ -1378,6 +1413,144 @@ static double eval_expression(ASTNode *node)
         }
         return 0;
     }
+    case NODE_STACK:
+        print_node(node);
+        return 0;
+    case NODE_STACK_PUSH:
+    {
+        ASTNode *stack_node = node->stack_push.stack;
+        ASTNode *value_node = node->stack_push.value;
+        
+        if (stack_node->type == NODE_VAR)
+        {
+            ASTNode *stack = get_stack_variable(stack_node->varname);
+            if (!stack)
+            {
+                printf("Runtime error: Undefined stack variable\n");
+                exit(1);
+            }
+            stack_node = stack;
+        }
+        
+        if (stack_node->type != NODE_STACK)
+        {
+            printf("Runtime error: push() expects a stack\n");
+            exit(1);
+        }
+        
+        ast_stack_add_element(stack_node, value_node);
+        return 0;
+    }
+    case NODE_STACK_POP:
+    {
+        ASTNode *stack_node = node->stack_op.stack;
+        
+        if (stack_node->type == NODE_VAR)
+        {
+            ASTNode *stack = get_stack_variable(stack_node->varname);
+            if (!stack)
+            {
+                printf("Runtime error: Undefined stack variable\n");
+                exit(1);
+            }
+            stack_node = stack;
+        }
+        
+        if (stack_node->type != NODE_STACK || stack_node->stack.count == 0)
+        {
+            printf("Runtime error: pop() expects a non-empty stack\n");
+            exit(1);
+        }
+        
+        ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
+        stack_node->stack.count--;
+        if (top_element->type == NODE_STRING)
+        {
+            printf("%s\n", top_element->string);
+            return 0;
+        }
+        return eval_expression(top_element);
+    }
+    case NODE_STACK_PEEK:
+    {
+        ASTNode *stack_node = node->stack_op.stack;
+        
+        if (stack_node->type == NODE_VAR)
+        {
+            ASTNode *stack = get_stack_variable(stack_node->varname);
+            if (!stack)
+            {
+                printf("Runtime error: Undefined stack variable\n");
+                exit(1);
+            }
+            stack_node = stack;
+        }
+        
+        if (stack_node->type != NODE_STACK || stack_node->stack.count == 0)
+        {
+            printf("Runtime error: peek() expects a non-empty stack\n");
+            exit(1);
+        }
+        
+        ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
+        if (top_element->type == NODE_STRING)
+        {
+            printf("%s\n", top_element->string);
+            return 0;
+        }
+        else if (top_element->type == NODE_NUMBER)
+        {
+            printf("%g\n", top_element->number);
+            return top_element->number;
+        }
+        return eval_expression(top_element);
+    }
+    case NODE_STACK_SIZE:
+    {
+        ASTNode *stack_node = node->stack_op.stack;
+        
+        if (stack_node->type == NODE_VAR)
+        {
+            ASTNode *stack = get_stack_variable(stack_node->varname);
+            if (!stack)
+            {
+                printf("Runtime error: Undefined stack variable\n");
+                exit(1);
+            }
+            stack_node = stack;
+        }
+        
+        if (stack_node->type != NODE_STACK)
+        {
+            printf("Runtime error: size() expects a stack\n");
+            exit(1);
+        }
+        
+        return stack_node->stack.count;
+    }
+    case NODE_STACK_EMPTY:
+    {
+        ASTNode *stack_node = node->stack_op.stack;
+        
+        if (stack_node->type == NODE_VAR)
+        {
+            ASTNode *stack = get_stack_variable(stack_node->varname);
+            if (!stack)
+            {
+                printf("Runtime error: Undefined stack variable\n");
+                exit(1);
+            }
+            stack_node = stack;
+        }
+        
+        if (stack_node->type != NODE_STACK)
+        {
+            printf("Runtime error: empty() expects a stack\n");
+            exit(1);
+        }
+        
+        return stack_node->stack.count == 0 ? 1 : 0;
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -1461,6 +1634,20 @@ static void print_node(ASTNode *node)
         printf("}\n");
         break;
     }
+    case NODE_STACK:
+    {
+        printf("<");
+        for (int i = 0; i < node->stack.count; i++)
+        {
+            if (node->stack.elements[i]->type == NODE_STRING)
+                printf("%s", node->stack.elements[i]->string);
+            else if (node->stack.elements[i]->type == NODE_NUMBER)
+                printf("%g", node->stack.elements[i]->number);
+            if (i < node->stack.count - 1) printf(", ");
+        }
+        printf(">\n");
+        break;
+    }
     case NODE_VAR:
     {
         // Check if it's a dict variable
@@ -1475,6 +1662,11 @@ static void print_node(ASTNode *node)
             char *list_str = list_to_string(dict);
             printf("%s\n", list_str);
             free(list_str);
+        }
+        // Check if it's a stack variable
+        else if ((dict = get_stack_variable(node->varname)))
+        {
+            print_node(dict);
         }
         else
         {

@@ -459,6 +459,63 @@ ASTNode *ast_new_dict_values(ASTNode *dict)
     return node;
 }
 
+ASTNode *ast_new_stack()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STACK;
+    node->stack.elements = NULL;
+    node->stack.count = 0;
+    return node;
+}
+
+void ast_stack_add_element(ASTNode *stack, ASTNode *element)
+{
+    if (stack->type != NODE_STACK) return;
+    stack->stack.elements = realloc(stack->stack.elements, sizeof(ASTNode *) * (stack->stack.count + 1));
+    stack->stack.elements[stack->stack.count++] = element;
+}
+
+ASTNode *ast_new_stack_push(ASTNode *stack, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STACK_PUSH;
+    node->stack_push.stack = stack;
+    node->stack_push.value = value;
+    return node;
+}
+
+ASTNode *ast_new_stack_pop(ASTNode *stack)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STACK_POP;
+    node->stack_op.stack = stack;
+    return node;
+}
+
+ASTNode *ast_new_stack_peek(ASTNode *stack)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STACK_PEEK;
+    node->stack_op.stack = stack;
+    return node;
+}
+
+ASTNode *ast_new_stack_size(ASTNode *stack)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STACK_SIZE;
+    node->stack_op.stack = stack;
+    return node;
+}
+
+ASTNode *ast_new_stack_empty(ASTNode *stack)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STACK_EMPTY;
+    node->stack_op.stack = stack;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -551,6 +608,23 @@ void ast_free(ASTNode *node)
         ast_free(node->dict_set.dict);
         ast_free(node->dict_set.key);
         ast_free(node->dict_set.value);
+        break;
+    case NODE_STACK:
+        for (int i = 0; i < node->stack.count; i++)
+        {
+            ast_free(node->stack.elements[i]);
+        }
+        free(node->stack.elements);
+        break;
+    case NODE_STACK_PUSH:
+        ast_free(node->stack_push.stack);
+        ast_free(node->stack_push.value);
+        break;
+    case NODE_STACK_POP:
+    case NODE_STACK_PEEK:
+    case NODE_STACK_SIZE:
+    case NODE_STACK_EMPTY:
+        ast_free(node->stack_op.stack);
         break;
     default:
         break;

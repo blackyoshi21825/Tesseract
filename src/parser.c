@@ -341,6 +341,12 @@ static ASTNode *parse_primary()
         return dict;
     }
 
+    if (current_token.type == TOK_STACK_NEW)
+    {
+        next_token();
+        return ast_new_stack();
+    }
+
     if (current_token.type == TOK_DICT_GET ||
         current_token.type == TOK_DICT_SET ||
         current_token.type == TOK_DICT_KEYS ||
@@ -374,6 +380,44 @@ static ASTNode *parse_primary()
             ASTNode *value = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_dict_set(dict, key, value);
+        }
+    }
+
+    if (current_token.type == TOK_STACK_PUSH ||
+        current_token.type == TOK_STACK_POP ||
+        current_token.type == TOK_STACK_PEEK ||
+        current_token.type == TOK_STACK_SIZE ||
+        current_token.type == TOK_STACK_EMPTY)
+    {
+        TokenType func_type = current_token.type;
+        next_token();
+        expect(TOK_LPAREN);
+        ASTNode *stack = parse_expression();
+        
+        if (func_type == TOK_STACK_PUSH)
+        {
+            expect(TOK_COMMA);
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_stack_push(stack, value);
+        }
+        else
+        {
+            expect(TOK_RPAREN);
+            switch (func_type)
+            {
+            case TOK_STACK_POP:
+                return ast_new_stack_pop(stack);
+            case TOK_STACK_PEEK:
+                return ast_new_stack_peek(stack);
+            case TOK_STACK_SIZE:
+                return ast_new_stack_size(stack);
+            case TOK_STACK_EMPTY:
+                return ast_new_stack_empty(stack);
+            default:
+                printf("Parse error: Unknown stack function\n");
+                exit(1);
+            }
         }
     }
 

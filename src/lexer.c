@@ -173,6 +173,41 @@ Token lexer_next_token()
         return token;
     }
 
+    if (starts_with("::push"))
+    {
+        token.type = TOK_STACK_PUSH;
+        strcpy(token.text, "::push");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::pop"))
+    {
+        token.type = TOK_STACK_POP;
+        strcpy(token.text, "::pop");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("::peek"))
+    {
+        token.type = TOK_STACK_PEEK;
+        strcpy(token.text, "::peek");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::size"))
+    {
+        token.type = TOK_STACK_SIZE;
+        strcpy(token.text, "::size");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::empty"))
+    {
+        token.type = TOK_STACK_EMPTY;
+        strcpy(token.text, "::empty");
+        pos += 7;
+        return token;
+    }
     if (starts_with("::len"))
     {
         token.type = TOK_LIST_LEN;
@@ -192,13 +227,6 @@ Token lexer_next_token()
         token.type = TOK_LIST_PREPEND;
         strcpy(token.text, "::prepend");
         pos += 9;
-        return token;
-    }
-    if (starts_with("::pop"))
-    {
-        token.type = TOK_LIST_POP;
-        strcpy(token.text, "::pop");
-        pos += 5;
         return token;
     }
     if (starts_with("::insert"))
@@ -257,6 +285,14 @@ Token lexer_next_token()
         pos += 4;
         return token;
     }
+    if (starts_with("<stack>"))
+    {
+        token.type = TOK_STACK_NEW;
+        strcpy(token.text, "<stack>");
+        pos += 7;
+        return token;
+    }
+
 
     // Single char tokens and operators
     switch (input[pos])

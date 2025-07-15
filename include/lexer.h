@@ -60,6 +60,12 @@ typedef enum
     TOK_DICT_SET, // ::set
     TOK_DICT_KEYS, // ::keys
     TOK_DICT_VALUES, // ::values
+    TOK_STACK_NEW, // <stack>
+    TOK_STACK_PUSH, // ::push
+    TOK_STACK_POP, // ::pop
+    TOK_STACK_PEEK, // ::peek
+    TOK_STACK_SIZE, // ::size
+    TOK_STACK_EMPTY, // ::empty
 } TokenType;
 
 typedef struct

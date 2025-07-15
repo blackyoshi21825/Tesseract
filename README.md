@@ -150,6 +150,30 @@ let$ myDict := dict{"name" := "John", "age" := 25}
 - `::keys(dict)` - Get all keys
 - `::values(dict)` - Get all values
 
+### Stacks
+
+**Creation:**
+```tesseract
+let$ myStack := <stack>
+```
+
+**Operations:**
+- `::push(stack, value)` - Push value to top
+- `::pop(stack)` - Remove and return top value
+- `::peek(stack)` - Return top value without removing
+- `::size(stack)` - Get number of elements
+- `::empty(stack)` - Check if stack is empty (returns 1 for empty, 0 for non-empty)
+
+**Example:**
+```tesseract
+let$ stack := <stack>
+::push(stack, 10)
+::push(stack, 20)
+::print ::peek(stack)  # prints 20
+::print ::pop(stack)   # prints 20
+::print ::size(stack)  # prints 1
+```
+
 ### Booleans
 
 Available operators: `and`, `not`, `or`, `true`, `false`

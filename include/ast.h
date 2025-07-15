@@ -46,6 +46,12 @@ typedef enum
     NODE_DICT_SET,       // Dictionary set operation
     NODE_DICT_KEYS,      // Dictionary keys operation
     NODE_DICT_VALUES,    // Dictionary values operation
+    NODE_STACK,          // Stack literal
+    NODE_STACK_PUSH,     // Stack push operation
+    NODE_STACK_POP,      // Stack pop operation
+    NODE_STACK_PEEK,     // Stack peek operation
+    NODE_STACK_SIZE,     // Stack size operation
+    NODE_STACK_EMPTY,    // Stack empty check
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -185,6 +191,20 @@ struct ASTNode
             ASTNode *key;
             ASTNode *value;
         } dict_set;
+        struct
+        {
+            ASTNode **elements;
+            int count;
+        } stack;
+        struct
+        {
+            ASTNode *stack;
+            ASTNode *value;
+        } stack_push;
+        struct
+        {
+            ASTNode *stack;
+        } stack_op;
     };
 };
 
@@ -239,5 +259,13 @@ ASTNode *ast_new_dict_set(ASTNode *dict, ASTNode *key, ASTNode *value);
 ASTNode *ast_new_dict_keys(ASTNode *dict);
 ASTNode *ast_new_dict_values(ASTNode *dict);
 void ast_dict_add_pair(ASTNode *dict, ASTNode *key, ASTNode *value);
+
+ASTNode *ast_new_stack();
+ASTNode *ast_new_stack_push(ASTNode *stack, ASTNode *value);
+ASTNode *ast_new_stack_pop(ASTNode *stack);
+ASTNode *ast_new_stack_peek(ASTNode *stack);
+ASTNode *ast_new_stack_size(ASTNode *stack);
+ASTNode *ast_new_stack_empty(ASTNode *stack);
+void ast_stack_add_element(ASTNode *stack, ASTNode *element);
 
 #endif

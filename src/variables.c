@@ -16,8 +16,9 @@ typedef struct
         char *string_val;  // For string values
         ASTNode *list_val; // For list values
         ASTNode *dict_val; // For dict values
+        ASTNode *stack_val; // For stack values
     } value;
-    int type; // 0=string, 1=list, 2=dict
+    int type; // 0=string, 1=list, 2=dict, 3=stack
 } VarEntry;
 
 static VarEntry vars[MAX_VARS];
@@ -51,6 +52,8 @@ void set_variable(const char *name, const char *value)
             ast_free(entry->value.list_val);
         else if (entry->type == 2)
             ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
         else if (entry->type == 0)
             free(entry->value.string_val);
 
@@ -107,6 +110,8 @@ void set_list_variable(const char *name, ASTNode *list)
             ast_free(entry->value.list_val);
         else if (entry->type == 2)
             ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
         entry->value.list_val = list;
         entry->type = 1;
         return;
@@ -150,6 +155,8 @@ void set_dict_variable(const char *name, ASTNode *dict)
             ast_free(entry->value.list_val);
         else if (entry->type == 2)
             ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
         entry->value.dict_val = dict;
         entry->type = 2;
         return;
@@ -203,4 +210,59 @@ ASTNode *get_dict_variable(const char *name)
         return NULL;
     }
     return entry->value.dict_val;
+}
+
+void set_stack_variable(const char *name, ASTNode *stack)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (stack->type != NODE_STACK)
+    {
+        fprintf(stderr, "Attempt to set non-stack value as stack variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        // Existing variable
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        entry->value.stack_val = stack;
+        entry->type = 3;
+        return;
+    }
+
+    // New variable
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.stack_val = stack;
+    vars[var_count].type = 3;
+    var_count++;
+}
+
+ASTNode *get_stack_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 3)
+    {
+        return NULL;
+    }
+    return entry->value.stack_val;
 }
