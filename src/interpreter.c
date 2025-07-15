@@ -279,8 +279,13 @@ void interpret(ASTNode *root)
         else if (root->binop.left->type == NODE_STACK_POP || root->binop.left->type == NODE_STACK_PEEK ||
                  root->binop.left->type == NODE_QUEUE_DEQUEUE || root->binop.left->type == NODE_QUEUE_FRONT)
         {
+            // For queue operations, eval_expression already handles printing for strings
+            // Only print the result if it's not 0 (which indicates a string was already printed)
             double result = eval_expression(root->binop.left);
-            printf("%g\n", result);
+            if (result != 0 || (root->binop.left->type != NODE_QUEUE_DEQUEUE && root->binop.left->type != NODE_QUEUE_FRONT))
+            {
+                printf("%g\n", result);
+            }
         }
         else
         {
