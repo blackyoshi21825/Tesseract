@@ -199,6 +199,31 @@ let$ queue := <queue>
 ::print ::qsize(queue)   # prints 1
 ```
 
+### Linked Lists
+
+**Creation:**
+```tesseract
+let$ myList := <linked>
+```
+
+**Operations:**
+- `::ladd(list, value)` - Add value to the list
+- `::lremove(list, value)` - Remove first occurrence of value
+- `::lget(list, index)` - Get element at index
+- `::lsize(list)` - Get number of elements
+- `::lisEmpty(list)` - Check if list is empty (returns 1 for empty, 0 for non-empty)
+
+**Example:**
+```tesseract
+let$ list := <linked>
+::ladd(list, 10)
+::ladd(list, 20)
+::ladd(list, 30)
+::print ::lget(list, 1)   # prints 20
+::lremove(list, 20)
+::print ::lsize(list)     # prints 2
+```
+
 ### Booleans
 
 Available operators: `and`, `not`, `or`, `true`, `false`

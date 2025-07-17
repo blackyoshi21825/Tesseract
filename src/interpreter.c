@@ -230,6 +230,10 @@ void interpret(ASTNode *root)
         {
             set_queue_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_LINKED_LIST)
+        {
+            set_linked_list_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -279,10 +283,11 @@ void interpret(ASTNode *root)
         else if (root->binop.left->type == NODE_STACK_POP || root->binop.left->type == NODE_STACK_PEEK ||
                  root->binop.left->type == NODE_QUEUE_DEQUEUE || root->binop.left->type == NODE_QUEUE_FRONT)
         {
-            // For queue operations, eval_expression already handles printing for strings
-            // Only print the result if it's not 0 (which indicates a string was already printed)
+            // For operations that may print strings directly, only print numeric results
             double result = eval_expression(root->binop.left);
-            if (result != 0 || (root->binop.left->type != NODE_QUEUE_DEQUEUE && root->binop.left->type != NODE_QUEUE_FRONT))
+            if (result != 0 || 
+                (root->binop.left->type != NODE_QUEUE_DEQUEUE && 
+                 root->binop.left->type != NODE_QUEUE_FRONT))
             {
                 printf("%g\n", result);
             }
@@ -587,9 +592,17 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_QUEUE_ENQUEUE || root->type == NODE_QUEUE_DEQUEUE ||
              root->type == NODE_QUEUE_FRONT || root->type == NODE_QUEUE_BACK ||
-             root->type == NODE_QUEUE_ISEMPTY || root->type == NODE_QUEUE_SIZE)
+             root->type == NODE_QUEUE_ISEMPTY || root->type == NODE_QUEUE_SIZE ||
+             root->type == NODE_LINKED_LIST_ADD || root->type == NODE_LINKED_LIST_REMOVE ||
+             root->type == NODE_LINKED_LIST_GET || root->type == NODE_LINKED_LIST_SIZE ||
+             root->type == NODE_LINKED_LIST_ISEMPTY)
     {
-        eval_expression(root);
+        // For linked list remove operations, don't print the result
+        if (root->type == NODE_LINKED_LIST_REMOVE) {
+            eval_expression(root); // Just execute without printing
+        } else {
+            eval_expression(root);
+        }
     }
     else if (root->type == NODE_PATTERN_MATCH)
     {
@@ -1702,6 +1715,199 @@ static double eval_expression(ASTNode *node)
         }
         return 0;
     }
+    case NODE_LINKED_LIST:
+        print_node(node);
+        return 0;
+    case NODE_LINKED_LIST_ADD:
+    {
+        ASTNode *list_node = node->linked_list_op.list;
+        ASTNode *value_node = node->linked_list_op.value;
+        
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_linked_list_variable(list_node->varname);
+            if (!list_node)
+            {
+                printf("Runtime error: Undefined linked list variable\n");
+                exit(1);
+            }
+        }
+        
+        if (list_node->type != NODE_LINKED_LIST)
+        {
+            printf("Runtime error: ladd() expects a linked list\n");
+            exit(1);
+        }
+        
+        ast_linked_list_add_element(list_node, value_node);
+        return 0;
+    }
+    case NODE_LINKED_LIST_REMOVE:
+    {
+        ASTNode *list_node = node->linked_list_op.list;
+        ASTNode *value_node = node->linked_list_op.value;
+        
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_linked_list_variable(list_node->varname);
+            if (!list_node)
+            {
+                printf("Runtime error: Undefined linked list variable\n");
+                exit(1);
+            }
+        }
+        
+        if (list_node->type != NODE_LINKED_LIST)
+        {
+            printf("Runtime error: lremove() expects a linked list\n");
+            exit(1);
+        }
+        
+        // Handle string values specially
+        if (value_node->type == NODE_STRING)
+        {
+            const char *str_value = value_node->string;
+            int found = 0;
+            
+            for (int i = 0; i < list_node->linked_list.count; i++)
+            {
+                if (list_node->linked_list.elements[i]->type == NODE_STRING &&
+                    strcmp(list_node->linked_list.elements[i]->string, str_value) == 0)
+                {
+                    found = 1;
+                    // Shift elements to fill the gap
+                    for (int j = i; j < list_node->linked_list.count - 1; j++)
+                    {
+                        list_node->linked_list.elements[j] = list_node->linked_list.elements[j + 1];
+                    }
+                    list_node->linked_list.count--;
+                    break;
+                }
+            }
+            
+            if (!found)
+            {
+                printf("Runtime error: String value not found in linked list\n");
+                exit(1);
+            }
+        }
+        else
+        {
+            double value = eval_expression(value_node);
+            int found = 0;
+            
+            for (int i = 0; i < list_node->linked_list.count; i++)
+            {
+                double element = eval_expression(list_node->linked_list.elements[i]);
+                if (element == value)
+                {
+                    found = 1;
+                    // Shift elements to fill the gap
+                    for (int j = i; j < list_node->linked_list.count - 1; j++)
+                    {
+                        list_node->linked_list.elements[j] = list_node->linked_list.elements[j + 1];
+                    }
+                    list_node->linked_list.count--;
+                    break;
+                }
+            }
+            
+            if (!found)
+            {
+                printf("Runtime error: Value not found in linked list\n");
+                exit(1);
+            }
+        }
+        
+        return 0; // Return 0 for consistency
+    }
+    case NODE_LINKED_LIST_GET:
+    {
+        ASTNode *list_node = node->linked_list_get.list;
+        ASTNode *index_node = node->linked_list_get.index;
+        
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_linked_list_variable(list_node->varname);
+            if (!list_node)
+            {
+                printf("Runtime error: Undefined linked list variable\n");
+                exit(1);
+            }
+        }
+        
+        if (list_node->type != NODE_LINKED_LIST)
+        {
+            printf("Runtime error: lget() expects a linked list\n");
+            exit(1);
+        }
+        
+        int index = (int)eval_expression(index_node);
+        if (index < 0 || index >= list_node->linked_list.count)
+        {
+            printf("Runtime error: Linked list index out of bounds\n");
+            exit(1);
+        }
+        
+        ASTNode *element = list_node->linked_list.elements[index];
+        if (element->type == NODE_NUMBER)
+        {
+            return element->number;
+        }
+        else if (element->type == NODE_STRING)
+        {
+            // For string elements, return a special value and let print_node handle it
+            return -999;
+        }
+        else
+        {
+            return eval_expression(element);
+        }
+    }
+    case NODE_LINKED_LIST_SIZE:
+    {
+        ASTNode *list_node = node->linked_list_op.list;
+        
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_linked_list_variable(list_node->varname);
+            if (!list_node)
+            {
+                printf("Runtime error: Undefined linked list variable\n");
+                exit(1);
+            }
+        }
+        
+        if (list_node->type != NODE_LINKED_LIST)
+        {
+            printf("Runtime error: lsize() expects a linked list\n");
+            exit(1);
+        }
+        
+        return list_node->linked_list.count;
+    }
+    case NODE_LINKED_LIST_ISEMPTY:
+    {
+        ASTNode *list_node = node->linked_list_op.list;
+        
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_linked_list_variable(list_node->varname);
+            if (!list_node)
+            {
+                printf("Runtime error: Undefined linked list variable\n");
+                exit(1);
+            }
+        }
+        
+        if (list_node->type != NODE_LINKED_LIST)
+        {
+            printf("Runtime error: lisEmpty() expects a linked list\n");
+            exit(1);
+        }
+        
+        return list_node->linked_list.count == 0 ? 1 : 0;
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -1813,6 +2019,20 @@ static void print_node(ASTNode *node)
         printf(">\n");
         break;
     }
+    case NODE_LINKED_LIST:
+    {
+        printf("[");
+        for (int i = 0; i < node->linked_list.count; i++)
+        {
+            if (node->linked_list.elements[i]->type == NODE_STRING)
+                printf("%s", node->linked_list.elements[i]->string);
+            else if (node->linked_list.elements[i]->type == NODE_NUMBER)
+                printf("%g", node->linked_list.elements[i]->number);
+            if (i < node->linked_list.count - 1) printf(", ");
+        }
+        printf("]\n");
+        break;
+    }
     case NODE_VAR:
     {
         // Check if it's a dict variable
@@ -1834,24 +2054,25 @@ static void print_node(ASTNode *node)
             print_node(dict);
         }
         // Check if it's a queue variable
+        else if ((dict = get_queue_variable(node->varname)))
+        {
+            print_node(dict);
+        }
+        // Check if it's a linked list variable
+        else if ((dict = get_linked_list_variable(node->varname)))
+        {
+            print_node(dict);
+        }
         else
         {
-            ASTNode *queue = get_queue_variable(node->varname);
-            if (queue)
+            const char *val = get_variable(node->varname);
+            if (val)
             {
-                print_node(queue);
+                printf("%s\n", val);
             }
             else
             {
-                const char *val = get_variable(node->varname);
-                if (val)
-                {
-                    printf("%s\n", val);
-                }
-                else
-                {
-                    printf("Runtime Error: Undefined variable '%s'\n", node->varname);
-                }
+                printf("Runtime Error: Undefined variable '%s'\n", node->varname);
             }
         }
 
@@ -1927,6 +2148,36 @@ static void print_node(ASTNode *node)
             }
         }
         printf("(unknown member)\n");
+        break;
+    }
+    case NODE_LINKED_LIST_GET:
+    {
+        ASTNode *list_node = node->linked_list_get.list;
+        int index = (int)eval_expression(node->linked_list_get.index);
+        
+        if (list_node->type == NODE_VAR)
+        {
+            list_node = get_linked_list_variable(list_node->varname);
+        }
+        
+        if (list_node && list_node->type == NODE_LINKED_LIST && 
+            index >= 0 && index < list_node->linked_list.count)
+        {
+            ASTNode *element = list_node->linked_list.elements[index];
+            if (element->type == NODE_STRING)
+            {
+                printf("%s\n", element->string);
+                return;
+            }
+            else if (element->type == NODE_NUMBER)
+            {
+                printf("%g\n", element->number);
+                return;
+            }
+        }
+        // If we get here, something went wrong
+        double result = eval_expression(node);
+        printf("%g\n", result);
         break;
     }
     default:

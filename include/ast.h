@@ -59,6 +59,12 @@ typedef enum
     NODE_QUEUE_BACK,     // Queue back operation
     NODE_QUEUE_ISEMPTY,  // Queue isEmpty check
     NODE_QUEUE_SIZE,     // Queue size operation
+    NODE_LINKED_LIST,    // Linked list literal
+    NODE_LINKED_LIST_ADD,     // Add to linked list
+    NODE_LINKED_LIST_REMOVE,  // Remove from linked list
+    NODE_LINKED_LIST_GET,     // Get element from linked list
+    NODE_LINKED_LIST_SIZE,    // Get size of linked list
+    NODE_LINKED_LIST_ISEMPTY  // Check if linked list is empty
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -226,6 +232,21 @@ struct ASTNode
         {
             ASTNode *queue;
         } queue_op;
+        struct
+        {
+            ASTNode **elements;
+            int count;
+        } linked_list;
+        struct
+        {
+            ASTNode *list;
+            ASTNode *value;
+        } linked_list_op;
+        struct
+        {
+            ASTNode *list;
+            ASTNode *index;
+        } linked_list_get;
     };
 };
 
@@ -297,5 +318,13 @@ ASTNode *ast_new_queue_back(ASTNode *queue);
 ASTNode *ast_new_queue_isempty(ASTNode *queue);
 ASTNode *ast_new_queue_size(ASTNode *queue);
 void ast_queue_add_element(ASTNode *queue, ASTNode *element);
+
+ASTNode *ast_new_linked_list();
+ASTNode *ast_new_linked_list_add(ASTNode *list, ASTNode *value);
+ASTNode *ast_new_linked_list_remove(ASTNode *list, ASTNode *value);
+ASTNode *ast_new_linked_list_get(ASTNode *list, ASTNode *index);
+ASTNode *ast_new_linked_list_size(ASTNode *list);
+ASTNode *ast_new_linked_list_isempty(ASTNode *list);
+void ast_linked_list_add_element(ASTNode *list, ASTNode *element);
 
 #endif

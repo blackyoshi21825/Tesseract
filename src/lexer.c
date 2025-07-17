@@ -341,6 +341,48 @@ Token lexer_next_token()
         pos += 7;
         return token;
     }
+    if (starts_with("<linked>"))
+    {
+        token.type = TOK_LINKED_LIST_NEW;
+        strcpy(token.text, "<linked>");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::ladd"))
+    {
+        token.type = TOK_LINKED_LIST_ADD;
+        strcpy(token.text, "::ladd");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::lremove"))
+    {
+        token.type = TOK_LINKED_LIST_REMOVE;
+        strcpy(token.text, "::lremove");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::lget"))
+    {
+        token.type = TOK_LINKED_LIST_GET;
+        strcpy(token.text, "::lget");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::lsize"))
+    {
+        token.type = TOK_LINKED_LIST_SIZE;
+        strcpy(token.text, "::lsize");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::lisEmpty"))
+    {
+        token.type = TOK_LINKED_LIST_ISEMPTY;
+        strcpy(token.text, "::lisEmpty");
+        pos += 10;
+        return token;
+    }
 
 
     // Single char tokens and operators

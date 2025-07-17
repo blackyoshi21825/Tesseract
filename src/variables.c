@@ -18,8 +18,9 @@ typedef struct
         ASTNode *dict_val; // For dict values
         ASTNode *stack_val; // For stack values
         ASTNode *queue_val; // For queue values
+        ASTNode *linked_list_val; // For linked list values
     } value;
-    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue
+    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list
 } VarEntry;
 
 static VarEntry vars[MAX_VARS];
@@ -327,4 +328,61 @@ ASTNode *get_queue_variable(const char *name)
         return NULL;
     }
     return entry->value.queue_val;
+}
+
+void set_linked_list_variable(const char *name, ASTNode *list)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (list->type != NODE_LINKED_LIST)
+    {
+        fprintf(stderr, "Attempt to set non-linked-list value as linked list variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        entry->value.linked_list_val = list;
+        entry->type = 5;
+        return;
+    }
+
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.linked_list_val = list;
+    vars[var_count].type = 5;
+    var_count++;
+}
+
+ASTNode *get_linked_list_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 5)
+    {
+        return NULL;
+    }
+    return entry->value.linked_list_val;
 }

@@ -73,6 +73,12 @@ typedef enum
     TOK_QUEUE_BACK, // ::back
     TOK_QUEUE_ISEMPTY, // ::isEmpty
     TOK_QUEUE_SIZE, // ::qsize
+    TOK_LINKED_LIST_NEW, // <linked>
+    TOK_LINKED_LIST_ADD, // ::ladd
+    TOK_LINKED_LIST_REMOVE, // ::lremove
+    TOK_LINKED_LIST_GET, // ::lget
+    TOK_LINKED_LIST_SIZE, // ::lsize
+    TOK_LINKED_LIST_ISEMPTY // ::lisEmpty
 } TokenType;
 
 typedef struct

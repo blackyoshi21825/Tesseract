@@ -352,6 +352,12 @@ static ASTNode *parse_primary()
         next_token();
         return ast_new_queue();
     }
+    
+    if (current_token.type == TOK_LINKED_LIST_NEW)
+    {
+        next_token();
+        return ast_new_linked_list();
+    }
 
     if (current_token.type == TOK_DICT_GET ||
         current_token.type == TOK_DICT_SET ||
@@ -432,7 +438,12 @@ static ASTNode *parse_primary()
         current_token.type == TOK_QUEUE_FRONT ||
         current_token.type == TOK_QUEUE_BACK ||
         current_token.type == TOK_QUEUE_ISEMPTY ||
-        current_token.type == TOK_QUEUE_SIZE)
+        current_token.type == TOK_QUEUE_SIZE ||
+        current_token.type == TOK_LINKED_LIST_ADD ||
+        current_token.type == TOK_LINKED_LIST_REMOVE ||
+        current_token.type == TOK_LINKED_LIST_GET ||
+        current_token.type == TOK_LINKED_LIST_SIZE ||
+        current_token.type == TOK_LINKED_LIST_ISEMPTY)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -445,6 +456,23 @@ static ASTNode *parse_primary()
             ASTNode *value = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_queue_enqueue(queue, value);
+        }
+        else if (func_type == TOK_LINKED_LIST_ADD || func_type == TOK_LINKED_LIST_REMOVE)
+        {
+            expect(TOK_COMMA);
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            if (func_type == TOK_LINKED_LIST_ADD)
+                return ast_new_linked_list_add(queue, value);
+            else
+                return ast_new_linked_list_remove(queue, value);
+        }
+        else if (func_type == TOK_LINKED_LIST_GET)
+        {
+            expect(TOK_COMMA);
+            ASTNode *index = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_linked_list_get(queue, index);
         }
         else
         {
@@ -461,8 +489,12 @@ static ASTNode *parse_primary()
                 return ast_new_queue_isempty(queue);
             case TOK_QUEUE_SIZE:
                 return ast_new_queue_size(queue);
+            case TOK_LINKED_LIST_SIZE:
+                return ast_new_linked_list_size(queue);
+            case TOK_LINKED_LIST_ISEMPTY:
+                return ast_new_linked_list_isempty(queue);
             default:
-                printf("Parse error: Unknown queue function\n");
+                printf("Parse error: Unknown queue or linked list function\n");
                 exit(1);
             }
         }

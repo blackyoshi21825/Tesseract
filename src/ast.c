@@ -581,6 +581,65 @@ ASTNode *ast_new_queue_size(ASTNode *queue)
     return node;
 }
 
+ASTNode *ast_new_linked_list()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LINKED_LIST;
+    node->linked_list.elements = NULL;
+    node->linked_list.count = 0;
+    return node;
+}
+
+void ast_linked_list_add_element(ASTNode *list, ASTNode *element)
+{
+    if (list->type != NODE_LINKED_LIST) return;
+    list->linked_list.elements = realloc(list->linked_list.elements, sizeof(ASTNode *) * (list->linked_list.count + 1));
+    list->linked_list.elements[list->linked_list.count++] = element;
+}
+
+ASTNode *ast_new_linked_list_add(ASTNode *list, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LINKED_LIST_ADD;
+    node->linked_list_op.list = list;
+    node->linked_list_op.value = value;
+    return node;
+}
+
+ASTNode *ast_new_linked_list_remove(ASTNode *list, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LINKED_LIST_REMOVE;
+    node->linked_list_op.list = list;
+    node->linked_list_op.value = value;
+    return node;
+}
+
+ASTNode *ast_new_linked_list_get(ASTNode *list, ASTNode *index)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LINKED_LIST_GET;
+    node->linked_list_get.list = list;
+    node->linked_list_get.index = index;
+    return node;
+}
+
+ASTNode *ast_new_linked_list_size(ASTNode *list)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LINKED_LIST_SIZE;
+    node->linked_list_op.list = list;
+    return node;
+}
+
+ASTNode *ast_new_linked_list_isempty(ASTNode *list)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LINKED_LIST_ISEMPTY;
+    node->linked_list_op.list = list;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -708,6 +767,26 @@ void ast_free(ASTNode *node)
     case NODE_QUEUE_ISEMPTY:
     case NODE_QUEUE_SIZE:
         ast_free(node->queue_op.queue);
+        break;
+    case NODE_LINKED_LIST:
+        for (int i = 0; i < node->linked_list.count; i++)
+        {
+            ast_free(node->linked_list.elements[i]);
+        }
+        free(node->linked_list.elements);
+        break;
+    case NODE_LINKED_LIST_ADD:
+    case NODE_LINKED_LIST_REMOVE:
+        ast_free(node->linked_list_op.list);
+        ast_free(node->linked_list_op.value);
+        break;
+    case NODE_LINKED_LIST_GET:
+        ast_free(node->linked_list_get.list);
+        ast_free(node->linked_list_get.index);
+        break;
+    case NODE_LINKED_LIST_SIZE:
+    case NODE_LINKED_LIST_ISEMPTY:
+        ast_free(node->linked_list_op.list);
         break;
     default:
         break;
