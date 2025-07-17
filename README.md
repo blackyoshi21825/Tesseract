@@ -227,8 +227,16 @@ let$ list := <linked>
 ### Booleans
 
 Available operators: `and`, `not`, `or`, `true`, `false`
-- `true` returns 1, `false` returns 0
-- Use only with comparative operators
+- Both boolean operations and comparison operators print as `true` or `false`
+
+**Example:**
+```tesseract
+let$ a := 10
+let$ b := 20
+::print a and b  # prints true
+::print a < b    # prints true
+::print a == b   # prints false
+```
 
 ### Bitwise Operators
 

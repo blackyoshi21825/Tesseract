@@ -292,6 +292,21 @@ void interpret(ASTNode *root)
                 printf("%g\n", result);
             }
         }
+        else if (root->binop.left->type == NODE_AND || 
+                 root->binop.left->type == NODE_OR || 
+                 root->binop.left->type == NODE_NOT ||
+                 (root->binop.left->type == NODE_BINOP && 
+                  (root->binop.left->binop.op == TOK_EQ || 
+                   root->binop.left->binop.op == TOK_NEQ || 
+                   root->binop.left->binop.op == TOK_LT || 
+                   root->binop.left->binop.op == TOK_GT || 
+                   root->binop.left->binop.op == TOK_LTE || 
+                   root->binop.left->binop.op == TOK_GTE)))
+        {
+            // Handle boolean operations and comparison operators
+            double result = eval_expression(root->binop.left);
+            printf("%s\n", bool_to_str((bool)result));
+        }
         else
         {
             print_node(root->binop.left);
@@ -1001,7 +1016,7 @@ static double eval_expression(ASTNode *node)
     case NODE_PRINT:
     {
         double value = eval_expression(node->binop.left);
-        if (value == 0 || value == 1)
+        if (value == 1.0 || value == 0.0)
         {
             printf("%s\n", bool_to_str((bool)value));
         }
@@ -2196,7 +2211,20 @@ const char *bool_to_str(bool value)
 void interpret_print(ASTNode *node)
 {
     double value = eval_expression(node->binop.left);
-    if (value == 0 || value == 1)
+    // Treat values from boolean operations and comparison operators as booleans
+    bool is_bool_op = node->binop.left->type == NODE_AND || 
+                     node->binop.left->type == NODE_OR || 
+                     node->binop.left->type == NODE_NOT;
+                     
+    bool is_comp_op = node->binop.left->type == NODE_BINOP && 
+                     (node->binop.left->binop.op == TOK_EQ || 
+                      node->binop.left->binop.op == TOK_NEQ || 
+                      node->binop.left->binop.op == TOK_LT || 
+                      node->binop.left->binop.op == TOK_GT || 
+                      node->binop.left->binop.op == TOK_LTE || 
+                      node->binop.left->binop.op == TOK_GTE);
+                      
+    if ((is_bool_op || is_comp_op) && (value == 0 || value == 1))
     {
         printf("%s\n", bool_to_str((bool)value));
     }
