@@ -292,6 +292,35 @@ Currently available: Math library
 import$ "lib/math.tesseract"
 ```
 
+### File Handling
+
+**File Operations:**
+- `::fopen(filename, mode)` - Open a file
+- `::fread(file_handle)` - Read from a file
+- `::fwrite(file_handle, content)` - Write to a file
+- `::fclose(file_handle)` - Close a file
+
+**File Modes:**
+- `"r"`: Read - Opens a file for reading. The file must exist.
+- `"w"`: Write - Creates an empty file for writing. If a file with the same name already exists, its content is erased and the file is considered as a new empty file.
+- `"a"`: Append - Appends to a file. Writing operations append data at the end of the file. The file is created if it does not exist.
+- `"r+"`: Read/Update - Opens a file for update (both for reading and writing). The file must exist.
+- `"w+"`: Write/Update - Creates an empty file for both reading and writing.
+- `"a+"`: Append/Update - Opens a file for reading and appending.
+
+**Example:**
+```tesseract
+let$ file_handle := ::fopen("test.txt", "w");
+::fwrite(file_handle, "Hello, Tesseract!");
+::fclose(file_handle);
+
+let$ read_handle := ::fopen("test.txt", "r");
+let$ content := ::fread(read_handle);
+::fclose(read_handle);
+
+::print(content);
+```
+
 ## Implementation Details
 
 ### Supported AST Node Types
@@ -319,7 +348,6 @@ import$ "lib/math.tesseract"
 ## Roadmap
 
 ### Planned Features
-- File handling
 - Additional data structures
 - Algorithm implementations
 - Enhanced error handling

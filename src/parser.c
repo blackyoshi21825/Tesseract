@@ -500,6 +500,45 @@ static ASTNode *parse_primary()
         }
     }
 
+    if (current_token.type == TOK_FILE_OPEN ||
+        current_token.type == TOK_FILE_READ ||
+        current_token.type == TOK_FILE_WRITE ||
+        current_token.type == TOK_FILE_CLOSE)
+    {
+        TokenType func_type = current_token.type;
+        next_token();
+        expect(TOK_LPAREN);
+
+        if (func_type == TOK_FILE_OPEN)
+        {
+            ASTNode *filename = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *mode = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_file_open(filename, mode);
+        }
+        else if (func_type == TOK_FILE_READ)
+        {
+            ASTNode *file_handle = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_file_read(file_handle);
+        }
+        else if (func_type == TOK_FILE_WRITE)
+        {
+            ASTNode *file_handle = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *content = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_file_write(file_handle, content);
+        }
+        else // TOK_FILE_CLOSE
+        {
+            ASTNode *file_handle = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_file_close(file_handle);
+        }
+    }
+
     if (current_token.type == TOK_LIST_LEN ||
         current_token.type == TOK_LIST_APPEND ||
         current_token.type == TOK_LIST_PREPEND ||

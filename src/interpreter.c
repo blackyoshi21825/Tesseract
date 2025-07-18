@@ -11,6 +11,10 @@
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
+#define MAX_FILE_HANDLES 1024
+
+static FILE *file_handles[MAX_FILE_HANDLES];
+static int file_handle_count = 0;
 
 typedef struct ObjectInstance ObjectInstance;
 
@@ -38,9 +42,41 @@ static int class_count = 0;
 
 static double eval_expression(ASTNode *node);
 static char *list_to_string(ASTNode *list);
+static char *get_string_value(ASTNode *node);
 
 // Forward declaration for file reading
 char *read_file(const char *filename);
+
+int add_file_handle(FILE *f)
+{
+    if (file_handle_count >= MAX_FILE_HANDLES)
+    {
+        return -1; // No space left
+    }
+    file_handles[file_handle_count] = f;
+    return file_handle_count++;
+}
+
+FILE *get_file_handle(int handle)
+{
+    if (handle < 0 || handle >= file_handle_count || file_handles[handle] == NULL)
+    {
+        return NULL; // Invalid handle
+    }
+    return file_handles[handle];
+}
+
+void remove_file_handle(int handle)
+{
+    if (handle >= 0 && handle < file_handle_count)
+    {
+        if (file_handles[handle] != NULL)
+        {
+            fclose(file_handles[handle]);
+            file_handles[handle] = NULL;
+        }
+    }
+}
 
 // Forward declaration of print_node
 static void print_node(ASTNode *node);
@@ -242,6 +278,33 @@ void interpret(ASTNode *root)
         else if (value_node->type == NODE_LINKED_LIST)
         {
             set_linked_list_variable(root->assign.varname, value_node);
+        }
+        else if (value_node->type == NODE_FILE_READ)
+        {
+            eval_expression(value_node); // This will read input and set __last_file_read
+            const char *read_val = get_variable("__last_file_read");
+            if (read_val)
+            {
+                set_variable(root->assign.varname, read_val);
+            }
+        }
+        else if (value_node->type == NODE_FILE_READ)
+        {
+            eval_expression(value_node); // This will read input and set __last_file_read
+            const char *read_val = get_variable("__last_file_read");
+            if (read_val)
+            {
+                set_variable(root->assign.varname, read_val);
+            }
+        }
+        else if (value_node->type == NODE_FILE_READ)
+        {
+            eval_expression(value_node); // This will read input and set __last_file_read
+            const char *read_val = get_variable("__last_file_read");
+            if (read_val)
+            {
+                set_variable(root->assign.varname, read_val);
+            }
         }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
@@ -659,6 +722,11 @@ void interpret(ASTNode *root)
     else if (root->type == NODE_BINOP || root->type == NODE_VAR || root->type == NODE_NUMBER || root->type == NODE_STRING)
     {
         // Evaluate top-level expressions (no side effects, but avoids error)
+        eval_expression(root);
+    }
+    else if (root->type == NODE_FILE_OPEN || root->type == NODE_FILE_READ ||
+             root->type == NODE_FILE_WRITE || root->type == NODE_FILE_CLOSE)
+    {
         eval_expression(root);
     }
     else
@@ -1969,9 +2037,95 @@ static double eval_expression(ASTNode *node)
 
         return list_node->linked_list.count == 0 ? 1 : 0;
     }
+    case NODE_FILE_OPEN:
+    {
+        char *filename = get_string_value(node->file_open_stmt.filename);
+        char *mode = get_string_value(node->file_open_stmt.mode);
+        FILE *f = fopen(filename, mode);
+        free(filename);
+        free(mode);
+        if (!f)
+        {
+            return -1; // Return -1 on failure
+        }
+        return add_file_handle(f);
+    }
+    case NODE_FILE_READ:
+    {
+        int handle = (int)eval_expression(node->file_read_stmt.file_handle);
+        FILE *f = get_file_handle(handle);
+        if (!f)
+        {
+            printf("Runtime error: Invalid file handle\n");
+            exit(1);
+        }
+        char buffer[1024];
+        if (fgets(buffer, sizeof(buffer), f))
+        {
+            buffer[strcspn(buffer, "\n")] = 0;
+            set_variable("__last_file_read", buffer);
+            return 1; // Success
+        }
+        return 0; // EOF or error
+    }
+    case NODE_FILE_WRITE:
+    {
+        int handle = (int)eval_expression(node->file_write_stmt.file_handle);
+        char *content = get_string_value(node->file_write_stmt.content);
+        FILE *f = get_file_handle(handle);
+        if (!f)
+        {
+            printf("Runtime error: Invalid file handle\n");
+            exit(1);
+        }
+        int result = fputs(content, f);
+        free(content);
+        return result >= 0;
+    }
+    case NODE_FILE_CLOSE:
+    {
+        int handle = (int)eval_expression(node->file_close_stmt.file_handle);
+        remove_file_handle(handle);
+        return 0;
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
+    }
+}
+
+static char *get_string_value(ASTNode *node)
+{
+    if (!node)
+        return NULL;
+
+    if (node->type == NODE_STRING)
+    {
+        return strdup(node->string);
+    }
+    else if (node->type == NODE_VAR)
+    {
+        const char *val = get_variable(node->varname);
+        if (val)
+        {
+            return strdup(val);
+        }
+        else
+        {
+            printf("Runtime error: Variable '%s' is not a string or is undefined.\n", node->varname);
+            exit(1);
+        }
+    }
+    else
+    {
+        // For other expression types, evaluate them to a number and convert to string
+        double val = eval_expression(node);
+        char *buffer = malloc(64); // Sufficient for a double
+        if (buffer)
+        {
+            snprintf(buffer, 64, "%g", val);
+        }
+        return buffer;
     }
 }
 

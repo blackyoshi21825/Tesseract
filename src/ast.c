@@ -652,6 +652,40 @@ ASTNode *ast_new_linked_list_isempty(ASTNode *list)
     return node;
 }
 
+ASTNode *ast_new_file_open(ASTNode *filename, ASTNode *mode)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FILE_OPEN;
+    node->file_open_stmt.filename = filename;
+    node->file_open_stmt.mode = mode;
+    return node;
+}
+
+ASTNode *ast_new_file_read(ASTNode *file_handle)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FILE_READ;
+    node->file_read_stmt.file_handle = file_handle;
+    return node;
+}
+
+ASTNode *ast_new_file_write(ASTNode *file_handle, ASTNode *content)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FILE_WRITE;
+    node->file_write_stmt.file_handle = file_handle;
+    node->file_write_stmt.content = content;
+    return node;
+}
+
+ASTNode *ast_new_file_close(ASTNode *file_handle)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FILE_CLOSE;
+    node->file_close_stmt.file_handle = file_handle;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -799,6 +833,20 @@ void ast_free(ASTNode *node)
     case NODE_LINKED_LIST_SIZE:
     case NODE_LINKED_LIST_ISEMPTY:
         ast_free(node->linked_list_op.list);
+        break;
+    case NODE_FILE_OPEN:
+        ast_free(node->file_open_stmt.filename);
+        ast_free(node->file_open_stmt.mode);
+        break;
+    case NODE_FILE_READ:
+        ast_free(node->file_read_stmt.file_handle);
+        break;
+    case NODE_FILE_WRITE:
+        ast_free(node->file_write_stmt.file_handle);
+        ast_free(node->file_write_stmt.content);
+        break;
+    case NODE_FILE_CLOSE:
+        ast_free(node->file_close_stmt.file_handle);
         break;
     default:
         break;

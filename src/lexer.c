@@ -390,6 +390,34 @@ Token lexer_next_token()
         pos += 10;
         return token;
     }
+    if (starts_with("::fopen"))
+    {
+        token.type = TOK_FILE_OPEN;
+        strcpy(token.text, "::fopen");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::fread"))
+    {
+        token.type = TOK_FILE_READ;
+        strcpy(token.text, "::fread");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::fwrite"))
+    {
+        token.type = TOK_FILE_WRITE;
+        strcpy(token.text, "::fwrite");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::fclose"))
+    {
+        token.type = TOK_FILE_CLOSE;
+        strcpy(token.text, "::fclose");
+        pos += 8;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])
