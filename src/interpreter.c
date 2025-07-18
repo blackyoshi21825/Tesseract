@@ -214,6 +214,15 @@ void interpret(ASTNode *root)
         {
             set_variable(root->assign.varname, value_node->string);
         }
+        else if (value_node->type == NODE_INPUT)
+        {
+            interpret(value_node); // This will read input and set __last_input
+            const char *input_val = get_variable("__last_input");
+            if (input_val)
+            {
+                set_variable(root->assign.varname, input_val);
+            }
+        }
         else if (value_node->type == NODE_LIST)
         {
             set_list_variable(root->assign.varname, value_node);
@@ -273,6 +282,27 @@ void interpret(ASTNode *root)
             set_variable(root->assign.varname, buf);
         }
     }
+    else if (root->type == NODE_INPUT)
+    {
+        if (root->input_stmt.prompt)
+        {
+            if (root->input_stmt.prompt->type == NODE_STRING)
+            {
+                printf("%s", root->input_stmt.prompt->string);
+            }
+            else
+            {
+                // For now, we don't handle dynamic prompts
+            }
+        }
+
+        char buffer[1024];
+        if (fgets(buffer, sizeof(buffer), stdin))
+        {
+            buffer[strcspn(buffer, "\n")] = 0; // Remove newline
+            set_variable("__last_input", buffer);
+        }
+    }
     else if (root->type == NODE_PRINT)
     {
         if (root->binop.left->type == NODE_LIST_ACCESS)
@@ -285,22 +315,22 @@ void interpret(ASTNode *root)
         {
             // For operations that may print strings directly, only print numeric results
             double result = eval_expression(root->binop.left);
-            if (result != 0 || 
-                (root->binop.left->type != NODE_QUEUE_DEQUEUE && 
+            if (result != 0 ||
+                (root->binop.left->type != NODE_QUEUE_DEQUEUE &&
                  root->binop.left->type != NODE_QUEUE_FRONT))
             {
                 printf("%g\n", result);
             }
         }
-        else if (root->binop.left->type == NODE_AND || 
-                 root->binop.left->type == NODE_OR || 
+        else if (root->binop.left->type == NODE_AND ||
+                 root->binop.left->type == NODE_OR ||
                  root->binop.left->type == NODE_NOT ||
-                 (root->binop.left->type == NODE_BINOP && 
-                  (root->binop.left->binop.op == TOK_EQ || 
-                   root->binop.left->binop.op == TOK_NEQ || 
-                   root->binop.left->binop.op == TOK_LT || 
-                   root->binop.left->binop.op == TOK_GT || 
-                   root->binop.left->binop.op == TOK_LTE || 
+                 (root->binop.left->type == NODE_BINOP &&
+                  (root->binop.left->binop.op == TOK_EQ ||
+                   root->binop.left->binop.op == TOK_NEQ ||
+                   root->binop.left->binop.op == TOK_LT ||
+                   root->binop.left->binop.op == TOK_GT ||
+                   root->binop.left->binop.op == TOK_LTE ||
                    root->binop.left->binop.op == TOK_GTE)))
         {
             // Handle boolean operations and comparison operators
@@ -613,9 +643,12 @@ void interpret(ASTNode *root)
              root->type == NODE_LINKED_LIST_ISEMPTY)
     {
         // For linked list remove operations, don't print the result
-        if (root->type == NODE_LINKED_LIST_REMOVE) {
+        if (root->type == NODE_LINKED_LIST_REMOVE)
+        {
             eval_expression(root); // Just execute without printing
-        } else {
+        }
+        else
+        {
             eval_expression(root);
         }
     }
@@ -675,6 +708,16 @@ static double eval_expression(ASTNode *node)
         if (endptr == val)
             return 0.0;
         return dval;
+    }
+    case NODE_INPUT:
+    {
+        interpret(node);
+        const char *val = get_variable("__last_input");
+        if (val)
+        {
+            return atof(val);
+        }
+        return 0;
     }
     case NODE_BINOP:
     {
@@ -1181,7 +1224,7 @@ static double eval_expression(ASTNode *node)
                         ASTNode *object = arg->member_access.object;
                         const char *member_name = arg->member_access.member_name;
                         ObjectInstance *obj = NULL;
-                        
+
                         if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
                         {
                             obj = current_self;
@@ -1194,7 +1237,7 @@ static double eval_expression(ASTNode *node)
                                 sscanf(obj_ptr_str, "%p", (void **)&obj);
                             }
                         }
-                        
+
                         if (obj)
                         {
                             FieldEntry *field = object_get_field(obj, member_name);
@@ -1226,7 +1269,8 @@ static double eval_expression(ASTNode *node)
                         if (stack_node && stack_node->type == NODE_STACK && stack_node->stack.count > 0)
                         {
                             ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
-                            if (arg->type == NODE_STACK_POP) stack_node->stack.count--;
+                            if (arg->type == NODE_STACK_POP)
+                                stack_node->stack.count--;
                             if (top_element->type == NODE_STRING)
                             {
                                 dest += sprintf(dest, "%s", top_element->string);
@@ -1329,7 +1373,7 @@ static double eval_expression(ASTNode *node)
             printf("Runtime error: get() expects a dictionary\n");
             exit(1);
         }
-        
+
         ASTNode *key = node->dict_get.key;
         for (int i = 0; i < dict_node->dict.count; i++)
         {
@@ -1365,10 +1409,10 @@ static double eval_expression(ASTNode *node)
             printf("Runtime error: set() expects a dictionary\n");
             exit(1);
         }
-        
+
         ASTNode *key = node->dict_set.key;
         ASTNode *value = node->dict_set.value;
-        
+
         // Find existing key or add new one
         for (int i = 0; i < dict_node->dict.count; i++)
         {
@@ -1408,7 +1452,8 @@ static double eval_expression(ASTNode *node)
                 printf("%s", dict_node->dict.keys[i]->string);
             else if (dict_node->dict.keys[i]->type == NODE_NUMBER)
                 printf("%g", dict_node->dict.keys[i]->number);
-            if (i < dict_node->dict.count - 1) printf(", ");
+            if (i < dict_node->dict.count - 1)
+                printf(", ");
         }
         printf("]\n");
         return 0;
@@ -1437,7 +1482,8 @@ static double eval_expression(ASTNode *node)
                 printf("%s", dict_node->dict.values[i]->string);
             else if (dict_node->dict.values[i]->type == NODE_NUMBER)
                 printf("%g", dict_node->dict.values[i]->number);
-            if (i < dict_node->dict.count - 1) printf(", ");
+            if (i < dict_node->dict.count - 1)
+                printf(", ");
         }
         printf("]\n");
         return 0;
@@ -1493,7 +1539,7 @@ static double eval_expression(ASTNode *node)
     {
         ASTNode *stack_node = node->stack_push.stack;
         ASTNode *value_node = node->stack_push.value;
-        
+
         if (stack_node->type == NODE_VAR)
         {
             ASTNode *stack = get_stack_variable(stack_node->varname);
@@ -1504,20 +1550,20 @@ static double eval_expression(ASTNode *node)
             }
             stack_node = stack;
         }
-        
+
         if (stack_node->type != NODE_STACK)
         {
             printf("Runtime error: push() expects a stack\n");
             exit(1);
         }
-        
+
         ast_stack_add_element(stack_node, value_node);
         return 0;
     }
     case NODE_STACK_POP:
     {
         ASTNode *stack_node = node->stack_op.stack;
-        
+
         if (stack_node->type == NODE_VAR)
         {
             ASTNode *stack = get_stack_variable(stack_node->varname);
@@ -1528,13 +1574,13 @@ static double eval_expression(ASTNode *node)
             }
             stack_node = stack;
         }
-        
+
         if (stack_node->type != NODE_STACK || stack_node->stack.count == 0)
         {
             printf("Runtime error: pop() expects a non-empty stack\n");
             exit(1);
         }
-        
+
         ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
         stack_node->stack.count--;
         if (top_element->type == NODE_NUMBER)
@@ -1546,7 +1592,7 @@ static double eval_expression(ASTNode *node)
     case NODE_STACK_PEEK:
     {
         ASTNode *stack_node = node->stack_op.stack;
-        
+
         if (stack_node->type == NODE_VAR)
         {
             ASTNode *stack = get_stack_variable(stack_node->varname);
@@ -1557,13 +1603,13 @@ static double eval_expression(ASTNode *node)
             }
             stack_node = stack;
         }
-        
+
         if (stack_node->type != NODE_STACK || stack_node->stack.count == 0)
         {
             printf("Runtime error: peek() expects a non-empty stack\n");
             exit(1);
         }
-        
+
         ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
         if (top_element->type == NODE_STRING)
         {
@@ -1580,7 +1626,7 @@ static double eval_expression(ASTNode *node)
     case NODE_STACK_SIZE:
     {
         ASTNode *stack_node = node->stack_op.stack;
-        
+
         if (stack_node->type == NODE_VAR)
         {
             ASTNode *stack = get_stack_variable(stack_node->varname);
@@ -1591,19 +1637,19 @@ static double eval_expression(ASTNode *node)
             }
             stack_node = stack;
         }
-        
+
         if (stack_node->type != NODE_STACK)
         {
             printf("Runtime error: size() expects a stack\n");
             exit(1);
         }
-        
+
         return stack_node->stack.count;
     }
     case NODE_STACK_EMPTY:
     {
         ASTNode *stack_node = node->stack_op.stack;
-        
+
         if (stack_node->type == NODE_VAR)
         {
             ASTNode *stack = get_stack_variable(stack_node->varname);
@@ -1614,13 +1660,13 @@ static double eval_expression(ASTNode *node)
             }
             stack_node = stack;
         }
-        
+
         if (stack_node->type != NODE_STACK)
         {
             printf("Runtime error: empty() expects a stack\n");
             exit(1);
         }
-        
+
         return stack_node->stack.count == 0 ? 1 : 0;
     }
     case NODE_QUEUE:
@@ -1737,7 +1783,7 @@ static double eval_expression(ASTNode *node)
     {
         ASTNode *list_node = node->linked_list_op.list;
         ASTNode *value_node = node->linked_list_op.value;
-        
+
         if (list_node->type == NODE_VAR)
         {
             list_node = get_linked_list_variable(list_node->varname);
@@ -1747,13 +1793,13 @@ static double eval_expression(ASTNode *node)
                 exit(1);
             }
         }
-        
+
         if (list_node->type != NODE_LINKED_LIST)
         {
             printf("Runtime error: ladd() expects a linked list\n");
             exit(1);
         }
-        
+
         ast_linked_list_add_element(list_node, value_node);
         return 0;
     }
@@ -1761,7 +1807,7 @@ static double eval_expression(ASTNode *node)
     {
         ASTNode *list_node = node->linked_list_op.list;
         ASTNode *value_node = node->linked_list_op.value;
-        
+
         if (list_node->type == NODE_VAR)
         {
             list_node = get_linked_list_variable(list_node->varname);
@@ -1771,19 +1817,19 @@ static double eval_expression(ASTNode *node)
                 exit(1);
             }
         }
-        
+
         if (list_node->type != NODE_LINKED_LIST)
         {
             printf("Runtime error: lremove() expects a linked list\n");
             exit(1);
         }
-        
+
         // Handle string values specially
         if (value_node->type == NODE_STRING)
         {
             const char *str_value = value_node->string;
             int found = 0;
-            
+
             for (int i = 0; i < list_node->linked_list.count; i++)
             {
                 if (list_node->linked_list.elements[i]->type == NODE_STRING &&
@@ -1799,7 +1845,7 @@ static double eval_expression(ASTNode *node)
                     break;
                 }
             }
-            
+
             if (!found)
             {
                 printf("Runtime error: String value not found in linked list\n");
@@ -1810,7 +1856,7 @@ static double eval_expression(ASTNode *node)
         {
             double value = eval_expression(value_node);
             int found = 0;
-            
+
             for (int i = 0; i < list_node->linked_list.count; i++)
             {
                 double element = eval_expression(list_node->linked_list.elements[i]);
@@ -1826,21 +1872,21 @@ static double eval_expression(ASTNode *node)
                     break;
                 }
             }
-            
+
             if (!found)
             {
                 printf("Runtime error: Value not found in linked list\n");
                 exit(1);
             }
         }
-        
+
         return 0; // Return 0 for consistency
     }
     case NODE_LINKED_LIST_GET:
     {
         ASTNode *list_node = node->linked_list_get.list;
         ASTNode *index_node = node->linked_list_get.index;
-        
+
         if (list_node->type == NODE_VAR)
         {
             list_node = get_linked_list_variable(list_node->varname);
@@ -1850,20 +1896,20 @@ static double eval_expression(ASTNode *node)
                 exit(1);
             }
         }
-        
+
         if (list_node->type != NODE_LINKED_LIST)
         {
             printf("Runtime error: lget() expects a linked list\n");
             exit(1);
         }
-        
+
         int index = (int)eval_expression(index_node);
         if (index < 0 || index >= list_node->linked_list.count)
         {
             printf("Runtime error: Linked list index out of bounds\n");
             exit(1);
         }
-        
+
         ASTNode *element = list_node->linked_list.elements[index];
         if (element->type == NODE_NUMBER)
         {
@@ -1882,7 +1928,7 @@ static double eval_expression(ASTNode *node)
     case NODE_LINKED_LIST_SIZE:
     {
         ASTNode *list_node = node->linked_list_op.list;
-        
+
         if (list_node->type == NODE_VAR)
         {
             list_node = get_linked_list_variable(list_node->varname);
@@ -1892,19 +1938,19 @@ static double eval_expression(ASTNode *node)
                 exit(1);
             }
         }
-        
+
         if (list_node->type != NODE_LINKED_LIST)
         {
             printf("Runtime error: lsize() expects a linked list\n");
             exit(1);
         }
-        
+
         return list_node->linked_list.count;
     }
     case NODE_LINKED_LIST_ISEMPTY:
     {
         ASTNode *list_node = node->linked_list_op.list;
-        
+
         if (list_node->type == NODE_VAR)
         {
             list_node = get_linked_list_variable(list_node->varname);
@@ -1914,13 +1960,13 @@ static double eval_expression(ASTNode *node)
                 exit(1);
             }
         }
-        
+
         if (list_node->type != NODE_LINKED_LIST)
         {
             printf("Runtime error: lisEmpty() expects a linked list\n");
             exit(1);
         }
-        
+
         return list_node->linked_list.count == 0 ? 1 : 0;
     }
     default:
@@ -2001,7 +2047,8 @@ static void print_node(ASTNode *node)
                 printf("\"%s\"", node->dict.values[i]->string);
             else if (node->dict.values[i]->type == NODE_NUMBER)
                 printf("%g", node->dict.values[i]->number);
-            if (i < node->dict.count - 1) printf(", ");
+            if (i < node->dict.count - 1)
+                printf(", ");
         }
         printf("}\n");
         break;
@@ -2015,7 +2062,8 @@ static void print_node(ASTNode *node)
                 printf("%s", node->stack.elements[i]->string);
             else if (node->stack.elements[i]->type == NODE_NUMBER)
                 printf("%g", node->stack.elements[i]->number);
-            if (i < node->stack.count - 1) printf(", ");
+            if (i < node->stack.count - 1)
+                printf(", ");
         }
         printf(">\n");
         break;
@@ -2029,7 +2077,8 @@ static void print_node(ASTNode *node)
                 printf("%s", node->queue.elements[i]->string);
             else if (node->queue.elements[i]->type == NODE_NUMBER)
                 printf("%g", node->queue.elements[i]->number);
-            if (i < node->queue.count - 1) printf(", ");
+            if (i < node->queue.count - 1)
+                printf(", ");
         }
         printf(">\n");
         break;
@@ -2043,7 +2092,8 @@ static void print_node(ASTNode *node)
                 printf("%s", node->linked_list.elements[i]->string);
             else if (node->linked_list.elements[i]->type == NODE_NUMBER)
                 printf("%g", node->linked_list.elements[i]->number);
-            if (i < node->linked_list.count - 1) printf(", ");
+            if (i < node->linked_list.count - 1)
+                printf(", ");
         }
         printf("]\n");
         break;
@@ -2169,13 +2219,13 @@ static void print_node(ASTNode *node)
     {
         ASTNode *list_node = node->linked_list_get.list;
         int index = (int)eval_expression(node->linked_list_get.index);
-        
+
         if (list_node->type == NODE_VAR)
         {
             list_node = get_linked_list_variable(list_node->varname);
         }
-        
-        if (list_node && list_node->type == NODE_LINKED_LIST && 
+
+        if (list_node && list_node->type == NODE_LINKED_LIST &&
             index >= 0 && index < list_node->linked_list.count)
         {
             ASTNode *element = list_node->linked_list.elements[index];
@@ -2212,18 +2262,18 @@ void interpret_print(ASTNode *node)
 {
     double value = eval_expression(node->binop.left);
     // Treat values from boolean operations and comparison operators as booleans
-    bool is_bool_op = node->binop.left->type == NODE_AND || 
-                     node->binop.left->type == NODE_OR || 
-                     node->binop.left->type == NODE_NOT;
-                     
-    bool is_comp_op = node->binop.left->type == NODE_BINOP && 
-                     (node->binop.left->binop.op == TOK_EQ || 
-                      node->binop.left->binop.op == TOK_NEQ || 
-                      node->binop.left->binop.op == TOK_LT || 
-                      node->binop.left->binop.op == TOK_GT || 
-                      node->binop.left->binop.op == TOK_LTE || 
-                      node->binop.left->binop.op == TOK_GTE);
-                      
+    bool is_bool_op = node->binop.left->type == NODE_AND ||
+                      node->binop.left->type == NODE_OR ||
+                      node->binop.left->type == NODE_NOT;
+
+    bool is_comp_op = node->binop.left->type == NODE_BINOP &&
+                      (node->binop.left->binop.op == TOK_EQ ||
+                       node->binop.left->binop.op == TOK_NEQ ||
+                       node->binop.left->binop.op == TOK_LT ||
+                       node->binop.left->binop.op == TOK_GT ||
+                       node->binop.left->binop.op == TOK_LTE ||
+                       node->binop.left->binop.op == TOK_GTE);
+
     if ((is_bool_op || is_comp_op) && (value == 0 || value == 1))
     {
         printf("%s\n", bool_to_str((bool)value));

@@ -267,6 +267,16 @@ Find patterns in strings:
 ::pattern_match(pattern, noise)  # returns list of starting indices
 ```
 
+### Input Function
+
+The `::input()` function prompts the user for input and returns the entered value as a string.
+
+**Example:**
+```tesseract
+let$ name := ::input("Enter your name: ")
+::print "Hello, @s" (name)
+```
+
 ### Import System
 
 ```tesseract

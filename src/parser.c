@@ -352,7 +352,7 @@ static ASTNode *parse_primary()
         next_token();
         return ast_new_queue();
     }
-    
+
     if (current_token.type == TOK_LINKED_LIST_NEW)
     {
         next_token();
@@ -368,7 +368,7 @@ static ASTNode *parse_primary()
         next_token();
         expect(TOK_LPAREN);
         ASTNode *dict = parse_expression();
-        
+
         if (func_type == TOK_DICT_KEYS || func_type == TOK_DICT_VALUES)
         {
             expect(TOK_RPAREN);
@@ -405,7 +405,7 @@ static ASTNode *parse_primary()
         next_token();
         expect(TOK_LPAREN);
         ASTNode *stack = parse_expression();
-        
+
         if (func_type == TOK_STACK_PUSH)
         {
             expect(TOK_COMMA);
@@ -449,7 +449,7 @@ static ASTNode *parse_primary()
         next_token();
         expect(TOK_LPAREN);
         ASTNode *queue = parse_expression();
-        
+
         if (func_type == TOK_QUEUE_ENQUEUE)
         {
             expect(TOK_COMMA);
@@ -549,6 +549,22 @@ static ASTNode *parse_primary()
                 exit(1);
             }
         }
+    }
+
+    if (current_token.type == TOK_INPUT)
+    {
+        next_token();
+        ASTNode *prompt = NULL;
+        if (current_token.type == TOK_LPAREN)
+        {
+            next_token();
+            if (current_token.type != TOK_RPAREN)
+            {
+                prompt = parse_expression();
+            }
+            expect(TOK_RPAREN);
+        }
+        return ast_new_input(prompt);
     }
 
     printf("Parse error: Unexpected token '%s' (type %d) in primary expression\n", current_token.text, current_token.type);

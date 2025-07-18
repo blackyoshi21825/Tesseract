@@ -1,1 +1,2 @@
-::print "Hello World"
+let$ my_var := ::input("What is your name: ");
+::print "Hello @s" (my_var)

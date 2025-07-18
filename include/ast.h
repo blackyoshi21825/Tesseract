@@ -14,6 +14,7 @@ typedef enum
     NODE_LOOP,
     NODE_IMPORT,
     NODE_PRINT,
+    NODE_INPUT,
     NODE_BLOCK,
     NODE_FUNC_DEF,
     NODE_FUNC_CALL,
@@ -41,30 +42,30 @@ typedef enum
     NODE_METHOD_DEF,     // Method definition inside a class
     NODE_METHOD_CALL,    // Method call on an object
     NODE_MEMBER_ASSIGN,
-    NODE_DICT,           // Dictionary literal
-    NODE_DICT_GET,       // Dictionary get operation
-    NODE_DICT_SET,       // Dictionary set operation
-    NODE_DICT_KEYS,      // Dictionary keys operation
-    NODE_DICT_VALUES,    // Dictionary values operation
-    NODE_STACK,          // Stack literal
-    NODE_STACK_PUSH,     // Stack push operation
-    NODE_STACK_POP,      // Stack pop operation
-    NODE_STACK_PEEK,     // Stack peek operation
-    NODE_STACK_SIZE,     // Stack size operation
-    NODE_STACK_EMPTY,    // Stack empty check
-    NODE_QUEUE,          // Queue literal
-    NODE_QUEUE_ENQUEUE,  // Queue enqueue operation
-    NODE_QUEUE_DEQUEUE,  // Queue dequeue operation
-    NODE_QUEUE_FRONT,    // Queue front operation
-    NODE_QUEUE_BACK,     // Queue back operation
-    NODE_QUEUE_ISEMPTY,  // Queue isEmpty check
-    NODE_QUEUE_SIZE,     // Queue size operation
-    NODE_LINKED_LIST,    // Linked list literal
-    NODE_LINKED_LIST_ADD,     // Add to linked list
-    NODE_LINKED_LIST_REMOVE,  // Remove from linked list
-    NODE_LINKED_LIST_GET,     // Get element from linked list
-    NODE_LINKED_LIST_SIZE,    // Get size of linked list
-    NODE_LINKED_LIST_ISEMPTY  // Check if linked list is empty
+    NODE_DICT,               // Dictionary literal
+    NODE_DICT_GET,           // Dictionary get operation
+    NODE_DICT_SET,           // Dictionary set operation
+    NODE_DICT_KEYS,          // Dictionary keys operation
+    NODE_DICT_VALUES,        // Dictionary values operation
+    NODE_STACK,              // Stack literal
+    NODE_STACK_PUSH,         // Stack push operation
+    NODE_STACK_POP,          // Stack pop operation
+    NODE_STACK_PEEK,         // Stack peek operation
+    NODE_STACK_SIZE,         // Stack size operation
+    NODE_STACK_EMPTY,        // Stack empty check
+    NODE_QUEUE,              // Queue literal
+    NODE_QUEUE_ENQUEUE,      // Queue enqueue operation
+    NODE_QUEUE_DEQUEUE,      // Queue dequeue operation
+    NODE_QUEUE_FRONT,        // Queue front operation
+    NODE_QUEUE_BACK,         // Queue back operation
+    NODE_QUEUE_ISEMPTY,      // Queue isEmpty check
+    NODE_QUEUE_SIZE,         // Queue size operation
+    NODE_LINKED_LIST,        // Linked list literal
+    NODE_LINKED_LIST_ADD,    // Add to linked list
+    NODE_LINKED_LIST_REMOVE, // Remove from linked list
+    NODE_LINKED_LIST_GET,    // Get element from linked list
+    NODE_LINKED_LIST_SIZE,   // Get size of linked list
+    NODE_LINKED_LIST_ISEMPTY // Check if linked list is empty
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -106,6 +107,10 @@ struct ASTNode
             ASTNode *end;
             ASTNode *body;
         } loop_stmt;
+        struct
+        {
+            ASTNode *prompt;
+        } input_stmt;
         struct
         {
             ASTNode **statements;
@@ -258,6 +263,7 @@ ASTNode *ast_new_assign(const char *name, ASTNode *value);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch);
 ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *body);
 ASTNode *ast_new_print(ASTNode *expr);
+ASTNode *ast_new_input(ASTNode *prompt);
 ASTNode *ast_new_block();
 ASTNode *ast_new_import(const char *filename);
 ASTNode *ast_new_func_def(const char *name, char params[][64], int param_count, ASTNode *body);

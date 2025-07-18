@@ -82,6 +82,14 @@ ASTNode *ast_new_print(ASTNode *expr)
     return node;
 }
 
+ASTNode *ast_new_input(ASTNode *prompt)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_INPUT;
+    node->input_stmt.prompt = prompt;
+    return node;
+}
+
 ASTNode *ast_new_block()
 {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -416,7 +424,8 @@ ASTNode *ast_new_dict()
 
 void ast_dict_add_pair(ASTNode *dict, ASTNode *key, ASTNode *value)
 {
-    if (dict->type != NODE_DICT) return;
+    if (dict->type != NODE_DICT)
+        return;
     dict->dict.keys = realloc(dict->dict.keys, sizeof(ASTNode *) * (dict->dict.count + 1));
     dict->dict.values = realloc(dict->dict.values, sizeof(ASTNode *) * (dict->dict.count + 1));
     dict->dict.keys[dict->dict.count] = key;
@@ -470,7 +479,8 @@ ASTNode *ast_new_stack()
 
 void ast_stack_add_element(ASTNode *stack, ASTNode *element)
 {
-    if (stack->type != NODE_STACK) return;
+    if (stack->type != NODE_STACK)
+        return;
     stack->stack.elements = realloc(stack->stack.elements, sizeof(ASTNode *) * (stack->stack.count + 1));
     stack->stack.elements[stack->stack.count++] = element;
 }
@@ -527,7 +537,8 @@ ASTNode *ast_new_queue()
 
 void ast_queue_add_element(ASTNode *queue, ASTNode *element)
 {
-    if (queue->type != NODE_QUEUE) return;
+    if (queue->type != NODE_QUEUE)
+        return;
     queue->queue.elements = realloc(queue->queue.elements, sizeof(ASTNode *) * (queue->queue.count + 1));
     queue->queue.elements[queue->queue.count++] = element;
 }
@@ -592,7 +603,8 @@ ASTNode *ast_new_linked_list()
 
 void ast_linked_list_add_element(ASTNode *list, ASTNode *element)
 {
-    if (list->type != NODE_LINKED_LIST) return;
+    if (list->type != NODE_LINKED_LIST)
+        return;
     list->linked_list.elements = realloc(list->linked_list.elements, sizeof(ASTNode *) * (list->linked_list.count + 1));
     list->linked_list.elements[list->linked_list.count++] = element;
 }

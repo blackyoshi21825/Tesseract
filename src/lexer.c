@@ -67,6 +67,13 @@ Token lexer_next_token()
         pos += 7;
         return token;
     }
+    if (starts_with("::input"))
+    {
+        token.type = TOK_INPUT;
+        strcpy(token.text, "::input");
+        pos += 7;
+        return token;
+    }
     if (starts_with("if$"))
     {
         token.type = TOK_IF;
@@ -383,7 +390,6 @@ Token lexer_next_token()
         pos += 10;
         return token;
     }
-
 
     // Single char tokens and operators
     switch (input[pos])
