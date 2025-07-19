@@ -857,6 +857,14 @@ static ASTNode *parse_statement()
         return ast_new_loop(loop_var, start, end, body);
     }
 
+    if (current_token.type == TOK_WHILE)
+    {
+        next_token();
+        ASTNode *condition = parse_expression();
+        ASTNode *body = parse_statement();
+        return ast_new_while(condition, body);
+    }
+
     if (current_token.type == TOK_IMPORT)
     {
         next_token();

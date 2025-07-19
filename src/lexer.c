@@ -102,6 +102,13 @@ Token lexer_next_token()
         pos += 5;
         return token;
     }
+    if (starts_with("while$"))
+    {
+        token.type = TOK_WHILE;
+        strcpy(token.text, "while$");
+        pos += 6;
+        return token;
+    }
     if (starts_with("import$"))
     {
         token.type = TOK_IMPORT;

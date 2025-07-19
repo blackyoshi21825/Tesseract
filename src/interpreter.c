@@ -443,6 +443,13 @@ void interpret(ASTNode *root)
             interpret(root->loop_stmt.body);
         }
     }
+    else if (root->type == NODE_WHILE)
+    {
+        while (eval_expression(root->while_stmt.condition) != 0)
+        {
+            interpret(root->while_stmt.body);
+        }
+    }
     else if (root->type == NODE_IMPORT)
     {
         char *source = read_file(root->string);

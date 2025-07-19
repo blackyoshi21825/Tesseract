@@ -74,6 +74,15 @@ ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode
     return node;
 }
 
+ASTNode *ast_new_while(ASTNode *condition, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_WHILE;
+    node->while_stmt.condition = condition;
+    node->while_stmt.body = body;
+    return node;
+}
+
 ASTNode *ast_new_print(ASTNode *expr)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -711,6 +720,10 @@ void ast_free(ASTNode *node)
         ast_free(node->loop_stmt.start);
         ast_free(node->loop_stmt.end);
         ast_free(node->loop_stmt.body);
+        break;
+    case NODE_WHILE:
+        ast_free(node->while_stmt.condition);
+        ast_free(node->while_stmt.body);
         break;
     case NODE_PRINT:
         ast_free(node->binop.left);

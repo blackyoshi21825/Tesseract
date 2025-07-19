@@ -15,6 +15,7 @@ typedef enum
     TOK_ELSE,
     TOK_ELSEIF,
     TOK_LOOP,
+    TOK_WHILE,
     TOK_IMPORT,
     TOK_INPUT,
     TOK_PLUS,

@@ -74,6 +74,13 @@ loop$i := start => end {
 }
 ```
 
+**While Loops:**
+```tesseract
+while$ condition {
+    // loop body
+}
+```
+
 ### Functions
 
 **Definition:**

@@ -12,6 +12,7 @@ typedef enum
     NODE_ASSIGN,
     NODE_IF,
     NODE_LOOP,
+    NODE_WHILE,
     NODE_IMPORT,
     NODE_PRINT,
     NODE_INPUT,
@@ -111,6 +112,11 @@ struct ASTNode
             ASTNode *end;
             ASTNode *body;
         } loop_stmt;
+        struct
+        {
+            ASTNode *condition;
+            ASTNode *body;
+        } while_stmt;
         struct
         {
             ASTNode *prompt;
@@ -284,6 +290,7 @@ ASTNode *ast_new_binop(ASTNode *left, ASTNode *right, TokenType op);
 ASTNode *ast_new_assign(const char *name, ASTNode *value);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch);
 ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *body);
+ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
 ASTNode *ast_new_print(ASTNode *expr);
 ASTNode *ast_new_input(ASTNode *prompt);
 ASTNode *ast_new_block();
