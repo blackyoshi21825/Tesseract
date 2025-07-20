@@ -12,6 +12,9 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - Pattern matching
 - File imports
 - Boolean and bitwise operations
+- File Handling
+- Advanced Data Structures(Stacks, Queues, and Linked Lists)
+- While Loops
 
 ## Getting Started
 
@@ -355,7 +358,4 @@ let$ content := ::fread(read_handle);
 ## Roadmap
 
 ### Planned Features
-- Additional data structures
-- Algorithm implementations
-- Enhanced error handling
-- Cross-platform support
+- Nothing, for now...
