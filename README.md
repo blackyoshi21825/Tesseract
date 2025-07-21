@@ -33,7 +33,7 @@ make clear  # to run test.tesseract
 ```bash
 gcc -g -o tesser src/*.c -Iinclude -lm
 ```
--It is good practice to run this command before running the main Tesseract file on Linux
+- It is good practice to run this command before running the main Tesseract file on Linux
 
 ## Language Syntax
 
