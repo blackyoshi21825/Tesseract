@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "parser.h"
-#include "interpreter.h"
-#include "ast.h"
+#include "tesseract_pch.h"
 
 #define MAX_INPUT 1024
 
