@@ -263,6 +263,24 @@ let$ b := 20
 
 ## Advanced Features
 
+### Type Conversion
+
+**String/Number Conversion:**
+```tesseract
+::to_str(42)      # converts number to string
+::to_int("123")   # converts string to number
+```
+
+**Example:**
+```tesseract
+let$num := 42
+let$str := ::to_str(num)   # "42"
+let$parsed := ::to_int("123")   # 123
+
+# Can be used in format strings
+::print "Value: @s" (::to_str(num))
+```
+
 ### String Formatting
 
 Currently supports formatting with `@s`:
@@ -341,6 +359,7 @@ let$ content := ::fread(read_handle);
 - Function definitions and calls
 - Lists, Booleans, Classes
 - Import statements, Print statements
+- Type conversions (to_str, to_int)
 
 ### Memory Management
 - Automatic memory allocation/deallocation for AST nodes

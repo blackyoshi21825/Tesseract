@@ -70,7 +70,9 @@ typedef enum
     NODE_FILE_OPEN,
     NODE_FILE_READ,
     NODE_FILE_WRITE,
-    NODE_FILE_CLOSE
+    NODE_FILE_CLOSE,
+    NODE_TO_STR,
+    NODE_TO_INT
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -366,5 +368,8 @@ ASTNode *ast_new_file_open(ASTNode *filename, ASTNode *mode);
 ASTNode *ast_new_file_read(ASTNode *file_handle);
 ASTNode *ast_new_file_write(ASTNode *file_handle, ASTNode *content);
 ASTNode *ast_new_file_close(ASTNode *file_handle);
+
+ASTNode *ast_new_to_str(ASTNode *value);
+ASTNode *ast_new_to_int(ASTNode *value);
 
 #endif

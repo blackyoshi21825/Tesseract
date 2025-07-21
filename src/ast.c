@@ -695,6 +695,22 @@ ASTNode *ast_new_file_close(ASTNode *file_handle)
     return node;
 }
 
+ASTNode *ast_new_to_str(ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TO_STR;
+    node->unop.operand = value;
+    return node;
+}
+
+ASTNode *ast_new_to_int(ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TO_INT;
+    node->unop.operand = value;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -860,6 +876,10 @@ void ast_free(ASTNode *node)
         break;
     case NODE_FILE_CLOSE:
         ast_free(node->file_close_stmt.file_handle);
+        break;
+    case NODE_TO_STR:
+    case NODE_TO_INT:
+        ast_free(node->unop.operand);
         break;
     default:
         break;

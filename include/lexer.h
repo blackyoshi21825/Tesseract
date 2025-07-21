@@ -84,7 +84,9 @@ typedef enum
     TOK_FILE_OPEN,
     TOK_FILE_READ,
     TOK_FILE_WRITE,
-    TOK_FILE_CLOSE
+    TOK_FILE_CLOSE,
+    TOK_TO_STR,
+    TOK_TO_INT
 } TokenType;
 
 typedef struct

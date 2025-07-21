@@ -425,6 +425,20 @@ Token lexer_next_token()
         pos += 8;
         return token;
     }
+    if (starts_with("::to_str"))
+    {
+        token.type = TOK_TO_STR;
+        strcpy(token.text, "::to_str");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::to_int"))
+    {
+        token.type = TOK_TO_INT;
+        strcpy(token.text, "::to_int");
+        pos += 8;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

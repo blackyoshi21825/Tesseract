@@ -503,7 +503,9 @@ static ASTNode *parse_primary()
     if (current_token.type == TOK_FILE_OPEN ||
         current_token.type == TOK_FILE_READ ||
         current_token.type == TOK_FILE_WRITE ||
-        current_token.type == TOK_FILE_CLOSE)
+        current_token.type == TOK_FILE_CLOSE ||
+        current_token.type == TOK_TO_STR ||
+        current_token.type == TOK_TO_INT)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -531,11 +533,23 @@ static ASTNode *parse_primary()
             expect(TOK_RPAREN);
             return ast_new_file_write(file_handle, content);
         }
-        else // TOK_FILE_CLOSE
+        else if (func_type == TOK_FILE_CLOSE)
         {
             ASTNode *file_handle = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_file_close(file_handle);
+        }
+        else if (func_type == TOK_TO_STR)
+        {
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_to_str(value);
+        }
+        else // TOK_TO_INT
+        {
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_to_int(value);
         }
     }
 

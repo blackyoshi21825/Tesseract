@@ -288,6 +288,21 @@ void interpret(ASTNode *root)
                 set_variable(root->assign.varname, read_val);
             }
         }
+        else if (value_node->type == NODE_TO_STR)
+        {
+            double result = eval_expression(value_node);
+            if (result == -12345.6789) {
+                const char *str_result = get_variable("__to_str_result");
+                if (str_result)
+                {
+                    set_variable(root->assign.varname, str_result);
+                }
+            } else {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", result);
+                set_variable(root->assign.varname, buf);
+            }
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -712,7 +727,8 @@ void interpret(ASTNode *root)
         eval_expression(root);
     }
     else if (root->type == NODE_FILE_OPEN || root->type == NODE_FILE_READ ||
-             root->type == NODE_FILE_WRITE || root->type == NODE_FILE_CLOSE)
+             root->type == NODE_FILE_WRITE || root->type == NODE_FILE_CLOSE ||
+             root->type == NODE_TO_STR || root->type == NODE_TO_INT)
     {
         eval_expression(root);
     }
@@ -1225,7 +1241,20 @@ static double eval_expression(ASTNode *node)
                     dest += sprintf(dest, "%g", val);
                     break;
                 case 's': // string (from variable)
-                    if (arg->type == NODE_STRING)
+                    if (arg->type == NODE_TO_STR)
+                    {
+                        double result = eval_expression(arg);
+                        if (result == -12345.6789) { // Special marker for to_str
+                            const char *str_result = get_variable("__to_str_result");
+                            if (str_result)
+                            {
+                                dest += sprintf(dest, "%s", str_result);
+                            }
+                        } else {
+                            dest += sprintf(dest, "%g", result);
+                        }
+                    }
+                    else if (arg->type == NODE_STRING)
                     {
                         dest += sprintf(dest, "%s", arg->string);
                     }
@@ -2075,6 +2104,48 @@ static double eval_expression(ASTNode *node)
         remove_file_handle(handle);
         return 0;
     }
+    case NODE_TO_STR:
+    {
+        double value = eval_expression(node->unop.operand);
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "%g", value);
+        set_variable("__to_str_result", buffer);
+        
+        // For format strings, we need to return the string directly
+        // We'll use a special return value that the format string handler can detect
+        return -12345.6789; // Special marker for to_str
+    }
+    case NODE_TO_INT:
+    {
+        if (node->unop.operand->type == NODE_STRING)
+        {
+            // Direct string to int conversion
+            char *endptr;
+            double value = strtod(node->unop.operand->string, &endptr);
+            return value;
+        }
+        else if (node->unop.operand->type == NODE_VAR)
+        {
+            // Variable containing a string to int conversion
+            const char *str_value = get_variable(node->unop.operand->varname);
+            if (str_value)
+            {
+                char *endptr;
+                double value = strtod(str_value, &endptr);
+                return value;
+            }
+            else
+            {
+                printf("Runtime error: Variable '%s' is undefined\n", node->unop.operand->varname);
+                exit(1);
+            }
+        }
+        else
+        {
+            // For other types, just evaluate and return
+            return eval_expression(node->unop.operand);
+        }
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -2287,6 +2358,20 @@ static void print_node(ASTNode *node)
     case NODE_FORMAT_STRING:
         eval_expression(node);
         break;
+    case NODE_TO_STR:
+    {
+        double result = eval_expression(node);
+        if (result == -12345.6789) {
+            const char *str_result = get_variable("__to_str_result");
+            if (str_result)
+            {
+                printf("%s\n", str_result);
+            }
+        } else {
+            printf("%g\n", result);
+        }
+        break;
+    }
     case NODE_DICT_GET:
     {
         ASTNode *dict_node = node->dict_get.dict;
