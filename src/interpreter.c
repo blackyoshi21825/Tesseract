@@ -544,7 +544,7 @@ void interpret(ASTNode *root)
         if (object->type == NODE_VAR && strcmp(object->varname, "self") == 0 && current_self)
         {
             // Accessing self.field
-            return object_get_field(current_self, member_name);
+            object_get_field(current_self, member_name);
         }
         else if (object->type == NODE_VAR)
         {
@@ -618,7 +618,6 @@ void interpret(ASTNode *root)
         }
         interpret(method_def->method_def.body);
         current_self = NULL;
-        return 0;
     }
     else if (root->type == NODE_MEMBER_ASSIGN)
     {
@@ -678,7 +677,6 @@ void interpret(ASTNode *root)
             double val = eval_expression(value_node);
             object_set_field(obj, member_name, val, NULL, FIELD_NUMBER);
         }
-        return 0;
     }
     else if (root->type == NODE_LIST)
     {
