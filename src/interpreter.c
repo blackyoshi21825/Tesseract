@@ -288,24 +288,6 @@ void interpret(ASTNode *root)
                 set_variable(root->assign.varname, read_val);
             }
         }
-        else if (value_node->type == NODE_FILE_READ)
-        {
-            eval_expression(value_node); // This will read input and set __last_file_read
-            const char *read_val = get_variable("__last_file_read");
-            if (read_val)
-            {
-                set_variable(root->assign.varname, read_val);
-            }
-        }
-        else if (value_node->type == NODE_FILE_READ)
-        {
-            eval_expression(value_node); // This will read input and set __last_file_read
-            const char *read_val = get_variable("__last_file_read");
-            if (read_val)
-            {
-                set_variable(root->assign.varname, read_val);
-            }
-        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
