@@ -72,7 +72,11 @@ typedef enum
     NODE_FILE_WRITE,
     NODE_FILE_CLOSE,
     NODE_TO_STR,
-    NODE_TO_INT
+    NODE_TO_INT,
+    NODE_HTTP_GET,            // HTTP GET request
+    NODE_HTTP_POST,           // HTTP POST request
+    NODE_HTTP_PUT,            // HTTP PUT request
+    NODE_HTTP_DELETE          // HTTP DELETE request
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -282,6 +286,28 @@ struct ASTNode
         {
             ASTNode *file_handle;
         } file_close_stmt;
+        struct
+        {
+            ASTNode *url;
+            ASTNode *headers; // Optional dictionary of headers
+        } http_get;
+        struct
+        {
+            ASTNode *url;
+            ASTNode *data;
+            ASTNode *headers; // Optional dictionary of headers
+        } http_post;
+        struct
+        {
+            ASTNode *url;
+            ASTNode *data;
+            ASTNode *headers; // Optional dictionary of headers
+        } http_put;
+        struct
+        {
+            ASTNode *url;
+            ASTNode *headers; // Optional dictionary of headers
+        } http_delete;
     };
 };
 
@@ -371,5 +397,11 @@ ASTNode *ast_new_file_close(ASTNode *file_handle);
 
 ASTNode *ast_new_to_str(ASTNode *value);
 ASTNode *ast_new_to_int(ASTNode *value);
+
+// HTTP request functions
+ASTNode *ast_new_http_get(ASTNode *url, ASTNode *headers);
+ASTNode *ast_new_http_post(ASTNode *url, ASTNode *data, ASTNode *headers);
+ASTNode *ast_new_http_put(ASTNode *url, ASTNode *data, ASTNode *headers);
+ASTNode *ast_new_http_delete(ASTNode *url, ASTNode *headers);
 
 #endif

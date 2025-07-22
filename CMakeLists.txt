@@ -5,6 +5,12 @@ project(Tesseract C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Enable precompiled headers if supported
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+    set(CMAKE_UNITY_BUILD ON)
+    set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
+endif()
+
 # Add include directory
 include_directories(include)
 
@@ -18,11 +24,20 @@ endif()
 # Find source files
 file(GLOB SOURCES "src/*.c")
 
+# Find curl package
+find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIRS})
+
 # Create executable
 add_executable(tesser ${SOURCES})
 
-# Link math library
-target_link_libraries(tesser m)
+# Add precompiled header if supported
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+    target_precompile_headers(tesser PRIVATE include/tesseract_pch.h)
+endif()
+
+# Link math and curl libraries
+target_link_libraries(tesser m ${CURL_LIBRARIES})
 
 # Add custom targets
 add_custom_target(debug

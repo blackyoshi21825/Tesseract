@@ -86,7 +86,11 @@ typedef enum
     TOK_FILE_WRITE,
     TOK_FILE_CLOSE,
     TOK_TO_STR,
-    TOK_TO_INT
+    TOK_TO_INT,
+    TOK_HTTP_GET,
+    TOK_HTTP_POST,
+    TOK_HTTP_PUT,
+    TOK_HTTP_DELETE
 } TokenType;
 
 typedef struct

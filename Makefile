@@ -1,6 +1,11 @@
 CC = gcc
 # Add optimization flags and enable faster math operations
-CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O2 -ffast-math
+CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O2 -ffast-math `curl-config --cflags`
+LDFLAGS = `curl-config --libs`
+
+# Precompiled header settings
+PCH = include/tesseract_pch.h
+PCH_GCH = $(PCH).gch
 # Add debug flags only when needed
 DEBUGFLAGS = -g
 
@@ -20,17 +25,20 @@ REPL_TARGET = tesser-repl
 # Enable parallel compilation
 MAKEFLAGS += -j8
 
-.PHONY: all clean run run-repl debug release
+.PHONY: all clean run run-repl debug release pch
 
 all: release
 
-release: $(TARGET)
+pch: $(PCH_GCH)
+
+release: pch $(TARGET)
 
 debug: CFLAGS += $(DEBUGFLAGS)
 debug: $(TARGET)
+	$(CC) $(DEBUGFLAGS) -o $(TARGET) $(SRC_DIR)/*.c -Iinclude -lm -lcurl
 
 $(TARGET): $(filter-out $(REPL_OBJ), $(OBJS))
-	$(CC) $(CFLAGS) -o $@ $^ -lm
+	$(CC) $(CFLAGS) -o $@ $^ -lm $(LDFLAGS)
 
 $(REPL_TARGET): $(filter-out $(OBJ_DIR)/main.o, $(OBJS)) $(REPL_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
@@ -39,9 +47,13 @@ $(REPL_TARGET): $(filter-out $(OBJ_DIR)/main.o, $(OBJS)) $(REPL_OBJ)
 $(OBJ_DIR) $(DEP_DIR):
 	@mkdir -p $@
 
-# Compile source files with dependency tracking
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR) $(DEP_DIR)
-	$(CC) $(CFLAGS) -MMD -MP -MF $(DEP_DIR)/$*.d -c $< -o $@
+# Precompiled header rule
+$(PCH_GCH): $(PCH)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile source files with dependency tracking and using precompiled header
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(PCH_GCH) | $(OBJ_DIR) $(DEP_DIR)
+	$(CC) $(CFLAGS) -include $(PCH) -MMD -MP -MF $(DEP_DIR)/$*.d -c $< -o $@
 
 # Include dependency files
 -include $(DEPS)
@@ -49,7 +61,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR) $(DEP_DIR)
 repl: $(REPL_TARGET)
 
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET) $(REPL_TARGET)
+	rm -rf $(OBJ_DIR) $(TARGET) $(REPL_TARGET) $(PCH_GCH)
 
 run: $(TARGET)
 	./tesser test.tesseract

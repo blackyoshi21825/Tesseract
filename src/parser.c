@@ -505,7 +505,11 @@ static ASTNode *parse_primary()
         current_token.type == TOK_FILE_WRITE ||
         current_token.type == TOK_FILE_CLOSE ||
         current_token.type == TOK_TO_STR ||
-        current_token.type == TOK_TO_INT)
+        current_token.type == TOK_TO_INT ||
+        current_token.type == TOK_HTTP_GET ||
+        current_token.type == TOK_HTTP_POST ||
+        current_token.type == TOK_HTTP_PUT ||
+        current_token.type == TOK_HTTP_DELETE)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -545,11 +549,63 @@ static ASTNode *parse_primary()
             expect(TOK_RPAREN);
             return ast_new_to_str(value);
         }
-        else // TOK_TO_INT
+        else if (func_type == TOK_TO_INT)
         {
             ASTNode *value = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_to_int(value);
+        }
+        else if (func_type == TOK_HTTP_GET)
+        {
+            ASTNode *url = parse_expression();
+            ASTNode *headers = NULL;
+            if (current_token.type == TOK_COMMA)
+            {
+                next_token();
+                headers = parse_expression();
+            }
+            expect(TOK_RPAREN);
+            return ast_new_http_get(url, headers);
+        }
+        else if (func_type == TOK_HTTP_POST)
+        {
+            ASTNode *url = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *data = parse_expression();
+            ASTNode *headers = NULL;
+            if (current_token.type == TOK_COMMA)
+            {
+                next_token();
+                headers = parse_expression();
+            }
+            expect(TOK_RPAREN);
+            return ast_new_http_post(url, data, headers);
+        }
+        else if (func_type == TOK_HTTP_PUT)
+        {
+            ASTNode *url = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *data = parse_expression();
+            ASTNode *headers = NULL;
+            if (current_token.type == TOK_COMMA)
+            {
+                next_token();
+                headers = parse_expression();
+            }
+            expect(TOK_RPAREN);
+            return ast_new_http_put(url, data, headers);
+        }
+        else // TOK_HTTP_DELETE
+        {
+            ASTNode *url = parse_expression();
+            ASTNode *headers = NULL;
+            if (current_token.type == TOK_COMMA)
+            {
+                next_token();
+                headers = parse_expression();
+            }
+            expect(TOK_RPAREN);
+            return ast_new_http_delete(url, headers);
         }
     }
 

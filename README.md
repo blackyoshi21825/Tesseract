@@ -15,23 +15,36 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - File Handling
 - Advanced Data Structures(Stacks, Queues, and Linked Lists)
 - While Loops
+- HTTP Web Requests
 
 ## Getting Started
 
 ### Prerequisites
 - GCC compiler
 - Make tools
+- libcurl development package
 - Mac/Linux (Windows users should use WSL)
+
+#### Installing libcurl
+- Ubuntu/Debian: `sudo apt-get install libcurl4-openssl-dev`
+- Fedora/RHEL: `sudo dnf install libcurl-devel`
+- macOS with Homebrew: `brew install curl`
+- Windows with MSYS2: `pacman -S mingw-w64-x86_64-curl`
 
 ### Installation
 ```bash
-make
+make        # builds with precompiled headers for faster compilation
 make clear  # to run test.tesseract
 ```
 
+### Fast Compilation
+Tesseract uses precompiled headers to speed up compilation:
+- On Linux/macOS: `make pch` will generate the precompiled header
+- On Windows: Run `generate_pch.bat` before building
+
 ### Debug Mode (Linux)
 ```bash
-gcc -g -o tesser src/*.c -Iinclude -lm
+gcc -g -o tesser src/*.c -Iinclude -lm -lcurl
 ```
 - It is good practice to run this command before running the main Tesseract file on Linux
 
@@ -348,6 +361,42 @@ let$ content := ::fread(read_handle);
 ::fclose(read_handle);
 
 ::print(content);
+```
+
+### HTTP Web Requests
+
+Tesseract supports making HTTP requests to interact with web services:
+
+**HTTP GET Request:**
+```tesseract
+# Simple GET request
+let$response := ::http_get("http://example.com/api")
+::print response
+
+# GET request with headers
+let$headers := dict{"User-Agent" := "Tesseract/1.0", "Accept" := "application/json"}
+let$response := ::http_get("http://example.com/api", headers)
+```
+
+**HTTP POST Request:**
+```tesseract
+# POST request with data
+let$data := "{\"name\": \"Tesseract\", \"value\": 42}"
+let$response := ::http_post("http://example.com/api", data)
+
+# POST with data and headers
+let$headers := dict{"Content-Type" := "application/json"}
+let$response := ::http_post("http://example.com/api", data, headers)
+```
+
+**HTTP PUT and DELETE Requests:**
+```tesseract
+# PUT request
+let$data := "{\"updated\": true}"
+let$response := ::http_put("http://example.com/api/resource", data)
+
+# DELETE request
+let$response := ::http_delete("http://example.com/api/resource")
 ```
 
 ## Implementation Details

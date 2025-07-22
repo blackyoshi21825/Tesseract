@@ -1,6 +1,9 @@
 @echo off
 echo Building Tesseract with CMake...
 
+:: Generate precompiled header first
+call generate_pch.bat
+
 if not exist build mkdir build
 cd build
 

@@ -1,4 +1,4 @@
 @echo off
 echo Generating precompiled header...
-gcc -c -Iinclude include/tesseract_pch.h -o obj/tesseract_pch.h.gch
-echo Done!
+gcc -Wall -Wextra -std=c99 -Iinclude -O2 -ffast-math -c include/tesseract_pch.h -o include/tesseract_pch.h.gch
+echo Done.

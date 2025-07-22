@@ -711,6 +711,44 @@ ASTNode *ast_new_to_int(ASTNode *value)
     return node;
 }
 
+ASTNode *ast_new_http_get(ASTNode *url, ASTNode *headers)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_HTTP_GET;
+    node->http_get.url = url;
+    node->http_get.headers = headers;
+    return node;
+}
+
+ASTNode *ast_new_http_post(ASTNode *url, ASTNode *data, ASTNode *headers)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_HTTP_POST;
+    node->http_post.url = url;
+    node->http_post.data = data;
+    node->http_post.headers = headers;
+    return node;
+}
+
+ASTNode *ast_new_http_put(ASTNode *url, ASTNode *data, ASTNode *headers)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_HTTP_PUT;
+    node->http_put.url = url;
+    node->http_put.data = data;
+    node->http_put.headers = headers;
+    return node;
+}
+
+ASTNode *ast_new_http_delete(ASTNode *url, ASTNode *headers)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_HTTP_DELETE;
+    node->http_delete.url = url;
+    node->http_delete.headers = headers;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -880,6 +918,28 @@ void ast_free(ASTNode *node)
     case NODE_TO_STR:
     case NODE_TO_INT:
         ast_free(node->unop.operand);
+        break;
+    case NODE_HTTP_GET:
+        ast_free(node->http_get.url);
+        if (node->http_get.headers)
+            ast_free(node->http_get.headers);
+        break;
+    case NODE_HTTP_POST:
+        ast_free(node->http_post.url);
+        ast_free(node->http_post.data);
+        if (node->http_post.headers)
+            ast_free(node->http_post.headers);
+        break;
+    case NODE_HTTP_PUT:
+        ast_free(node->http_put.url);
+        ast_free(node->http_put.data);
+        if (node->http_put.headers)
+            ast_free(node->http_put.headers);
+        break;
+    case NODE_HTTP_DELETE:
+        ast_free(node->http_delete.url);
+        if (node->http_delete.headers)
+            ast_free(node->http_delete.headers);
         break;
     default:
         break;

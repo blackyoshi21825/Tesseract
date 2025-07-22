@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <math.h>
-#include "interpreter.h"
-#include "variables.h"
-#include "ast.h"
-#include "parser.h"
-#include "object.h"
+#include "tesseract_pch.h"
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
@@ -19,6 +10,129 @@ static int file_handle_count = 0;
 typedef struct ObjectInstance ObjectInstance;
 
 const char *bool_to_str(bool value);
+
+// Flag to track if HTTP has been initialized
+static bool http_initialized = false;
+
+// Structure to store response data
+struct ResponseData {
+    char *data;
+    size_t size;
+};
+
+// Callback function for libcurl to write response data
+static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    struct ResponseData *resp = (struct ResponseData *)userp;
+    
+    char *ptr = realloc(resp->data, resp->size + realsize + 1);
+    if(!ptr) {
+        printf("Error: Memory allocation failed\n");
+        return 0;
+    }
+    
+    resp->data = ptr;
+    memcpy(&(resp->data[resp->size]), contents, realsize);
+    resp->size += realsize;
+    resp->data[resp->size] = '\0';
+    
+    return realsize;
+}
+
+// Initialize HTTP functionality
+static void init_http() {
+    if (!http_initialized) {
+        curl_global_init(CURL_GLOBAL_ALL);
+        http_initialized = true;
+    }
+}
+
+// Perform HTTP request and return response as string
+static char *perform_http_request(const char *url, const char *method, const char *data, ASTNode *headers) {
+    init_http();
+    
+    CURL *curl;
+    CURLcode res;
+    struct ResponseData response_data;
+    struct curl_slist *header_list = NULL;
+    
+    // Initialize response data
+    response_data.data = malloc(1);
+    response_data.size = 0;
+    response_data.data[0] = '\0';
+    
+    curl = curl_easy_init();
+    if (!curl) {
+        free(response_data.data);
+        return strdup("Error: Failed to initialize curl");
+    }
+    
+    // Set URL
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    
+    // Always add these headers to prevent libcurl's automatic form encoding
+    header_list = curl_slist_append(header_list, "Content-Type: application/json");
+    
+    // Set request method
+    if (strcmp(method, "POST") == 0) {
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        if (data) {
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(data));
+        }
+    } else if (strcmp(method, "PUT") == 0) {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        if (data) {
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(data));
+        }
+    } else if (strcmp(method, "DELETE") == 0) {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+    }
+    
+    // Set headers if provided
+    if (headers && headers->type == NODE_DICT) {
+        for (int i = 0; i < headers->dict.count; i++) {
+            if (headers->dict.keys[i]->type == NODE_STRING && headers->dict.values[i]->type == NODE_STRING) {
+                char header_line[512];
+                snprintf(header_line, sizeof(header_line), "%s: %s", 
+                         headers->dict.keys[i]->string, 
+                         headers->dict.values[i]->string);
+                header_list = curl_slist_append(header_list, header_line);
+            }
+        }
+    }
+    
+    // Always set the header list to ensure Content-Type is applied
+    if (header_list) {
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+    }
+    
+    // Set callback function to receive response
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response_data);
+    
+    // Set user agent
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Tesseract/1.0");
+    
+    // Perform the request
+    res = curl_easy_perform(curl);
+    
+    // Clean up
+    if (header_list) {
+        curl_slist_free_all(header_list);
+    }
+    curl_easy_cleanup(curl);
+    
+    if (res != CURLE_OK) {
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg), "Error: %s", curl_easy_strerror(res));
+        free(response_data.data);
+        return strdup(error_msg);
+    }
+    
+    return response_data.data;
+}
 
 typedef struct
 {
@@ -80,6 +194,10 @@ void remove_file_handle(int handle)
 
 // Forward declaration of print_node
 static void print_node(ASTNode *node);
+
+// Forward declaration for HTTP request functions
+static char *perform_http_request(const char *url, const char *method, const char *data, ASTNode *headers);
+static void init_http();
 
 static FieldEntry *object_get_field(ObjectInstance *obj, const char *field);
 
@@ -728,7 +846,9 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_FILE_OPEN || root->type == NODE_FILE_READ ||
              root->type == NODE_FILE_WRITE || root->type == NODE_FILE_CLOSE ||
-             root->type == NODE_TO_STR || root->type == NODE_TO_INT)
+             root->type == NODE_TO_STR || root->type == NODE_TO_INT ||
+             root->type == NODE_HTTP_GET || root->type == NODE_HTTP_POST ||
+             root->type == NODE_HTTP_PUT || root->type == NODE_HTTP_DELETE)
     {
         eval_expression(root);
     }
@@ -2146,6 +2266,98 @@ static double eval_expression(ASTNode *node)
             return eval_expression(node->unop.operand);
         }
     }
+    
+    case NODE_HTTP_GET:
+    {
+        char *url = get_string_value(node->http_get.url);
+        if (!url) {
+            printf("Runtime error: Invalid URL for HTTP GET\n");
+            exit(1);
+        }
+        
+        char *response = perform_http_request(url, "GET", NULL, node->http_get.headers);
+        free(url);
+        
+        if (response) {
+            // Store the response in a variable and print it directly
+            printf("%s\n", response);
+            set_variable("__http_response", response);
+            free(response);
+            return 0; // Success
+        }
+        return 0; // Failure
+    }
+    
+    case NODE_HTTP_POST:
+    {
+        char *url = get_string_value(node->http_post.url);
+        char *data = get_string_value(node->http_post.data);
+        if (!url || !data) {
+            if (url) free(url);
+            if (data) free(data);
+            printf("Runtime error: Invalid URL or data for HTTP POST\n");
+            exit(1);
+        }
+        
+        char *response = perform_http_request(url, "POST", data, node->http_post.headers);
+        free(url);
+        free(data);
+        
+        if (response) {
+            // Print the response directly
+            printf("%s\n", response);
+            set_variable("__http_response", response);
+            free(response);
+            return 0; // Success
+        }
+        return 0; // Failure
+    }
+    
+    case NODE_HTTP_PUT:
+    {
+        char *url = get_string_value(node->http_put.url);
+        char *data = get_string_value(node->http_put.data);
+        if (!url || !data) {
+            if (url) free(url);
+            if (data) free(data);
+            printf("Runtime error: Invalid URL or data for HTTP PUT\n");
+            exit(1);
+        }
+        
+        char *response = perform_http_request(url, "PUT", data, node->http_put.headers);
+        free(url);
+        free(data);
+        
+        if (response) {
+            // Print the response directly
+            printf("%s\n", response);
+            set_variable("__http_response", response);
+            free(response);
+            return 0; // Success
+        }
+        return 0; // Failure
+    }
+    
+    case NODE_HTTP_DELETE:
+    {
+        char *url = get_string_value(node->http_delete.url);
+        if (!url) {
+            printf("Runtime error: Invalid URL for HTTP DELETE\n");
+            exit(1);
+        }
+        
+        char *response = perform_http_request(url, "DELETE", NULL, node->http_delete.headers);
+        free(url);
+        
+        if (response) {
+            // Print the response directly
+            printf("%s\n", response);
+            set_variable("__http_response", response);
+            free(response);
+            return 0; // Success
+        }
+        return 0; // Failure
+    }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
         exit(1);
@@ -2363,13 +2575,22 @@ static void print_node(ASTNode *node)
         double result = eval_expression(node);
         if (result == -12345.6789) {
             const char *str_result = get_variable("__to_str_result");
-            if (str_result)
-            {
+            if (str_result) {
                 printf("%s\n", str_result);
             }
         } else {
             printf("%g\n", result);
         }
+        break;
+    }
+    case NODE_HTTP_GET:
+    case NODE_HTTP_POST:
+    case NODE_HTTP_PUT:
+    case NODE_HTTP_DELETE:
+    {
+        // HTTP requests are handled directly in eval_expression
+        // which will print the response
+        eval_expression(node);
         break;
     }
     case NODE_DICT_GET:

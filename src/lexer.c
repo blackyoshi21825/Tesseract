@@ -439,6 +439,34 @@ Token lexer_next_token()
         pos += 8;
         return token;
     }
+    if (starts_with("::http_get"))
+    {
+        token.type = TOK_HTTP_GET;
+        strcpy(token.text, "::http_get");
+        pos += 10;
+        return token;
+    }
+    if (starts_with("::http_post"))
+    {
+        token.type = TOK_HTTP_POST;
+        strcpy(token.text, "::http_post");
+        pos += 11;
+        return token;
+    }
+    if (starts_with("::http_put"))
+    {
+        token.type = TOK_HTTP_PUT;
+        strcpy(token.text, "::http_put");
+        pos += 10;
+        return token;
+    }
+    if (starts_with("::http_delete"))
+    {
+        token.type = TOK_HTTP_DELETE;
+        strcpy(token.text, "::http_delete");
+        pos += 13;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])
