@@ -1,7 +1,16 @@
-CC = gcc
+# Detect the best compiler available
+ifneq ($(shell which clang 2>/dev/null),)
+    CC = clang
+else
+    CC = gcc
+endif
+
+# Detect number of CPU cores for optimal parallel compilation
+NUM_CORES := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+
 # Add optimization flags and enable faster math operations
-CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O2 -ffast-math `curl-config --cflags`
-LDFLAGS = `curl-config --libs`
+CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O3 -ffast-math -flto -march=native `curl-config --cflags`
+LDFLAGS = `curl-config --libs` -flto
 
 # Precompiled header settings
 PCH = include/tesseract_pch.h
@@ -22,8 +31,8 @@ REPL_OBJ = $(OBJ_DIR)/repl.o
 TARGET = tesser
 REPL_TARGET = tesser-repl
 
-# Enable parallel compilation
-MAKEFLAGS += -j8
+# Enable parallel compilation with detected number of cores
+MAKEFLAGS += -j$(NUM_CORES)
 
 .PHONY: all clean run run-repl debug release pch
 
