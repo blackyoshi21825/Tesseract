@@ -109,6 +109,27 @@ Token lexer_next_token()
         pos += 6;
         return token;
     }
+    if (starts_with("switch$"))
+    {
+        token.type = TOK_SWITCH;
+        strcpy(token.text, "switch$");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("case$"))
+    {
+        token.type = TOK_CASE;
+        strcpy(token.text, "case$");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("default$"))
+    {
+        token.type = TOK_DEFAULT;
+        strcpy(token.text, "default$");
+        pos += 8;
+        return token;
+    }
     if (starts_with("import$"))
     {
         token.type = TOK_IMPORT;

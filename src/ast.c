@@ -83,6 +83,44 @@ ASTNode *ast_new_while(ASTNode *condition, ASTNode *body)
     return node;
 }
 
+ASTNode *ast_new_switch(ASTNode *expression)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SWITCH;
+    node->switch_stmt.expression = expression;
+    node->switch_stmt.cases = NULL;
+    node->switch_stmt.case_count = 0;
+    node->switch_stmt.default_case = NULL;
+    return node;
+}
+
+ASTNode *ast_new_case(ASTNode *value, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_CASE;
+    node->case_stmt.value = value;
+    node->case_stmt.body = body;
+    return node;
+}
+
+void ast_switch_add_case(ASTNode *switch_node, ASTNode *case_node)
+{
+    if (switch_node->type != NODE_SWITCH || case_node->type != NODE_CASE)
+        return;
+    
+    switch_node->switch_stmt.cases = realloc(switch_node->switch_stmt.cases, 
+                                           sizeof(ASTNode *) * (switch_node->switch_stmt.case_count + 1));
+    switch_node->switch_stmt.cases[switch_node->switch_stmt.case_count++] = case_node;
+}
+
+void ast_switch_set_default(ASTNode *switch_node, ASTNode *default_body)
+{
+    if (switch_node->type != NODE_SWITCH)
+        return;
+    
+    switch_node->switch_stmt.default_case = default_body;
+}
+
 ASTNode *ast_new_print(ASTNode *expr)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -778,6 +816,20 @@ void ast_free(ASTNode *node)
     case NODE_WHILE:
         ast_free(node->while_stmt.condition);
         ast_free(node->while_stmt.body);
+        break;
+    case NODE_SWITCH:
+        ast_free(node->switch_stmt.expression);
+        for (int i = 0; i < node->switch_stmt.case_count; i++) {
+            ast_free(node->switch_stmt.cases[i]);
+        }
+        free(node->switch_stmt.cases);
+        if (node->switch_stmt.default_case) {
+            ast_free(node->switch_stmt.default_case);
+        }
+        break;
+    case NODE_CASE:
+        ast_free(node->case_stmt.value);
+        ast_free(node->case_stmt.body);
         break;
     case NODE_PRINT:
         ast_free(node->binop.left);

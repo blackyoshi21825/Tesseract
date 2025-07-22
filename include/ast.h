@@ -13,6 +13,8 @@ typedef enum
     NODE_IF,
     NODE_LOOP,
     NODE_WHILE,
+    NODE_SWITCH,
+    NODE_CASE,
     NODE_IMPORT,
     NODE_PRINT,
     NODE_INPUT,
@@ -123,6 +125,18 @@ struct ASTNode
             ASTNode *condition;
             ASTNode *body;
         } while_stmt;
+        struct
+        {
+            ASTNode *expression;
+            ASTNode **cases;
+            int case_count;
+            ASTNode *default_case;
+        } switch_stmt;
+        struct
+        {
+            ASTNode *value;
+            ASTNode *body;
+        } case_stmt;
         struct
         {
             ASTNode *prompt;
@@ -319,6 +333,10 @@ ASTNode *ast_new_assign(const char *name, ASTNode *value);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch);
 ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *body);
 ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
+ASTNode *ast_new_switch(ASTNode *expression);
+ASTNode *ast_new_case(ASTNode *value, ASTNode *body);
+void ast_switch_add_case(ASTNode *switch_node, ASTNode *case_node);
+void ast_switch_set_default(ASTNode *switch_node, ASTNode *default_body);
 ASTNode *ast_new_print(ASTNode *expr);
 ASTNode *ast_new_input(ASTNode *prompt);
 ASTNode *ast_new_block();

@@ -934,6 +934,41 @@ static ASTNode *parse_statement()
         ASTNode *body = parse_statement();
         return ast_new_while(condition, body);
     }
+    
+    if (current_token.type == TOK_SWITCH)
+    {
+        next_token();
+        ASTNode *expression = parse_expression();
+        expect(TOK_LBRACE); // Opening brace for switch block
+        
+        ASTNode *switch_node = ast_new_switch(expression);
+        
+        while (current_token.type != TOK_RBRACE && current_token.type != TOK_EOF)
+        {
+            if (current_token.type == TOK_CASE)
+            {
+                next_token();
+                ASTNode *case_value = parse_expression();
+                ASTNode *case_body = parse_statement();
+                ASTNode *case_node = ast_new_case(case_value, case_body);
+                ast_switch_add_case(switch_node, case_node);
+            }
+            else if (current_token.type == TOK_DEFAULT)
+            {
+                next_token();
+                ASTNode *default_body = parse_statement();
+                ast_switch_set_default(switch_node, default_body);
+            }
+            else
+            {
+                printf("Parse error: Expected 'case$' or 'default$' in switch statement\n");
+                exit(1);
+            }
+        }
+        
+        expect(TOK_RBRACE); // Closing brace for switch block
+        return switch_node;
+    }
 
     if (current_token.type == TOK_IMPORT)
     {

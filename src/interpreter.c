@@ -565,6 +565,31 @@ void interpret(ASTNode *root)
             interpret(root->while_stmt.body);
         }
     }
+    else if (root->type == NODE_SWITCH)
+    {
+        double switch_value = eval_expression(root->switch_stmt.expression);
+        bool case_matched = false;
+        
+        // Check each case
+        for (int i = 0; i < root->switch_stmt.case_count; i++)
+        {
+            ASTNode *case_node = root->switch_stmt.cases[i];
+            double case_value = eval_expression(case_node->case_stmt.value);
+            
+            if (switch_value == case_value)
+            {
+                interpret(case_node->case_stmt.body);
+                case_matched = true;
+                break; // Exit after first match
+            }
+        }
+        
+        // If no case matched, try the default case
+        if (!case_matched && root->switch_stmt.default_case)
+        {
+            interpret(root->switch_stmt.default_case);
+        }
+    }
     else if (root->type == NODE_IMPORT)
     {
         char *source = read_file(root->string);

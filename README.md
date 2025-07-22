@@ -98,6 +98,21 @@ while$ condition {
 }
 ```
 
+**Switch-Case Statements:**
+```tesseract
+switch$ expression {
+    case$ value1 {
+        // code for value1
+    }
+    case$ value2 {
+        // code for value2
+    }
+    default$ {
+        // default code
+    }
+}
+```
+
 ### Functions
 
 **Definition:**
