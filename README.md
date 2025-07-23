@@ -51,7 +51,7 @@ gcc -g -o tesser src/*.c -Iinclude -lm -lcurl
 ## Language Syntax
 
 ### General Rules
-- Statements end with semicolons (optional in most cases)
+- Statements end with semicolons
 - Blocks are enclosed in curly braces `{}`
 - Comments start with `#`
 
