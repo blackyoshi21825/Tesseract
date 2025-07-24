@@ -75,14 +75,14 @@ typedef enum
     NODE_FILE_CLOSE,
     NODE_TO_STR,
     NODE_TO_INT,
-    NODE_HTTP_GET,            // HTTP GET request
-    NODE_HTTP_POST,           // HTTP POST request
-    NODE_HTTP_PUT,            // HTTP PUT request
-    NODE_HTTP_DELETE,         // HTTP DELETE request
-    NODE_REGEX,               // Regex literal
-    NODE_REGEX_MATCH,         // Regex match operation
-    NODE_REGEX_REPLACE,       // Regex replace operation
-    NODE_REGEX_FIND_ALL       // Regex find all operation
+    NODE_HTTP_GET,       // HTTP GET request
+    NODE_HTTP_POST,      // HTTP POST request
+    NODE_HTTP_PUT,       // HTTP PUT request
+    NODE_HTTP_DELETE,    // HTTP DELETE request
+    NODE_REGEX,          // Regex literal
+    NODE_REGEX_MATCH,    // Regex match operation
+    NODE_REGEX_REPLACE,  // Regex replace operation
+    NODE_REGEX_FIND_ALL, // Regex find all operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
