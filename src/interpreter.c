@@ -1,4 +1,5 @@
 #include "tesseract_pch.h"
+#include <ctype.h>
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
@@ -15,122 +16,142 @@ const char *bool_to_str(bool value);
 static bool http_initialized = false;
 
 // Structure to store response data
-struct ResponseData {
+struct ResponseData
+{
     char *data;
     size_t size;
 };
 
 // Callback function for libcurl to write response data
-static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
+static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp)
+{
     size_t realsize = size * nmemb;
     struct ResponseData *resp = (struct ResponseData *)userp;
-    
+
     char *ptr = realloc(resp->data, resp->size + realsize + 1);
-    if(!ptr) {
+    if (!ptr)
+    {
         printf("Error: Memory allocation failed\n");
         return 0;
     }
-    
+
     resp->data = ptr;
     memcpy(&(resp->data[resp->size]), contents, realsize);
     resp->size += realsize;
     resp->data[resp->size] = '\0';
-    
+
     return realsize;
 }
 
 // Initialize HTTP functionality
-static void init_http() {
-    if (!http_initialized) {
+static void init_http()
+{
+    if (!http_initialized)
+    {
         curl_global_init(CURL_GLOBAL_ALL);
         http_initialized = true;
     }
 }
 
 // Perform HTTP request and return response as string
-static char *perform_http_request(const char *url, const char *method, const char *data, ASTNode *headers) {
+static char *perform_http_request(const char *url, const char *method, const char *data, ASTNode *headers)
+{
     init_http();
-    
+
     CURL *curl;
     CURLcode res;
     struct ResponseData response_data;
     struct curl_slist *header_list = NULL;
-    
+
     // Initialize response data
     response_data.data = malloc(1);
     response_data.size = 0;
     response_data.data[0] = '\0';
-    
+
     curl = curl_easy_init();
-    if (!curl) {
+    if (!curl)
+    {
         free(response_data.data);
         return strdup("Error: Failed to initialize curl");
     }
-    
+
     // Set URL
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    
+
     // Always add these headers to prevent libcurl's automatic form encoding
     header_list = curl_slist_append(header_list, "Content-Type: application/json");
-    
+
     // Set request method
-    if (strcmp(method, "POST") == 0) {
+    if (strcmp(method, "POST") == 0)
+    {
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        if (data) {
+        if (data)
+        {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(data));
         }
-    } else if (strcmp(method, "PUT") == 0) {
+    }
+    else if (strcmp(method, "PUT") == 0)
+    {
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
-        if (data) {
+        if (data)
+        {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(data));
         }
-    } else if (strcmp(method, "DELETE") == 0) {
+    }
+    else if (strcmp(method, "DELETE") == 0)
+    {
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
     }
-    
+
     // Set headers if provided
-    if (headers && headers->type == NODE_DICT) {
-        for (int i = 0; i < headers->dict.count; i++) {
-            if (headers->dict.keys[i]->type == NODE_STRING && headers->dict.values[i]->type == NODE_STRING) {
+    if (headers && headers->type == NODE_DICT)
+    {
+        for (int i = 0; i < headers->dict.count; i++)
+        {
+            if (headers->dict.keys[i]->type == NODE_STRING && headers->dict.values[i]->type == NODE_STRING)
+            {
                 char header_line[512];
-                snprintf(header_line, sizeof(header_line), "%s: %s", 
-                         headers->dict.keys[i]->string, 
+                snprintf(header_line, sizeof(header_line), "%s: %s",
+                         headers->dict.keys[i]->string,
                          headers->dict.values[i]->string);
                 header_list = curl_slist_append(header_list, header_line);
             }
         }
     }
-    
+
     // Always set the header list to ensure Content-Type is applied
-    if (header_list) {
+    if (header_list)
+    {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
     }
-    
+
     // Set callback function to receive response
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response_data);
-    
+
     // Set user agent
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "Tesseract/1.0");
-    
+
     // Perform the request
     res = curl_easy_perform(curl);
-    
+
     // Clean up
-    if (header_list) {
+    if (header_list)
+    {
         curl_slist_free_all(header_list);
     }
     curl_easy_cleanup(curl);
-    
-    if (res != CURLE_OK) {
+
+    if (res != CURLE_OK)
+    {
         char error_msg[256];
         snprintf(error_msg, sizeof(error_msg), "Error: %s", curl_easy_strerror(res));
         free(response_data.data);
         return strdup(error_msg);
     }
-    
+
     return response_data.data;
 }
 
@@ -198,6 +219,14 @@ static void print_node(ASTNode *node);
 // Forward declaration for HTTP request functions
 static char *perform_http_request(const char *url, const char *method, const char *data, ASTNode *headers);
 static void init_http();
+
+// Forward declarations for regex functions
+static int regex_match_pattern(const char *pattern, const char *text, const char *flags);
+static void regex_find_all_matches(const char *pattern, const char *text, const char *flags, ASTNode *result_list);
+static char *regex_replace_pattern(const char *pattern, const char *text, const char *replacement, const char *flags);
+static int regex_match_at_position(const char *pattern, const char *text, int case_insensitive);
+static int regex_get_match_length(const char *pattern, const char *text, int case_insensitive);
+static int regex_match_char(char pattern_char, char text_char, int case_insensitive);
 
 static FieldEntry *object_get_field(ObjectInstance *obj, const char *field);
 
@@ -397,6 +426,10 @@ void interpret(ASTNode *root)
         {
             set_linked_list_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_REGEX)
+        {
+            set_regex_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_FILE_READ)
         {
             eval_expression(value_node); // This will read input and set __last_file_read
@@ -409,13 +442,16 @@ void interpret(ASTNode *root)
         else if (value_node->type == NODE_TO_STR)
         {
             double result = eval_expression(value_node);
-            if (result == -12345.6789) {
+            if (result == -12345.6789)
+            {
                 const char *str_result = get_variable("__to_str_result");
                 if (str_result)
                 {
                     set_variable(root->assign.varname, str_result);
                 }
-            } else {
+            }
+            else
+            {
                 char buf[64];
                 snprintf(buf, sizeof(buf), "%g", result);
                 set_variable(root->assign.varname, buf);
@@ -569,13 +605,13 @@ void interpret(ASTNode *root)
     {
         double switch_value = eval_expression(root->switch_stmt.expression);
         bool case_matched = false;
-        
+
         // Check each case
         for (int i = 0; i < root->switch_stmt.case_count; i++)
         {
             ASTNode *case_node = root->switch_stmt.cases[i];
             double case_value = eval_expression(case_node->case_stmt.value);
-            
+
             if (switch_value == case_value)
             {
                 interpret(case_node->case_stmt.body);
@@ -583,7 +619,7 @@ void interpret(ASTNode *root)
                 break; // Exit after first match
             }
         }
-        
+
         // If no case matched, try the default case
         if (!case_matched && root->switch_stmt.default_case)
         {
@@ -848,7 +884,9 @@ void interpret(ASTNode *root)
              root->type == NODE_QUEUE_ISEMPTY || root->type == NODE_QUEUE_SIZE ||
              root->type == NODE_LINKED_LIST_ADD || root->type == NODE_LINKED_LIST_REMOVE ||
              root->type == NODE_LINKED_LIST_GET || root->type == NODE_LINKED_LIST_SIZE ||
-             root->type == NODE_LINKED_LIST_ISEMPTY)
+             root->type == NODE_LINKED_LIST_ISEMPTY || root->type == NODE_REGEX ||
+             root->type == NODE_REGEX_MATCH || root->type == NODE_REGEX_REPLACE ||
+             root->type == NODE_REGEX_FIND_ALL)
     {
         // For linked list remove operations, don't print the result
         if (root->type == NODE_LINKED_LIST_REMOVE)
@@ -1363,7 +1401,8 @@ static double eval_expression(ASTNode *node)
 
         while (*src && (dest - buffer) < sizeof(buffer) - 1)
         {
-            if (*src == '@' && *(src + 1) != '\0')
+            if (*src == '@' && *(src + 1) != '\0' && *(src + 1) != '@' && 
+                (*(src + 1) == 's' || *(src + 1) == 'd' || *(src + 1) == 'f'))
             {
                 src++; // skip '@'
                 if (arg_index >= node->format_str.arg_count)
@@ -1389,13 +1428,16 @@ static double eval_expression(ASTNode *node)
                     if (arg->type == NODE_TO_STR)
                     {
                         double result = eval_expression(arg);
-                        if (result == -12345.6789) { // Special marker for to_str
+                        if (result == -12345.6789)
+                        { // Special marker for to_str
                             const char *str_result = get_variable("__to_str_result");
                             if (str_result)
                             {
                                 dest += sprintf(dest, "%s", str_result);
                             }
-                        } else {
+                        }
+                        else
+                        {
                             dest += sprintf(dest, "%g", result);
                         }
                     }
@@ -1554,6 +1596,12 @@ static double eval_expression(ASTNode *node)
                     exit(1);
                 }
                 src++;
+            }
+            else if (*src == '@' && *(src + 1) == '@')
+            {
+                // Handle @@ as literal @
+                *dest++ = '@';
+                src += 2;
             }
             else
             {
@@ -2255,7 +2303,7 @@ static double eval_expression(ASTNode *node)
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "%g", value);
         set_variable("__to_str_result", buffer);
-        
+
         // For format strings, we need to return the string directly
         // We'll use a special return value that the format string handler can detect
         return -12345.6789; // Special marker for to_str
@@ -2291,19 +2339,21 @@ static double eval_expression(ASTNode *node)
             return eval_expression(node->unop.operand);
         }
     }
-    
+
     case NODE_HTTP_GET:
     {
         char *url = get_string_value(node->http_get.url);
-        if (!url) {
+        if (!url)
+        {
             printf("Runtime error: Invalid URL for HTTP GET\n");
             exit(1);
         }
-        
+
         char *response = perform_http_request(url, "GET", NULL, node->http_get.headers);
         free(url);
-        
-        if (response) {
+
+        if (response)
+        {
             // Store the response in a variable and print it directly
             printf("%s\n", response);
             set_variable("__http_response", response);
@@ -2312,23 +2362,27 @@ static double eval_expression(ASTNode *node)
         }
         return 0; // Failure
     }
-    
+
     case NODE_HTTP_POST:
     {
         char *url = get_string_value(node->http_post.url);
         char *data = get_string_value(node->http_post.data);
-        if (!url || !data) {
-            if (url) free(url);
-            if (data) free(data);
+        if (!url || !data)
+        {
+            if (url)
+                free(url);
+            if (data)
+                free(data);
             printf("Runtime error: Invalid URL or data for HTTP POST\n");
             exit(1);
         }
-        
+
         char *response = perform_http_request(url, "POST", data, node->http_post.headers);
         free(url);
         free(data);
-        
-        if (response) {
+
+        if (response)
+        {
             // Print the response directly
             printf("%s\n", response);
             set_variable("__http_response", response);
@@ -2337,23 +2391,27 @@ static double eval_expression(ASTNode *node)
         }
         return 0; // Failure
     }
-    
+
     case NODE_HTTP_PUT:
     {
         char *url = get_string_value(node->http_put.url);
         char *data = get_string_value(node->http_put.data);
-        if (!url || !data) {
-            if (url) free(url);
-            if (data) free(data);
+        if (!url || !data)
+        {
+            if (url)
+                free(url);
+            if (data)
+                free(data);
             printf("Runtime error: Invalid URL or data for HTTP PUT\n");
             exit(1);
         }
-        
+
         char *response = perform_http_request(url, "PUT", data, node->http_put.headers);
         free(url);
         free(data);
-        
-        if (response) {
+
+        if (response)
+        {
             // Print the response directly
             printf("%s\n", response);
             set_variable("__http_response", response);
@@ -2362,19 +2420,21 @@ static double eval_expression(ASTNode *node)
         }
         return 0; // Failure
     }
-    
+
     case NODE_HTTP_DELETE:
     {
         char *url = get_string_value(node->http_delete.url);
-        if (!url) {
+        if (!url)
+        {
             printf("Runtime error: Invalid URL for HTTP DELETE\n");
             exit(1);
         }
-        
+
         char *response = perform_http_request(url, "DELETE", NULL, node->http_delete.headers);
         free(url);
-        
-        if (response) {
+
+        if (response)
+        {
             // Print the response directly
             printf("%s\n", response);
             set_variable("__http_response", response);
@@ -2382,6 +2442,99 @@ static double eval_expression(ASTNode *node)
             return 0; // Success
         }
         return 0; // Failure
+    }
+    case NODE_REGEX_MATCH:
+    {
+        ASTNode *regex_node = node->regex_match.regex;
+        ASTNode *text_node = node->regex_match.text;
+
+        if (regex_node->type == NODE_VAR)
+        {
+            regex_node = get_regex_variable(regex_node->varname);
+        }
+
+        if (!regex_node || regex_node->type != NODE_REGEX)
+        {
+            printf("Runtime error: Invalid regex in match operation\n");
+            exit(1);
+        }
+
+        char *text_str = get_string_value(text_node);
+        if (!text_str)
+        {
+            printf("Runtime error: Invalid text in regex match\n");
+            exit(1);
+        }
+
+        int result = regex_match_pattern(regex_node->regex.pattern, text_str, regex_node->regex.flags);
+        free(text_str);
+        return result;
+    }
+    case NODE_REGEX_FIND_ALL:
+    {
+        ASTNode *regex_node = node->regex_find_all.regex;
+        ASTNode *text_node = node->regex_find_all.text;
+
+        if (regex_node->type == NODE_VAR)
+        {
+            regex_node = get_regex_variable(regex_node->varname);
+        }
+
+        if (!regex_node || regex_node->type != NODE_REGEX)
+        {
+            printf("Runtime error: Invalid regex in find_all operation\n");
+            exit(1);
+        }
+
+        char *text_str = get_string_value(text_node);
+        if (!text_str)
+        {
+            printf("Runtime error: Invalid text in regex find_all\n");
+            exit(1);
+        }
+
+        ASTNode *result_list = ast_new_list();
+        regex_find_all_matches(regex_node->regex.pattern, text_str, regex_node->regex.flags, result_list);
+
+        char *list_str = list_to_string(result_list);
+        printf("%s\n", list_str);
+        free(list_str);
+        free(text_str);
+        ast_free(result_list);
+        return 0;
+    }
+    case NODE_REGEX_REPLACE:
+    {
+        ASTNode *regex_node = node->regex_replace.regex;
+        ASTNode *text_node = node->regex_replace.text;
+        ASTNode *replacement_node = node->regex_replace.replacement;
+
+        if (regex_node->type == NODE_VAR)
+        {
+            regex_node = get_regex_variable(regex_node->varname);
+        }
+
+        if (!regex_node || regex_node->type != NODE_REGEX)
+        {
+            printf("Runtime error: Invalid regex in replace operation\n");
+            exit(1);
+        }
+
+        char *text_str = get_string_value(text_node);
+        char *replacement_str = get_string_value(replacement_node);
+
+        if (!text_str || !replacement_str)
+        {
+            printf("Runtime error: Invalid text or replacement in regex replace\n");
+            exit(1);
+        }
+
+        char *result = regex_replace_pattern(regex_node->regex.pattern, text_str, replacement_str, regex_node->regex.flags);
+        printf("%s\n", result);
+        free(result);
+        free(text_str);
+        free(replacement_str);
+        return 0;
     }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
@@ -2394,15 +2547,31 @@ static char *get_string_value(ASTNode *node)
     if (!node)
         return NULL;
 
+
+    
     if (node->type == NODE_STRING)
     {
+
         return strdup(node->string);
+    }
+    else if (node->type == NODE_FORMAT_STRING)
+    {
+        // Handle format strings that are actually just literal strings with @
+        return strdup(node->format_str.format);
     }
     else if (node->type == NODE_VAR)
     {
+        // Check if it's a regex variable first
+        ASTNode *regex = get_regex_variable(node->varname);
+        if (regex)
+        {
+            return strdup(regex->regex.pattern);
+        }
+
         const char *val = get_variable(node->varname);
         if (val)
         {
+
             return strdup(val);
         }
         else
@@ -2415,6 +2584,7 @@ static char *get_string_value(ASTNode *node)
     {
         // For other expression types, evaluate them to a number and convert to string
         double val = eval_expression(node);
+
         char *buffer = malloc(64); // Sufficient for a double
         if (buffer)
         {
@@ -2547,6 +2717,12 @@ static void print_node(ASTNode *node)
         printf("]\n");
         break;
     }
+    case NODE_REGEX:
+    {
+        printf("/%s/%s\n", node->regex.pattern, node->regex.flags);
+
+        break;
+    }
     case NODE_VAR:
     {
         // Check if it's a dict variable
@@ -2577,6 +2753,11 @@ static void print_node(ASTNode *node)
         {
             print_node(dict);
         }
+        // Check if it's a regex variable
+        else if ((dict = get_regex_variable(node->varname)))
+        {
+            print_node(dict);
+        }
         else
         {
             const char *val = get_variable(node->varname);
@@ -2598,12 +2779,16 @@ static void print_node(ASTNode *node)
     case NODE_TO_STR:
     {
         double result = eval_expression(node);
-        if (result == -12345.6789) {
+        if (result == -12345.6789)
+        {
             const char *str_result = get_variable("__to_str_result");
-            if (str_result) {
+            if (str_result)
+            {
                 printf("%s\n", str_result);
             }
-        } else {
+        }
+        else
+        {
             printf("%g\n", result);
         }
         break;
@@ -2727,6 +2912,609 @@ static void print_node(ASTNode *node)
 const char *bool_to_str(bool value)
 {
     return value ? "true" : "false";
+}
+
+// Simple regex engine implementation
+static int regex_match_char(char pattern_char, char text_char, int case_insensitive)
+{
+    if (case_insensitive)
+    {
+        return tolower(pattern_char) == tolower(text_char);
+    }
+    return pattern_char == text_char;
+}
+
+static int regex_match_at_position(const char *pattern, const char *text, int case_insensitive)
+{
+    int p = 0, t = 0;
+    
+
+    
+    while (pattern[p])
+    {
+        // Handle escape sequences - check for double backslash from Tesseract parsing
+        if ((pattern[p] == '\\' && pattern[p + 1] == '\\' && pattern[p + 2]) || 
+            (pattern[p] == '\\' && pattern[p + 1]))
+        {
+            char next;
+            int base_skip;
+            if (pattern[p + 1] == '\\' && pattern[p + 2])
+            {
+                // Double backslash case: \\d
+                next = pattern[p + 2];
+                base_skip = 3;
+            }
+            else
+            {
+                // Single backslash case: \d
+                next = pattern[p + 1];
+                base_skip = 2;
+            }
+            
+            if (next == 'd')
+            {
+                // Check for quantifier after \d
+                if (pattern[p + base_skip] == '+')
+                {
+                    // \d+ - one or more digits
+                    if (!text[t] || !isdigit(text[t])) return 0;
+                    while (text[t] && isdigit(text[t])) t++;
+                    p += base_skip + 1;
+                }
+                else if (pattern[p + base_skip] == '*')
+                {
+                    // \d* - zero or more digits
+                    while (text[t] && isdigit(text[t])) t++;
+                    p += base_skip + 1;
+                }
+                else if (pattern[p + base_skip] == '{')
+                {
+                    // \d{n} - exactly n digits
+                    int brace_end = p + base_skip + 1;
+                    while (pattern[brace_end] && pattern[brace_end] != '}') brace_end++;
+                    if (!pattern[brace_end]) return 0;
+                    
+                    int count = 0;
+                    for (int i = p + base_skip + 1; i < brace_end; i++)
+                    {
+                        if (isdigit(pattern[i]))
+                            count = count * 10 + (pattern[i] - '0');
+                        else
+                            break;
+                    }
+                    
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!text[t] || !isdigit(text[t])) return 0;
+                        t++;
+                    }
+                    p = brace_end + 1;
+                }
+                else
+                {
+                    // \d - single digit
+                    if (!text[t] || !isdigit(text[t])) return 0;
+                    t++;
+                    p += base_skip;
+                }
+            }
+            else if (next == 'w')
+            {
+                if (pattern[p + base_skip] == '+')
+                {
+                    if (!text[t] || (!isalnum(text[t]) && text[t] != '_')) return 0;
+                    while (text[t] && (isalnum(text[t]) || text[t] == '_')) t++;
+                    p += base_skip + 1;
+                }
+                else
+                {
+                    if (!text[t] || (!isalnum(text[t]) && text[t] != '_')) return 0;
+                    t++;
+                    p += base_skip;
+                }
+            }
+            else if (next == 's')
+            {
+                if (pattern[p + base_skip] == '+')
+                {
+                    if (!text[t] || !isspace(text[t])) return 0;
+                    while (text[t] && isspace(text[t])) t++;
+                    p += base_skip + 1;
+                }
+                else
+                {
+                    if (!text[t] || !isspace(text[t])) return 0;
+                    t++;
+                    p += base_skip;
+                }
+            }
+            else if (next == '(' || next == ')')
+            {
+                // Handle escaped parentheses - check for optional quantifier
+                if (pattern[p + base_skip] == '?')
+                {
+                    // Optional parenthesis - try with and without
+                    if (text[t] && regex_match_char(next, text[t], case_insensitive))
+                    {
+                        if (regex_match_at_position(pattern + p + base_skip + 1, text + t + 1, case_insensitive))
+                            return 1;
+                    }
+                    return regex_match_at_position(pattern + p + base_skip + 1, text + t, case_insensitive);
+                }
+                else
+                {
+                    // Literal parenthesis
+                    if (!text[t] || !regex_match_char(next, text[t], case_insensitive)) return 0;
+                    p += base_skip;
+                    t++;
+                }
+            }
+            else
+            {
+                // Literal escaped character
+                if (!text[t] || !regex_match_char(next, text[t], case_insensitive)) return 0;
+                p += base_skip;
+                t++;
+            }
+        }
+        // Handle character classes
+        else if (pattern[p] == '[')
+        {
+            int class_end = p + 1;
+            while (pattern[class_end] && pattern[class_end] != ']') class_end++;
+            if (!pattern[class_end]) return 0; // Malformed class
+            
+            int match = 0;
+            for (int i = p + 1; i < class_end; i++)
+            {
+                if (i + 2 < class_end && pattern[i + 1] == '-')
+                {
+                    // Range like a-z or 0-9
+                    if (text[t] >= pattern[i] && text[t] <= pattern[i + 2])
+                    {
+                        match = 1;
+                        break;
+                    }
+                    i += 2;
+                }
+                else
+                {
+                    if (regex_match_char(pattern[i], text[t], case_insensitive))
+                    {
+                        match = 1;
+                        break;
+                    }
+                }
+            }
+            if (!match) return 0;
+            
+            // Check for quantifier after character class
+            if (pattern[class_end + 1] == '+')
+            {
+                // One or more matches
+                t++; // We already matched one
+                while (text[t])
+                {
+                    int class_match = 0;
+                    for (int i = p + 1; i < class_end; i++)
+                    {
+                        if (i + 2 < class_end && pattern[i + 1] == '-')
+                        {
+                            if (text[t] >= pattern[i] && text[t] <= pattern[i + 2])
+                            {
+                                class_match = 1;
+                                break;
+                            }
+                            i += 2;
+                        }
+                        else
+                        {
+                            if (regex_match_char(pattern[i], text[t], case_insensitive))
+                            {
+                                class_match = 1;
+                                break;
+                            }
+                        }
+                    }
+                    if (!class_match) break;
+                    t++;
+                }
+                p = class_end + 2;
+            }
+            else if (pattern[class_end + 1] == '?')
+            {
+                // Optional character class - try with and without
+                if (text[t])
+                {
+                    int class_match = 0;
+                    for (int i = p + 1; i < class_end; i++)
+                    {
+                        if (i + 2 < class_end && pattern[i + 1] == '-')
+                        {
+                            if (text[t] >= pattern[i] && text[t] <= pattern[i + 2])
+                            {
+                                class_match = 1;
+                                break;
+                            }
+                            i += 2;
+                        }
+                        else
+                        {
+                            if (regex_match_char(pattern[i], text[t], case_insensitive))
+                            {
+                                class_match = 1;
+                                break;
+                            }
+                        }
+                    }
+                    if (class_match)
+                    {
+                        if (regex_match_at_position(pattern + class_end + 2, text + t + 1, case_insensitive))
+                            return 1;
+                    }
+                }
+                return regex_match_at_position(pattern + class_end + 2, text + t, case_insensitive);
+            }
+            else
+            {
+                p = class_end + 1;
+                t++;
+            }
+        }
+        else if (pattern[p] == '.')
+        {
+            // Match any character
+            if (!text[t]) return 0;
+            p++;
+            t++;
+        }
+        else
+        {
+            // Check for quantifiers after literal characters
+            if (pattern[p + 1] == '?')
+            {
+                // Optional character - try with and without
+                if (text[t] && regex_match_char(pattern[p], text[t], case_insensitive))
+                {
+                    // Try matching with the character
+                    if (regex_match_at_position(pattern + p + 2, text + t + 1, case_insensitive))
+                        return 1;
+                }
+                // Try matching without the character
+                return regex_match_at_position(pattern + p + 2, text + t, case_insensitive);
+            }
+            else if (pattern[p + 1] == '*')
+            {
+                // Zero or more - try all possibilities
+                // First try without matching any
+                if (regex_match_at_position(pattern + p + 2, text + t, case_insensitive))
+                    return 1;
+                // Then try matching one or more
+                while (text[t] && regex_match_char(pattern[p], text[t], case_insensitive))
+                {
+                    t++;
+                    if (regex_match_at_position(pattern + p + 2, text + t, case_insensitive))
+                        return 1;
+                }
+                return 0;
+            }
+            else if (pattern[p + 1] == '+')
+            {
+                // One or more
+                if (!text[t] || !regex_match_char(pattern[p], text[t], case_insensitive)) return 0;
+                t++;
+                while (text[t] && regex_match_char(pattern[p], text[t], case_insensitive))
+                {
+                    t++;
+                }
+                p += 2;
+            }
+            else if (pattern[p + 1] == '{')
+            {
+                // Quantifier like {3} or {2,4}
+                int brace_end = p + 2;
+                while (pattern[brace_end] && pattern[brace_end] != '}') brace_end++;
+                if (!pattern[brace_end]) return 0; // Malformed quantifier
+                
+                // Extract number from {n}
+                int count = 0;
+                for (int i = p + 2; i < brace_end; i++)
+                {
+                    if (isdigit(pattern[i]))
+                        count = count * 10 + (pattern[i] - '0');
+                    else
+                        break; // Stop at comma or other chars for now
+                }
+                
+                // Match exactly 'count' occurrences
+                for (int i = 0; i < count; i++)
+                {
+                    if (!text[t] || !regex_match_char(pattern[p], text[t], case_insensitive)) return 0;
+                    t++;
+                }
+                p = brace_end + 1;
+            }
+            else
+            {
+                // Literal character match
+                if (!text[t] || !regex_match_char(pattern[p], text[t], case_insensitive)) return 0;
+                p++;
+                t++;
+            }
+        }
+    }
+    
+
+    return 1; // Successfully matched entire pattern
+}
+
+static int regex_match_pattern(const char *pattern, const char *text, const char *flags)
+{
+    int case_insensitive = (strchr(flags, 'i') != NULL);
+    int text_len = strlen(text);
+    
+    // Try matching at each position in the text
+    for (int i = 0; i <= text_len; i++)
+    {
+        if (regex_match_at_position(pattern, text + i, case_insensitive))
+        {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
+static int regex_get_match_length(const char *pattern, const char *text, int case_insensitive)
+{
+    int p = 0, t = 0;
+    
+    while (pattern[p])
+    {
+        if ((pattern[p] == '\\' && pattern[p + 1] == '\\' && pattern[p + 2]) || 
+            (pattern[p] == '\\' && pattern[p + 1]))
+        {
+            char next;
+            int base_skip;
+            if (pattern[p + 1] == '\\' && pattern[p + 2])
+            {
+                next = pattern[p + 2];
+                base_skip = 3;
+            }
+            else
+            {
+                next = pattern[p + 1];
+                base_skip = 2;
+            }
+            if (next == 'd')
+            {
+                if (pattern[p + base_skip] == '+')
+                {
+                    if (!text[t] || !isdigit(text[t])) return 0;
+                    while (text[t] && isdigit(text[t])) t++;
+                    p += base_skip + 1;
+                }
+                else if (pattern[p + base_skip] == '*')
+                {
+                    while (text[t] && isdigit(text[t])) t++;
+                    p += base_skip + 1;
+                }
+                else if (pattern[p + base_skip] == '{')
+                {
+                    int brace_end = p + base_skip + 1;
+                    while (pattern[brace_end] && pattern[brace_end] != '}') brace_end++;
+                    if (!pattern[brace_end]) return 0;
+                    
+                    int count = 0;
+                    for (int i = p + base_skip + 1; i < brace_end; i++)
+                    {
+                        if (isdigit(pattern[i]))
+                            count = count * 10 + (pattern[i] - '0');
+                        else
+                            break;
+                    }
+                    
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (!text[t] || !isdigit(text[t])) return 0;
+                        t++;
+                    }
+                    p = brace_end + 1;
+                }
+                else
+                {
+                    if (!text[t] || !isdigit(text[t])) return 0;
+                    t++;
+                    p += base_skip;
+                }
+            }
+            else if (next == 'w')
+            {
+                if (pattern[p + base_skip] == '+')
+                {
+                    if (!text[t] || (!isalnum(text[t]) && text[t] != '_')) return 0;
+                    while (text[t] && (isalnum(text[t]) || text[t] == '_')) t++;
+                    p += base_skip + 1;
+                }
+                else
+                {
+                    if (!text[t] || (!isalnum(text[t]) && text[t] != '_')) return 0;
+                    t++;
+                    p += base_skip;
+                }
+            }
+            else
+            {
+                if (!text[t] || !regex_match_char(next, text[t], case_insensitive)) return 0;
+                p += base_skip;
+                t++;
+            }
+        }
+        else if (pattern[p] == '[')
+        {
+            int class_end = p + 1;
+            while (pattern[class_end] && pattern[class_end] != ']') class_end++;
+            if (!pattern[class_end]) return 0;
+            
+            if (pattern[class_end + 1] == '+')
+            {
+                // Character class with +
+                int matched = 0;
+                while (text[t])
+                {
+                    int class_match = 0;
+                    for (int i = p + 1; i < class_end; i++)
+                    {
+                        if (i + 2 < class_end && pattern[i + 1] == '-')
+                        {
+                            if (text[t] >= pattern[i] && text[t] <= pattern[i + 2])
+                            {
+                                class_match = 1;
+                                break;
+                            }
+                            i += 2;
+                        }
+                        else
+                        {
+                            if (regex_match_char(pattern[i], text[t], case_insensitive))
+                            {
+                                class_match = 1;
+                                break;
+                            }
+                        }
+                    }
+                    if (!class_match) break;
+                    t++;
+                    matched = 1;
+                }
+                if (!matched) return 0;
+                p = class_end + 2;
+            }
+            else
+            {
+                // Single character class match
+                if (!text[t]) return 0;
+                t++;
+                p = class_end + 1;
+            }
+        }
+        else
+        {
+            // Handle quantifiers for literal characters
+            if (pattern[p + 1] == '+')
+            {
+                if (!text[t] || !regex_match_char(pattern[p], text[t], case_insensitive)) return 0;
+                while (text[t] && regex_match_char(pattern[p], text[t], case_insensitive)) t++;
+                p += 2;
+            }
+            else if (pattern[p + 1] == '*')
+            {
+                while (text[t] && regex_match_char(pattern[p], text[t], case_insensitive)) t++;
+                p += 2;
+            }
+            else if (pattern[p + 1] == '?')
+            {
+                if (text[t] && regex_match_char(pattern[p], text[t], case_insensitive)) t++;
+                p += 2;
+            }
+            else if (pattern[p + 1] == '{')
+            {
+                int brace_end = p + 2;
+                while (pattern[brace_end] && pattern[brace_end] != '}') brace_end++;
+                if (!pattern[brace_end]) return 0;
+                
+                int count = 0;
+                for (int i = p + 2; i < brace_end; i++)
+                {
+                    if (isdigit(pattern[i]))
+                        count = count * 10 + (pattern[i] - '0');
+                    else
+                        break;
+                }
+                
+                for (int i = 0; i < count; i++)
+                {
+                    if (!text[t] || !regex_match_char(pattern[p], text[t], case_insensitive)) return 0;
+                    t++;
+                }
+                p = brace_end + 1;
+            }
+            else
+            {
+                if (!text[t] || !regex_match_char(pattern[p], text[t], case_insensitive)) return 0;
+                p++;
+                t++;
+            }
+        }
+    }
+    
+    return t; // Return length of match
+}
+
+static void regex_find_all_matches(const char *pattern, const char *text, const char *flags, ASTNode *result_list)
+{
+    int case_insensitive = (strchr(flags, 'i') != NULL);
+    int text_len = strlen(text);
+    
+    for (int i = 0; i < text_len; i++)
+    {
+        if (regex_match_at_position(pattern, text + i, case_insensitive))
+        {
+            ast_list_add_element(result_list, ast_new_number(i));
+            
+            // Calculate match length to skip ahead properly
+            int match_len = regex_get_match_length(pattern, text + i, case_insensitive);
+            if (match_len > 1)
+            {
+                i += match_len - 1; // -1 because loop will increment
+            }
+        }
+    }
+}
+
+static char *regex_replace_pattern(const char *pattern, const char *text, const char *replacement, const char *flags)
+{
+    int case_insensitive = (strchr(flags, 'i') != NULL);
+    int global_flag = (strchr(flags, 'g') != NULL);
+    int text_len = strlen(text);
+    int replacement_len = strlen(replacement);
+    
+    // Allocate generous buffer for result
+    char *result = malloc(text_len * 3 + 1);
+    int result_pos = 0;
+    int text_pos = 0;
+    
+    while (text_pos < text_len)
+    {
+        if (regex_match_at_position(pattern, text + text_pos, case_insensitive))
+        {
+            // Found a match, add replacement
+            strcpy(result + result_pos, replacement);
+            result_pos += replacement_len;
+            
+            // Skip the matched portion
+            int match_len = regex_get_match_length(pattern, text + text_pos, case_insensitive);
+            if (match_len <= 0) match_len = 1; // Ensure we advance at least 1 character
+            text_pos += match_len;
+            
+            if (!global_flag) break;
+        }
+        else
+        {
+            // No match, copy character as-is
+            result[result_pos++] = text[text_pos++];
+        }
+    }
+    
+    // Copy remaining text if we stopped early (non-global replace)
+    if (text_pos < text_len)
+    {
+        strcpy(result + result_pos, text + text_pos);
+        result_pos += text_len - text_pos;
+    }
+    
+    result[result_pos] = '\0';
+    return result;
 }
 
 // Modify your print function (if you have one)

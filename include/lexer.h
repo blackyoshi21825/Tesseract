@@ -93,7 +93,11 @@ typedef enum
     TOK_HTTP_GET,
     TOK_HTTP_POST,
     TOK_HTTP_PUT,
-    TOK_HTTP_DELETE
+    TOK_HTTP_DELETE,
+    TOK_REGEX_NEW,           // <regex>
+    TOK_REGEX_MATCH,         // ::rmatch
+    TOK_REGEX_REPLACE,       // ::rreplace
+    TOK_REGEX_FIND_ALL       // ::rfind_all
 } TokenType;
 
 typedef struct

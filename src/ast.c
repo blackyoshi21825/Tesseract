@@ -787,6 +787,45 @@ ASTNode *ast_new_http_delete(ASTNode *url, ASTNode *headers)
     return node;
 }
 
+ASTNode *ast_new_regex(const char *pattern, const char *flags)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_REGEX;
+    strncpy(node->regex.pattern, pattern, sizeof(node->regex.pattern));
+    node->regex.pattern[sizeof(node->regex.pattern) - 1] = '\0';
+    strncpy(node->regex.flags, flags, sizeof(node->regex.flags));
+    node->regex.flags[sizeof(node->regex.flags) - 1] = '\0';
+    return node;
+}
+
+ASTNode *ast_new_regex_match(ASTNode *regex, ASTNode *text)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_REGEX_MATCH;
+    node->regex_match.regex = regex;
+    node->regex_match.text = text;
+    return node;
+}
+
+ASTNode *ast_new_regex_replace(ASTNode *regex, ASTNode *text, ASTNode *replacement)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_REGEX_REPLACE;
+    node->regex_replace.regex = regex;
+    node->regex_replace.text = text;
+    node->regex_replace.replacement = replacement;
+    return node;
+}
+
+ASTNode *ast_new_regex_find_all(ASTNode *regex, ASTNode *text)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_REGEX_FIND_ALL;
+    node->regex_find_all.regex = regex;
+    node->regex_find_all.text = text;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -992,6 +1031,19 @@ void ast_free(ASTNode *node)
         ast_free(node->http_delete.url);
         if (node->http_delete.headers)
             ast_free(node->http_delete.headers);
+        break;
+    case NODE_REGEX:
+        // No dynamic memory to free for regex pattern and flags
+        break;
+    case NODE_REGEX_MATCH:
+    case NODE_REGEX_FIND_ALL:
+        ast_free(node->regex_match.regex);
+        ast_free(node->regex_match.text);
+        break;
+    case NODE_REGEX_REPLACE:
+        ast_free(node->regex_replace.regex);
+        ast_free(node->regex_replace.text);
+        ast_free(node->regex_replace.replacement);
         break;
     default:
         break;

@@ -16,6 +16,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - Advanced Data Structures(Stacks, Queues, and Linked Lists)
 - While Loops
 - HTTP Web Requests
+- Regular Expressions
 
 ## Getting Started
 
@@ -262,6 +263,34 @@ let$ list := <linked>
 ::lremove(list, 20)
 ::print ::lsize(list)     # prints 2
 ```
+
+### Regular Expressions
+
+**Creation:**
+```tesseract
+let$ myRegex := <regex> "pattern"//flags
+```
+
+**Operations:**
+- `::rmatch(regex, text)` - Test if pattern matches text (returns 1 for match, 0 for no match)
+- `::rfind_all(regex, text)` - Find all match positions in text
+- `::rreplace(regex, text, replacement)` - Replace first match with replacement text
+
+**Example:**
+```tesseract
+let$ pattern := <regex> "hello"//i
+let$ text := "Hello World"
+let$ match := ::rmatch(pattern, text)  # returns 1 (case-insensitive match)
+::print match  # prints 1
+
+let$ text2 := "hello world hello tesseract"
+::rfind_all(pattern, text2)  # prints positions of matches
+::rreplace(pattern, text2, "hi")  # prints "hi world hello tesseract"
+```
+
+**Flags:**
+- `i` - Case insensitive matching
+- `g` - Global matching (find/replace all occurrences)
 
 ### Booleans
 

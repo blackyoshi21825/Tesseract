@@ -488,6 +488,34 @@ Token lexer_next_token()
         pos += 13;
         return token;
     }
+    if (starts_with("<regex>"))
+    {
+        token.type = TOK_REGEX_NEW;
+        strcpy(token.text, "<regex>");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::rmatch"))
+    {
+        token.type = TOK_REGEX_MATCH;
+        strcpy(token.text, "::rmatch");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::rreplace"))
+    {
+        token.type = TOK_REGEX_REPLACE;
+        strcpy(token.text, "::rreplace");
+        pos += 10;
+        return token;
+    }
+    if (starts_with("::rfind_all"))
+    {
+        token.type = TOK_REGEX_FIND_ALL;
+        strcpy(token.text, "::rfind_all");
+        pos += 11;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])
@@ -655,7 +683,7 @@ Token lexer_next_token()
         pos++;
         return token;
     }
-    // String literal
+    // String literal or regex pattern
     if (input[pos] == '"')
     {
         pos++;
@@ -680,6 +708,23 @@ Token lexer_next_token()
         token.type = TOK_STRING;
         if (input[pos] == '"')
             pos++;
+        
+        // Check if this is followed by //flags (regex pattern)
+        if (input[pos] == '/' && input[pos + 1] == '/')
+        {
+            pos += 2; // Skip //
+            int flag_start = pos;
+            while (isalpha(input[pos]))
+                pos++;
+            int flag_len = pos - flag_start;
+            
+            // Store pattern and flags in string_value for later parsing
+            char combined[512];
+            snprintf(combined, sizeof(combined), "%s//%.*s", token.text, flag_len, &input[flag_start]);
+            strncpy(token.string_value, combined, sizeof(token.string_value));
+            token.string_value[sizeof(token.string_value) - 1] = '\0';
+        }
+        
         return token;
     }
 

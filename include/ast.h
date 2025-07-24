@@ -78,7 +78,11 @@ typedef enum
     NODE_HTTP_GET,            // HTTP GET request
     NODE_HTTP_POST,           // HTTP POST request
     NODE_HTTP_PUT,            // HTTP PUT request
-    NODE_HTTP_DELETE          // HTTP DELETE request
+    NODE_HTTP_DELETE,         // HTTP DELETE request
+    NODE_REGEX,               // Regex literal
+    NODE_REGEX_MATCH,         // Regex match operation
+    NODE_REGEX_REPLACE,       // Regex replace operation
+    NODE_REGEX_FIND_ALL       // Regex find all operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -322,6 +326,27 @@ struct ASTNode
             ASTNode *url;
             ASTNode *headers; // Optional dictionary of headers
         } http_delete;
+        struct
+        {
+            char pattern[256];
+            char flags[16];
+        } regex;
+        struct
+        {
+            ASTNode *regex;
+            ASTNode *text;
+        } regex_match;
+        struct
+        {
+            ASTNode *regex;
+            ASTNode *text;
+            ASTNode *replacement;
+        } regex_replace;
+        struct
+        {
+            ASTNode *regex;
+            ASTNode *text;
+        } regex_find_all;
     };
 };
 
@@ -421,5 +446,11 @@ ASTNode *ast_new_http_get(ASTNode *url, ASTNode *headers);
 ASTNode *ast_new_http_post(ASTNode *url, ASTNode *data, ASTNode *headers);
 ASTNode *ast_new_http_put(ASTNode *url, ASTNode *data, ASTNode *headers);
 ASTNode *ast_new_http_delete(ASTNode *url, ASTNode *headers);
+
+// Regex functions
+ASTNode *ast_new_regex(const char *pattern, const char *flags);
+ASTNode *ast_new_regex_match(ASTNode *regex, ASTNode *text);
+ASTNode *ast_new_regex_replace(ASTNode *regex, ASTNode *text, ASTNode *replacement);
+ASTNode *ast_new_regex_find_all(ASTNode *regex, ASTNode *text);
 
 #endif

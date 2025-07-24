@@ -19,8 +19,9 @@ typedef struct
         ASTNode *stack_val; // For stack values
         ASTNode *queue_val; // For queue values
         ASTNode *linked_list_val; // For linked list values
+        ASTNode *regex_val; // For regex values
     } value;
-    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list
+    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex
 } VarEntry;
 
 static VarEntry vars[MAX_VARS];
@@ -58,6 +59,10 @@ void set_variable(const char *name, const char *value)
             ast_free(entry->value.stack_val);
         else if (entry->type == 4)
             ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
         else if (entry->type == 0)
             free(entry->value.string_val);
 
@@ -116,6 +121,12 @@ void set_list_variable(const char *name, ASTNode *list)
             ast_free(entry->value.dict_val);
         else if (entry->type == 3)
             ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
         entry->value.list_val = list;
         entry->type = 1;
         return;
@@ -163,6 +174,10 @@ void set_dict_variable(const char *name, ASTNode *dict)
             ast_free(entry->value.stack_val);
         else if (entry->type == 4)
             ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
         entry->value.dict_val = dict;
         entry->type = 2;
         return;
@@ -246,6 +261,10 @@ void set_stack_variable(const char *name, ASTNode *stack)
             ast_free(entry->value.stack_val);
         else if (entry->type == 4)
             ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
         entry->value.stack_val = stack;
         entry->type = 3;
         return;
@@ -302,6 +321,10 @@ void set_queue_variable(const char *name, ASTNode *queue)
             ast_free(entry->value.stack_val);
         else if (entry->type == 4)
             ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
         entry->value.queue_val = queue;
         entry->type = 4;
         return;
@@ -385,4 +408,63 @@ ASTNode *get_linked_list_variable(const char *name)
         return NULL;
     }
     return entry->value.linked_list_val;
+}
+
+void set_regex_variable(const char *name, ASTNode *regex)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (regex->type != NODE_REGEX)
+    {
+        fprintf(stderr, "Attempt to set non-regex value as regex variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+        entry->value.regex_val = regex;
+        entry->type = 6;
+        return;
+    }
+
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.regex_val = regex;
+    vars[var_count].type = 6;
+    var_count++;
+}
+
+ASTNode *get_regex_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 6)
+    {
+        return NULL;
+    }
+    return entry->value.regex_val;
 }

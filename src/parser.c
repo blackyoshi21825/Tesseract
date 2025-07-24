@@ -359,6 +359,38 @@ static ASTNode *parse_primary()
         return ast_new_linked_list();
     }
 
+    if (current_token.type == TOK_REGEX_NEW)
+    {
+        next_token();
+        
+        // Expect a string literal with optional flags
+        if (current_token.type != TOK_STRING)
+        {
+            printf("Parse error: Expected regex pattern after <regex>\n");
+            exit(1);
+        }
+        
+        char pattern[256] = "";
+        char flags[16] = "";
+        
+        // Check if the string contains //flags
+        if (strstr(current_token.string_value, "//"))
+        {
+            char *flag_pos = strstr(current_token.string_value, "//");
+            int pattern_len = flag_pos - current_token.string_value;
+            strncpy(pattern, current_token.string_value, pattern_len);
+            pattern[pattern_len] = '\0';
+            strcpy(flags, flag_pos + 2);
+        }
+        else
+        {
+            strcpy(pattern, current_token.text);
+        }
+        
+        next_token();
+        return ast_new_regex(pattern, flags);
+    }
+
     if (current_token.type == TOK_DICT_GET ||
         current_token.type == TOK_DICT_SET ||
         current_token.type == TOK_DICT_KEYS ||
@@ -443,7 +475,10 @@ static ASTNode *parse_primary()
         current_token.type == TOK_LINKED_LIST_REMOVE ||
         current_token.type == TOK_LINKED_LIST_GET ||
         current_token.type == TOK_LINKED_LIST_SIZE ||
-        current_token.type == TOK_LINKED_LIST_ISEMPTY)
+        current_token.type == TOK_LINKED_LIST_ISEMPTY ||
+        current_token.type == TOK_REGEX_MATCH ||
+        current_token.type == TOK_REGEX_REPLACE ||
+        current_token.type == TOK_REGEX_FIND_ALL)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -473,6 +508,29 @@ static ASTNode *parse_primary()
             ASTNode *index = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_linked_list_get(queue, index);
+        }
+        else if (func_type == TOK_REGEX_MATCH)
+        {
+            expect(TOK_COMMA);
+            ASTNode *text = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_regex_match(queue, text);
+        }
+        else if (func_type == TOK_REGEX_FIND_ALL)
+        {
+            expect(TOK_COMMA);
+            ASTNode *text = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_regex_find_all(queue, text);
+        }
+        else if (func_type == TOK_REGEX_REPLACE)
+        {
+            expect(TOK_COMMA);
+            ASTNode *text = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *replacement = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_regex_replace(queue, text, replacement);
         }
         else
         {
