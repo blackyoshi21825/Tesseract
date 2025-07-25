@@ -83,6 +83,7 @@ typedef enum
     NODE_REGEX_MATCH,    // Regex match operation
     NODE_REGEX_REPLACE,  // Regex replace operation
     NODE_REGEX_FIND_ALL, // Regex find all operation
+    NODE_TERNARY,        // Ternary operator (condition ? true_val : false_val)
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -348,6 +349,12 @@ struct ASTNode
             ASTNode *regex;
             ASTNode *text;
         } regex_find_all;
+        struct
+        {
+            ASTNode *condition;
+            ASTNode *true_expr;
+            ASTNode *false_expr;
+        } ternary;
     };
 };
 
@@ -453,5 +460,8 @@ ASTNode *ast_new_regex(const char *pattern, const char *flags);
 ASTNode *ast_new_regex_match(ASTNode *regex, ASTNode *text);
 ASTNode *ast_new_regex_replace(ASTNode *regex, ASTNode *text, ASTNode *replacement);
 ASTNode *ast_new_regex_find_all(ASTNode *regex, ASTNode *text);
+
+// Ternary operator
+ASTNode *ast_new_ternary(ASTNode *condition, ASTNode *true_expr, ASTNode *false_expr);
 
 #endif

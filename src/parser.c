@@ -391,6 +391,18 @@ static ASTNode *parse_primary()
         return ast_new_regex(pattern, flags);
     }
 
+    if (current_token.type == TOK_TRUE)
+    {
+        next_token();
+        return ast_new_number(1.0);
+    }
+
+    if (current_token.type == TOK_FALSE)
+    {
+        next_token();
+        return ast_new_number(0.0);
+    }
+
     if (current_token.type == TOK_DICT_GET ||
         current_token.type == TOK_DICT_SET ||
         current_token.type == TOK_DICT_KEYS ||
@@ -766,10 +778,28 @@ static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs)
     return lhs; // defensive
 }
 
+static ASTNode *parse_ternary_expression();
+
 static ASTNode *parse_expression()
 {
-    ASTNode *lhs = parse_logical_expression();
-    return parse_binop_rhs(0, lhs);
+    return parse_ternary_expression();
+}
+
+static ASTNode *parse_ternary_expression()
+{
+    ASTNode *condition = parse_logical_expression();
+    condition = parse_binop_rhs(0, condition);
+    
+    if (current_token.type == TOK_QUESTION)
+    {
+        next_token(); // consume '?'
+        ASTNode *true_expr = parse_expression();
+        expect(TOK_COLON);
+        ASTNode *false_expr = parse_expression();
+        return ast_new_ternary(condition, true_expr, false_expr);
+    }
+    
+    return condition;
 }
 
 static ASTNode *parse_logical_expression()

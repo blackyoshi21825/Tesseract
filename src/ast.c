@@ -827,6 +827,18 @@ ASTNode *ast_new_regex_find_all(ASTNode *regex, ASTNode *text)
     return node;
 }
 
+ASTNode *ast_new_ternary(ASTNode *condition, ASTNode *true_expr, ASTNode *false_expr)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TERNARY;
+    node->ternary.condition = condition;
+    node->ternary.true_expr = true_expr;
+    node->ternary.false_expr = false_expr;
+    return node;
+}
+
+
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -1048,6 +1060,12 @@ void ast_free(ASTNode *node)
         ast_free(node->regex_replace.text);
         ast_free(node->regex_replace.replacement);
         break;
+    case NODE_TERNARY:
+        ast_free(node->ternary.condition);
+        ast_free(node->ternary.true_expr);
+        ast_free(node->ternary.false_expr);
+        break;
+
     default:
         break;
     }

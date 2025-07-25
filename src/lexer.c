@@ -173,6 +173,20 @@ Token lexer_next_token()
         pos += 2;
         return token;
     }
+    if (starts_with("true") && !isalnum(input[pos + 4]))
+    {
+        token.type = TOK_TRUE;
+        strcpy(token.text, "true");
+        pos += 4;
+        return token;
+    }
+    if (starts_with("false") && !isalnum(input[pos + 5]))
+    {
+        token.type = TOK_FALSE;
+        strcpy(token.text, "false");
+        pos += 5;
+        return token;
+    }
     if (starts_with("not"))
     {
         token.type = TOK_NOT;
@@ -679,6 +693,24 @@ Token lexer_next_token()
     case '.':
         token.type = TOK_DOT;
         token.text[0] = '.';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case '?':
+        token.type = TOK_QUESTION;
+        token.text[0] = '?';
+        token.text[1] = '\0';
+        pos++;
+        return token;
+    case ':':
+        // Check if it's part of := assignment operator
+        if (safe_peek(1) == '=')
+        {
+            // This will be handled by the := case above
+            break;
+        }
+        token.type = TOK_COLON;
+        token.text[0] = ':';
         token.text[1] = '\0';
         pos++;
         return token;

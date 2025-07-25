@@ -457,6 +457,53 @@ void interpret(ASTNode *root)
                 set_variable(root->assign.varname, buf);
             }
         }
+        else if (value_node->type == NODE_TERNARY)
+        {
+            // Handle ternary operator specially to preserve string results
+            double condition = eval_expression(value_node->ternary.condition);
+            ASTNode *result_expr = (condition != 0) ? value_node->ternary.true_expr : value_node->ternary.false_expr;
+            
+            if (result_expr->type == NODE_STRING)
+            {
+                set_variable(root->assign.varname, result_expr->string);
+            }
+            else
+            {
+                double val = eval_expression(result_expr);
+                
+                // Check if this is a boolean context (ternary with true/false literals)
+                // Look at both branches to see if they are boolean literals
+                int is_boolean_context = 0;
+                if ((value_node->ternary.true_expr->type == NODE_NUMBER && 
+                     (value_node->ternary.true_expr->number == 1.0 || value_node->ternary.true_expr->number == 0.0)) ||
+                    (value_node->ternary.false_expr->type == NODE_NUMBER && 
+                     (value_node->ternary.false_expr->number == 1.0 || value_node->ternary.false_expr->number == 0.0)))
+                {
+                    is_boolean_context = 1;
+                }
+                
+                // Also check if the condition is a boolean operation
+                if ((value_node->ternary.condition->type == NODE_BINOP &&
+                     (value_node->ternary.condition->binop.op == TOK_EQ || value_node->ternary.condition->binop.op == TOK_NEQ ||
+                      value_node->ternary.condition->binop.op == TOK_LT || value_node->ternary.condition->binop.op == TOK_GT ||
+                      value_node->ternary.condition->binop.op == TOK_LTE || value_node->ternary.condition->binop.op == TOK_GTE)) ||
+                    value_node->ternary.condition->type == NODE_AND || value_node->ternary.condition->type == NODE_OR || value_node->ternary.condition->type == NODE_NOT)
+                {
+                    is_boolean_context = 1;
+                }
+                
+                if (is_boolean_context && (val == 1.0 || val == 0.0))
+                {
+                    set_variable(root->assign.varname, val == 1.0 ? "true" : "false");
+                }
+                else
+                {
+                    char buf[64];
+                    snprintf(buf, sizeof(buf), "%g", val);
+                    set_variable(root->assign.varname, buf);
+                }
+            }
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -534,6 +581,60 @@ void interpret(ASTNode *root)
                  root->binop.left->type != NODE_QUEUE_FRONT))
             {
                 printf("%g\n", result);
+            }
+        }
+        else if (root->binop.left->type == NODE_TERNARY)
+        {
+            // Handle ternary operator specially for printing
+            double condition = eval_expression(root->binop.left->ternary.condition);
+            ASTNode *result_expr = (condition != 0) ? root->binop.left->ternary.true_expr : root->binop.left->ternary.false_expr;
+            
+            if (result_expr->type == NODE_STRING)
+            {
+                printf("%s\n", result_expr->string);
+            }
+            else
+            {
+                double result = eval_expression(result_expr);
+                
+                // Check if this is a boolean context (ternary with true/false literals)
+                int is_boolean_context = 0;
+                if ((root->binop.left->ternary.true_expr->type == NODE_NUMBER && 
+                     (root->binop.left->ternary.true_expr->number == 1.0 || root->binop.left->ternary.true_expr->number == 0.0)) ||
+                    (root->binop.left->ternary.false_expr->type == NODE_NUMBER && 
+                     (root->binop.left->ternary.false_expr->number == 1.0 || root->binop.left->ternary.false_expr->number == 0.0)))
+                {
+                    is_boolean_context = 1;
+                }
+                
+                // Also check if the condition is a boolean operation
+                if ((root->binop.left->ternary.condition->type == NODE_BINOP &&
+                     (root->binop.left->ternary.condition->binop.op == TOK_EQ || root->binop.left->ternary.condition->binop.op == TOK_NEQ ||
+                      root->binop.left->ternary.condition->binop.op == TOK_LT || root->binop.left->ternary.condition->binop.op == TOK_GT ||
+                      root->binop.left->ternary.condition->binop.op == TOK_LTE || root->binop.left->ternary.condition->binop.op == TOK_GTE)) ||
+                    root->binop.left->ternary.condition->type == NODE_AND || root->binop.left->ternary.condition->type == NODE_OR || root->binop.left->ternary.condition->type == NODE_NOT)
+                {
+                    is_boolean_context = 1;
+                }
+                
+                // Check if the result expression itself is a boolean operation
+                if ((result_expr->type == NODE_BINOP &&
+                     (result_expr->binop.op == TOK_EQ || result_expr->binop.op == TOK_NEQ ||
+                      result_expr->binop.op == TOK_LT || result_expr->binop.op == TOK_GT ||
+                      result_expr->binop.op == TOK_LTE || result_expr->binop.op == TOK_GTE)) ||
+                    result_expr->type == NODE_AND || result_expr->type == NODE_OR || result_expr->type == NODE_NOT)
+                {
+                    is_boolean_context = 1;
+                }
+                
+                if (is_boolean_context && (result == 1.0 || result == 0.0))
+                {
+                    printf("%s\n", bool_to_str((bool)result));
+                }
+                else
+                {
+                    printf("%g\n", result);
+                }
             }
         }
         else if (root->binop.left->type == NODE_AND ||
@@ -2471,6 +2572,19 @@ static double eval_expression(ASTNode *node)
         }
         return 0; // Failure
     }
+    case NODE_TERNARY:
+    {
+        double condition = eval_expression(node->ternary.condition);
+        if (condition != 0)
+        {
+            return eval_expression(node->ternary.true_expr);
+        }
+        else
+        {
+            return eval_expression(node->ternary.false_expr);
+        }
+    }
+
     case NODE_REGEX_MATCH:
     {
         ASTNode *regex_node = node->regex_match.regex;
@@ -2748,9 +2862,9 @@ static void print_node(ASTNode *node)
     case NODE_REGEX:
     {
         printf("/%s/%s\n", node->regex.pattern, node->regex.flags);
-
         break;
     }
+
     case NODE_VAR:
     {
         // Check if it's a dict variable
@@ -2931,8 +3045,78 @@ static void print_node(ASTNode *node)
         break;
     }
     default:
-        printf("%g\n", eval_expression(node));
+    {
+        double result = eval_expression(node);
+        // Handle ternary operator specially for printing
+        if (node->type == NODE_TERNARY)
+        {
+            double condition = eval_expression(node->ternary.condition);
+            ASTNode *result_expr = (condition != 0) ? node->ternary.true_expr : node->ternary.false_expr;
+            
+            if (result_expr->type == NODE_STRING)
+            {
+                printf("%s\n", result_expr->string);
+            }
+            else
+            {
+                double expr_result = eval_expression(result_expr);
+                
+                // Check if this is a boolean context (ternary with true/false literals)
+                int is_boolean_context = 0;
+                if ((node->ternary.true_expr->type == NODE_NUMBER && 
+                     (node->ternary.true_expr->number == 1.0 || node->ternary.true_expr->number == 0.0)) ||
+                    (node->ternary.false_expr->type == NODE_NUMBER && 
+                     (node->ternary.false_expr->number == 1.0 || node->ternary.false_expr->number == 0.0)))
+                {
+                    is_boolean_context = 1;
+                }
+                
+                // Also check if the condition is a boolean operation
+                if ((node->ternary.condition->type == NODE_BINOP &&
+                     (node->ternary.condition->binop.op == TOK_EQ || node->ternary.condition->binop.op == TOK_NEQ ||
+                      node->ternary.condition->binop.op == TOK_LT || node->ternary.condition->binop.op == TOK_GT ||
+                      node->ternary.condition->binop.op == TOK_LTE || node->ternary.condition->binop.op == TOK_GTE)) ||
+                    node->ternary.condition->type == NODE_AND || node->ternary.condition->type == NODE_OR || node->ternary.condition->type == NODE_NOT)
+                {
+                    is_boolean_context = 1;
+                }
+                
+                // Check if the result expression itself is a boolean operation
+                if ((result_expr->type == NODE_BINOP &&
+                     (result_expr->binop.op == TOK_EQ || result_expr->binop.op == TOK_NEQ ||
+                      result_expr->binop.op == TOK_LT || result_expr->binop.op == TOK_GT ||
+                      result_expr->binop.op == TOK_LTE || result_expr->binop.op == TOK_GTE)) ||
+                    result_expr->type == NODE_AND || result_expr->type == NODE_OR || result_expr->type == NODE_NOT)
+                {
+                    is_boolean_context = 1;
+                }
+                
+                if (is_boolean_context && (expr_result == 1.0 || expr_result == 0.0))
+                {
+                    printf("%s\n", bool_to_str((bool)expr_result));
+                }
+                else
+                {
+                    printf("%g\n", expr_result);
+                }
+            }
+        }
+        // Check if this is a boolean result (0 or 1 from boolean operations)
+        else if ((result == 0.0 || result == 1.0) && 
+            (node->type == NODE_AND || node->type == NODE_OR || node->type == NODE_NOT ||
+             (node->type == NODE_BINOP && 
+              (node->binop.op == TOK_EQ || node->binop.op == TOK_NEQ ||
+               node->binop.op == TOK_LT || node->binop.op == TOK_GT ||
+               node->binop.op == TOK_LTE || node->binop.op == TOK_GTE))))
+        {
+            printf("%s\n", bool_to_str((bool)result));
+        }
+        else
+        {
+            printf("%g\n", result);
+        }
         break;
+    }
     }
 }
 

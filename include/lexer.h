@@ -97,7 +97,11 @@ typedef enum
     TOK_REGEX_NEW,           // <regex>
     TOK_REGEX_MATCH,         // ::rmatch
     TOK_REGEX_REPLACE,       // ::rreplace
-    TOK_REGEX_FIND_ALL       // ::rfind_all
+    TOK_REGEX_FIND_ALL,      // ::rfind_all
+    TOK_QUESTION,            // ?
+    TOK_COLON,               // :
+    TOK_TRUE,                // true
+    TOK_FALSE                // false
 } TokenType;
 
 typedef struct

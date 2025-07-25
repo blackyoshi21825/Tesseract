@@ -135,6 +135,33 @@ while$ condition {
 }
 ```
 
+**Ternary Operator:**
+```tesseract
+condition ? true_value : false_value
+```
+
+**Ternary Examples:**
+```tesseract
+// Basic ternary with strings
+let$result := x > y ? "x is greater" : "y is greater"
+::print result
+
+// Numeric ternary
+let$max := x > y ? x : y
+::print max
+
+// Boolean ternary
+let$is_positive := x > 0 ? true : false
+::print is_positive  // prints "true" or "false"
+
+// Nested ternary
+let$largest := x > y ? (x > z ? x : z) : (y > z ? y : z)
+::print largest
+
+// Direct printing
+::print 5 > 3 ? "five is greater" : "three is greater"
+```
+
 **Switch-Case Statements:**
 ```tesseract
 switch$ expression {
