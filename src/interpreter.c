@@ -393,6 +393,16 @@ void interpret(ASTNode *root)
     else if (root->type == NODE_ASSIGN)
     {
         ASTNode *value_node = root->assign.value;
+        
+        // Check if this is a temporal variable initialization (let$ x := <temp@5>)
+        if (value_node->type == NODE_TEMPORAL_VAR)
+        {
+            int max_history = (int)value_node->number;
+            // Initialize with empty value - will be set on first assignment
+            set_temporal_variable(root->assign.varname, "0", max_history);
+            return;
+        }
+        
         if (value_node->type == NODE_STRING)
         {
             set_variable(root->assign.varname, value_node->string);
@@ -540,7 +550,17 @@ void interpret(ASTNode *root)
             double val = eval_expression(value_node);
             char buf[64];
             snprintf(buf, sizeof(buf), "%g", val);
-            set_variable(root->assign.varname, buf);
+            
+            // Check if this is a temporal variable
+            TemporalVariable *temp_var = get_temporal_var_struct(root->assign.varname);
+            if (temp_var)
+            {
+                set_temporal_variable(root->assign.varname, buf, temp_var->max_history);
+            }
+            else
+            {
+                set_variable(root->assign.varname, buf);
+            }
         }
     }
     else if (root->type == NODE_INPUT)
@@ -728,6 +748,23 @@ void interpret(ASTNode *root)
         while (eval_expression(root->while_stmt.condition) != 0)
         {
             interpret(root->while_stmt.body);
+        }
+    }
+    else if (root->type == NODE_TEMPORAL_LOOP)
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(root->temporal_loop.temporal_var);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", root->temporal_loop.temporal_var);
+            exit(1);
+        }
+        
+        // Iterate through the temporal history
+        for (int i = 0; i < temp_var->count; i++)
+        {
+            // Set the loop variable to current history entry
+            set_variable(root->temporal_loop.varname, temp_var->history[i].value);
+            interpret(root->temporal_loop.body);
         }
     }
     else if (root->type == NODE_SWITCH)
@@ -1080,6 +1117,25 @@ static double eval_expression(ASTNode *node)
             // Return dummy value for self
             return 0;
         }
+        
+        // Check if it's a temporal variable first
+        TemporalVariable *temp_var = get_temporal_var_struct(node->varname);
+        if (temp_var)
+        {
+            // Get current value (time_offset = 0)
+            const char *val = get_temporal_variable(node->varname, 0);
+            if (!val)
+            {
+                printf("Runtime error: Cannot access temporal variable '%s'\n", node->varname);
+                exit(1);
+            }
+            char *endptr;
+            double dval = strtod(val, &endptr);
+            if (endptr == val)
+                return 0.0;
+            return dval;
+        }
+        
         const char *val = get_variable(node->varname);
         if (!val)
         {
@@ -2584,6 +2640,31 @@ static double eval_expression(ASTNode *node)
             return eval_expression(node->ternary.false_expr);
         }
     }
+    case NODE_TEMPORAL_VAR:
+    {
+        // If this node has a time_offset, it's accessing past values
+        if (node->temporal_var.time_offset)
+        {
+            int time_offset = (int)eval_expression(node->temporal_var.time_offset);
+            const char *val = get_temporal_variable(node->temporal_var.varname, time_offset);
+            if (!val)
+            {
+                printf("Runtime error: Cannot access temporal variable '%s' at offset %d\n", 
+                       node->temporal_var.varname, time_offset);
+                exit(1);
+            }
+            char *endptr;
+            double dval = strtod(val, &endptr);
+            if (endptr == val)
+                return 0.0;
+            return dval;
+        }
+        else
+        {
+            // This is a temporal variable creation node, return the max_history
+            return node->number;
+        }
+    }
 
     case NODE_REGEX_MATCH:
     {
@@ -2867,38 +2948,57 @@ static void print_node(ASTNode *node)
 
     case NODE_VAR:
     {
-        // Check if it's a dict variable
-        ASTNode *dict = get_dict_variable(node->varname);
-        if (dict)
+        // Check if it's a temporal variable first
+        TemporalVariable *temp_var = get_temporal_var_struct(node->varname);
+        if (temp_var)
         {
+            const char *val = get_temporal_variable(node->varname, 0);
+            if (val)
+            {
+                printf("%s\n", val);
+            }
+            else
+            {
+                printf("Runtime Error: Cannot access temporal variable '%s'\n", node->varname);
+            }
+        }
+        // Check if it's a dict variable
+        else if ((temp_var = NULL, get_dict_variable(node->varname)))
+        {
+            ASTNode *dict = get_dict_variable(node->varname);
             print_node(dict);
         }
         // Check if it's a list variable
-        else if ((dict = get_list_variable(node->varname)))
+        else if (get_list_variable(node->varname))
         {
-            char *list_str = list_to_string(dict);
+            ASTNode *list = get_list_variable(node->varname);
+            char *list_str = list_to_string(list);
             printf("%s\n", list_str);
             free(list_str);
         }
         // Check if it's a stack variable
-        else if ((dict = get_stack_variable(node->varname)))
+        else if (get_stack_variable(node->varname))
         {
-            print_node(dict);
+            ASTNode *stack = get_stack_variable(node->varname);
+            print_node(stack);
         }
         // Check if it's a queue variable
-        else if ((dict = get_queue_variable(node->varname)))
+        else if (get_queue_variable(node->varname))
         {
-            print_node(dict);
+            ASTNode *queue = get_queue_variable(node->varname);
+            print_node(queue);
         }
         // Check if it's a linked list variable
-        else if ((dict = get_linked_list_variable(node->varname)))
+        else if (get_linked_list_variable(node->varname))
         {
-            print_node(dict);
+            ASTNode *linked_list = get_linked_list_variable(node->varname);
+            print_node(linked_list);
         }
         // Check if it's a regex variable
-        else if ((dict = get_regex_variable(node->varname)))
+        else if (get_regex_variable(node->varname))
         {
-            print_node(dict);
+            ASTNode *regex = get_regex_variable(node->varname);
+            print_node(regex);
         }
         else
         {
@@ -2913,6 +3013,19 @@ static void print_node(ASTNode *node)
             }
         }
 
+        break;
+    }
+    case NODE_TEMPORAL_VAR:
+    {
+        if (node->temporal_var.time_offset)
+        {
+            double result = eval_expression(node);
+            printf("%g\n", result);
+        }
+        else
+        {
+            printf("<temp@%g>\n", node->number);
+        }
         break;
     }
     case NODE_FORMAT_STRING:

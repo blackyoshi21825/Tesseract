@@ -837,6 +837,28 @@ ASTNode *ast_new_ternary(ASTNode *condition, ASTNode *true_expr, ASTNode *false_
     return node;
 }
 
+ASTNode *ast_new_temporal_var(const char *varname, ASTNode *time_offset)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_VAR;
+    strncpy(node->temporal_var.varname, varname, sizeof(node->temporal_var.varname));
+    node->temporal_var.varname[sizeof(node->temporal_var.varname) - 1] = '\0';
+    node->temporal_var.time_offset = time_offset;
+    return node;
+}
+
+ASTNode *ast_new_temporal_loop(const char *varname, const char *temporal_var, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_LOOP;
+    strncpy(node->temporal_loop.varname, varname, sizeof(node->temporal_loop.varname));
+    node->temporal_loop.varname[sizeof(node->temporal_loop.varname) - 1] = '\0';
+    strncpy(node->temporal_loop.temporal_var, temporal_var, sizeof(node->temporal_loop.temporal_var));
+    node->temporal_loop.temporal_var[sizeof(node->temporal_loop.temporal_var) - 1] = '\0';
+    node->temporal_loop.body = body;
+    return node;
+}
+
 
 
 // --- AST Free ---
@@ -1064,6 +1086,12 @@ void ast_free(ASTNode *node)
         ast_free(node->ternary.condition);
         ast_free(node->ternary.true_expr);
         ast_free(node->ternary.false_expr);
+        break;
+    case NODE_TEMPORAL_VAR:
+        ast_free(node->temporal_var.time_offset);
+        break;
+    case NODE_TEMPORAL_LOOP:
+        ast_free(node->temporal_loop.body);
         break;
 
     default:

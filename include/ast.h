@@ -84,6 +84,8 @@ typedef enum
     NODE_REGEX_REPLACE,  // Regex replace operation
     NODE_REGEX_FIND_ALL, // Regex find all operation
     NODE_TERNARY,        // Ternary operator (condition ? true_val : false_val)
+    NODE_TEMPORAL_VAR,   // Temporal variable access (x@2)
+    NODE_TEMPORAL_LOOP,  // Temporal loop (temporal$i in x)
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -355,6 +357,17 @@ struct ASTNode
             ASTNode *true_expr;
             ASTNode *false_expr;
         } ternary;
+        struct
+        {
+            char varname[64];
+            ASTNode *time_offset; // How many steps back (0 = current)
+        } temporal_var;
+        struct
+        {
+            char varname[64];
+            char temporal_var[64]; // Variable to iterate through
+            ASTNode *body;
+        } temporal_loop;
     };
 };
 
@@ -463,5 +476,9 @@ ASTNode *ast_new_regex_find_all(ASTNode *regex, ASTNode *text);
 
 // Ternary operator
 ASTNode *ast_new_ternary(ASTNode *condition, ASTNode *true_expr, ASTNode *false_expr);
+
+// Temporal variables and loops
+ASTNode *ast_new_temporal_var(const char *varname, ASTNode *time_offset);
+ASTNode *ast_new_temporal_loop(const char *varname, const char *temporal_var, ASTNode *body);
 
 #endif

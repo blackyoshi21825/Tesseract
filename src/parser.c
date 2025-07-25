@@ -271,8 +271,15 @@ static ASTNode *parse_primary()
         }
 
         ASTNode *node = ast_new_var(varname);
+        // Check for temporal access (@)
+        if (current_token.type == TOK_AT)
+        {
+            next_token();
+            ASTNode *time_offset = parse_expression();
+            node = ast_new_temporal_var(varname, time_offset);
+        }
         // Check for member access
-        if (current_token.type == TOK_DOT)
+        else if (current_token.type == TOK_DOT)
         {
             node = parse_member_access(node);
         }
@@ -389,6 +396,27 @@ static ASTNode *parse_primary()
         
         next_token();
         return ast_new_regex(pattern, flags);
+    }
+
+    if (current_token.type == TOK_TEMP_NEW)
+    {
+        // Parse <temp@N> to extract the history size
+        char temp_text[64];
+        strcpy(temp_text, current_token.text);
+        next_token();
+        
+        // Extract number from <temp@N>
+        int max_history = 5; // default
+        char *at_pos = strchr(temp_text, '@');
+        if (at_pos)
+        {
+            max_history = atoi(at_pos + 1);
+        }
+        
+        // Create a special node that represents temporal variable creation
+        ASTNode *node = ast_new_number(max_history);
+        node->type = NODE_TEMPORAL_VAR; // Reuse this type for creation
+        return node;
     }
 
     if (current_token.type == TOK_TRUE)
@@ -906,6 +934,7 @@ static ASTNode *parse_statement()
     if (current_token.type == TOK_LET)
     {
         next_token();
+        
         if (current_token.type != TOK_ID && current_token.type != TOK_SELF)
         {
             printf("Parse error: Expected variable name after let$\n");
@@ -1030,6 +1059,33 @@ static ASTNode *parse_statement()
         ASTNode *condition = parse_expression();
         ASTNode *body = parse_statement();
         return ast_new_while(condition, body);
+    }
+    
+    if (current_token.type == TOK_TEMPORAL)
+    {
+        next_token();
+        if (current_token.type != TOK_ID)
+        {
+            printf("Parse error: Expected variable name after temporal$\n");
+            exit(1);
+        }
+        char loop_var[64];
+        strcpy(loop_var, current_token.text);
+        next_token();
+        
+        expect(TOK_IN);
+        
+        if (current_token.type != TOK_ID)
+        {
+            printf("Parse error: Expected temporal variable name after 'in'\n");
+            exit(1);
+        }
+        char temporal_var[64];
+        strcpy(temporal_var, current_token.text);
+        next_token();
+        
+        ASTNode *body = parse_statement();
+        return ast_new_temporal_loop(loop_var, temporal_var, body);
     }
     
     if (current_token.type == TOK_SWITCH)

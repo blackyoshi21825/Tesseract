@@ -21,7 +21,8 @@ typedef struct
         ASTNode *linked_list_val; // For linked list values
         ASTNode *regex_val; // For regex values
     } value;
-    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex
+    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex, 7=temporal
+    TemporalVariable *temporal_val; // For temporal variables
 } VarEntry;
 
 static VarEntry vars[MAX_VARS];
@@ -63,6 +64,15 @@ void set_variable(const char *name, const char *value)
             ast_free(entry->value.linked_list_val);
         else if (entry->type == 6)
             ast_free(entry->value.regex_val);
+        else if (entry->type == 7)
+        {
+            // Free temporal variable history
+            for (int i = 0; i < entry->temporal_val->count; i++)
+            {
+                free(entry->temporal_val->history[i].value);
+            }
+            free(entry->temporal_val);
+        }
         else if (entry->type == 0)
             free(entry->value.string_val);
 
@@ -467,4 +477,125 @@ ASTNode *get_regex_variable(const char *name)
         return NULL;
     }
     return entry->value.regex_val;
+}
+
+void set_temporal_variable(const char *name, const char *value, int max_history)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (max_history > MAX_TEMPORAL_HISTORY)
+        max_history = MAX_TEMPORAL_HISTORY;
+
+    VarEntry *entry = find_variable(name);
+    if (entry && entry->type == 7)
+    {
+        // Existing temporal variable - add new value to history
+        TemporalVariable *temp_var = entry->temporal_val;
+        
+        // Shift history if at capacity
+        if (temp_var->count >= temp_var->max_history)
+        {
+            free(temp_var->history[0].value);
+            for (int i = 0; i < temp_var->count - 1; i++)
+            {
+                temp_var->history[i] = temp_var->history[i + 1];
+            }
+            temp_var->count--;
+        }
+        
+        // Add new value
+        temp_var->history[temp_var->count].value = strdup(value);
+        temp_var->history[temp_var->count].timestamp = temp_var->count;
+        temp_var->count++;
+        return;
+    }
+    
+    if (entry)
+    {
+        // Convert existing variable to temporal
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+    }
+    else
+    {
+        // New variable
+        if (var_count >= MAX_VARS)
+        {
+            fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+            exit(EXIT_FAILURE);
+        }
+        entry = &vars[var_count++];
+        strncpy(entry->name, name, MAX_VAR_NAME_LEN);
+        entry->name[MAX_VAR_NAME_LEN] = '\0';
+    }
+    
+    // Initialize temporal variable
+    entry->temporal_val = malloc(sizeof(TemporalVariable));
+    entry->temporal_val->max_history = max_history;
+    entry->temporal_val->count = 1;
+    entry->temporal_val->current_index = 0;
+    entry->temporal_val->history[0].value = strdup(value);
+    entry->temporal_val->history[0].timestamp = 0;
+    entry->type = 7;
+}
+
+const char *get_temporal_variable(const char *name, int time_offset)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 7)
+    {
+        fprintf(stderr, "Variable %s is not a temporal variable\n", name);
+        return NULL;
+    }
+    
+    TemporalVariable *temp_var = entry->temporal_val;
+    
+    // For time_offset = 0, return current value (most recent)
+    // For time_offset = 1, return previous value, etc.
+    int index = temp_var->count - 1 - time_offset;
+    
+    if (index < 0 || index >= temp_var->count)
+    {
+        fprintf(stderr, "Temporal offset %d out of range for variable %s (count: %d)\n", 
+                time_offset, name, temp_var->count);
+        return NULL;
+    }
+    
+    return temp_var->history[index].value;
+}
+
+int get_temporal_variable_count(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 7)
+    {
+        return 0;
+    }
+    return entry->temporal_val->count;
+}
+
+TemporalVariable *get_temporal_var_struct(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 7)
+    {
+        return NULL;
+    }
+    return entry->temporal_val;
 }

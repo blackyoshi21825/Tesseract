@@ -101,7 +101,11 @@ typedef enum
     TOK_QUESTION,            // ?
     TOK_COLON,               // :
     TOK_TRUE,                // true
-    TOK_FALSE                // false
+    TOK_FALSE,               // false
+    TOK_AT,                  // @
+    TOK_TEMPORAL,            // temporal$
+    TOK_IN,                  // in
+    TOK_TEMP_NEW,            // <temp@N>
 } TokenType;
 
 typedef struct

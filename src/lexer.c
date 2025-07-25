@@ -397,6 +397,27 @@ Token lexer_next_token()
         pos += 8;
         return token;
     }
+    if (starts_with("<temp@"))
+    {
+        // Parse <temp@N>
+        int start_pos = pos;
+        pos += 6; // Skip "<temp@"
+        while (isdigit(input[pos])) pos++; // Skip digits
+        if (input[pos] == '>')
+        {
+            pos++; // Skip '>'
+            int len = pos - start_pos;
+            if (len < sizeof(token.text))
+            {
+                strncpy(token.text, &input[start_pos], len);
+                token.text[len] = '\0';
+                token.type = TOK_TEMP_NEW;
+                return token;
+            }
+        }
+        // If parsing failed, reset position and continue
+        pos = start_pos;
+    }
     if (starts_with("::ladd"))
     {
         token.type = TOK_LINKED_LIST_ADD;
@@ -528,6 +549,20 @@ Token lexer_next_token()
         token.type = TOK_REGEX_FIND_ALL;
         strcpy(token.text, "::rfind_all");
         pos += 11;
+        return token;
+    }
+    if (starts_with("temporal$"))
+    {
+        token.type = TOK_TEMPORAL;
+        strcpy(token.text, "temporal$");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("in") && !isalnum(input[pos + 2]))
+    {
+        token.type = TOK_IN;
+        strcpy(token.text, "in");
+        pos += 2;
         return token;
     }
 
@@ -685,7 +720,7 @@ Token lexer_next_token()
         pos++;
         return token;
     case '@':
-        token.type = TOK_FORMAT_SPECIFIER;
+        token.type = TOK_AT;
         token.text[0] = '@';
         token.text[1] = '\0';
         pos++;
@@ -776,10 +811,10 @@ Token lexer_next_token()
     }
 
     // Identifier
-    if (isalpha(input[pos]) || input[pos] == '@' || input[pos] == '$' || input[pos] == '_')
+    if (isalpha(input[pos]) || input[pos] == '$' || input[pos] == '_')
     {
         int start = pos;
-        while (isalnum(input[pos]) || input[pos] == '@' || input[pos] == '$' || input[pos] == '_')
+        while (isalnum(input[pos]) || input[pos] == '$' || input[pos] == '_')
             pos++;
         int len = pos - start;
         if (len >= sizeof(token.text))
