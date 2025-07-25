@@ -62,7 +62,7 @@ ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch,
     return node;
 }
 
-ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *body)
+ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *increment, ASTNode *body)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_LOOP;
@@ -70,6 +70,7 @@ ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode
     node->loop_stmt.varname[sizeof(node->loop_stmt.varname) - 1] = '\0';
     node->loop_stmt.start = start;
     node->loop_stmt.end = end;
+    node->loop_stmt.increment = increment;
     node->loop_stmt.body = body;
     return node;
 }
@@ -850,6 +851,8 @@ void ast_free(ASTNode *node)
     case NODE_LOOP:
         ast_free(node->loop_stmt.start);
         ast_free(node->loop_stmt.end);
+        if (node->loop_stmt.increment)
+            ast_free(node->loop_stmt.increment);
         ast_free(node->loop_stmt.body);
         break;
     case NODE_WHILE:

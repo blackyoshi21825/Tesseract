@@ -1,0 +1,29 @@
+# Test basic loop (default increment of 1)
+::print "Basic loop (1 to 5):";
+loop$i := 1 => 5 {
+    ::print i;
+}
+
+# Test loop with custom increment
+::print "Loop with increment of 2:";
+loop$i := 1 => 10, 2 {
+    ::print i;
+}
+
+# Test loop with decrement
+::print "Loop with decrement of -1:";
+loop$i := 5 => 1, -1 {
+    ::print i;
+}
+
+# Test loop with larger decrement
+::print "Loop with decrement of -2:";
+loop$i := 10 => 2, -2 {
+    ::print i;
+}
+
+# Test loop with fractional increment
+::print "Loop with fractional increment:";
+loop$i := 0 => 2, 0.5 {
+    ::print i;
+}

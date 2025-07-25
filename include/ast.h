@@ -122,6 +122,7 @@ struct ASTNode
             char varname[64];
             ASTNode *start;
             ASTNode *end;
+            ASTNode *increment; // New field for increment/decrement
             ASTNode *body;
         } loop_stmt;
         struct
@@ -356,7 +357,7 @@ ASTNode *ast_new_var(const char *name);
 ASTNode *ast_new_binop(ASTNode *left, ASTNode *right, TokenType op);
 ASTNode *ast_new_assign(const char *name, ASTNode *value);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch);
-ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *body);
+ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *increment, ASTNode *body);
 ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
 ASTNode *ast_new_switch(ASTNode *expression);
 ASTNode *ast_new_case(ASTNode *value, ASTNode *body);

@@ -980,9 +980,18 @@ static ASTNode *parse_statement()
         ASTNode *start = parse_expression();
         expect(TOK_ARROW);
         ASTNode *end = parse_expression();
+        
+        // Check for optional increment/decrement
+        ASTNode *increment = NULL;
+        if (current_token.type == TOK_COMMA)
+        {
+            next_token();
+            increment = parse_expression();
+        }
+        
         ASTNode *body = parse_statement();
 
-        return ast_new_loop(loop_var, start, end, body);
+        return ast_new_loop(loop_var, start, end, increment, body);
     }
 
     if (current_token.type == TOK_WHILE)

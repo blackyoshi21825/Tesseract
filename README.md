@@ -88,7 +88,43 @@ else {
 ```tesseract
 loop$i := start => end {
     // loop body
-    // i takes values from start to end (inclusive)
+    // i takes values from start to end (inclusive) with increment of 1
+}
+
+// Loop with custom increment/decrement
+loop$i := start => end, increment {
+    // loop body
+    // i takes values from start to end with specified increment
+    // Use positive values for ascending loops
+    // Use negative values for descending loops
+}
+```
+
+**Loop Examples:**
+```tesseract
+// Basic ascending loop
+loop$i := 1 => 5 {
+    ::print i  // prints 1, 2, 3, 4, 5
+}
+
+// Loop with increment of 2
+loop$i := 0 => 10, 2 {
+    ::print i  // prints 0, 2, 4, 6, 8, 10
+}
+
+// Descending loop
+loop$i := 10 => 1, -1 {
+    ::print i  // prints 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+}
+
+// Loop with larger decrement
+loop$i := 20 => 5, -3 {
+    ::print i  // prints 20, 17, 14, 11, 8, 5
+}
+
+// Loop with fractional increment
+loop$i := 0 => 2, 0.5 {
+    ::print i  // prints 0, 0.5, 1, 1.5, 2
 }
 ```
 

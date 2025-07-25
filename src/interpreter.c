@@ -586,12 +586,40 @@ void interpret(ASTNode *root)
     {
         double start = eval_expression(root->loop_stmt.start);
         double end = eval_expression(root->loop_stmt.end);
-        for (int i = (int)start; i <= (int)end; i++)
+        double increment = 1.0; // Default increment
+        
+        if (root->loop_stmt.increment)
         {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%d", i);
-            set_variable(root->loop_stmt.varname, buf);
-            interpret(root->loop_stmt.body);
+            increment = eval_expression(root->loop_stmt.increment);
+        }
+        
+        if (increment == 0)
+        {
+            printf("Runtime error: Loop increment cannot be zero\n");
+            exit(1);
+        }
+        
+        if (increment > 0)
+        {
+            // Positive increment (ascending)
+            for (double i = start; i <= end; i += increment)
+            {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", i);
+                set_variable(root->loop_stmt.varname, buf);
+                interpret(root->loop_stmt.body);
+            }
+        }
+        else
+        {
+            // Negative increment (descending)
+            for (double i = start; i >= end; i += increment)
+            {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", i);
+                set_variable(root->loop_stmt.varname, buf);
+                interpret(root->loop_stmt.body);
+            }
         }
     }
     else if (root->type == NODE_WHILE)
