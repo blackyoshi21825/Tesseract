@@ -1,40 +1,40 @@
-let$ PI := 3.14159
+let$ PI := 3.14159;
 
 func$add(a, b) => {
-   ::print a + b
+   ::print a + b;
 }
 
 func$subtract(a, b) => {
-    ::print a - b
+    ::print a - b;
 }
 
 func$multiply(a, b) => {
-    ::print a * b
+    ::print a * b;
 }
 
 func$divide(a, b) => {
-    ::print a / b
+    ::print a / b;
 }
 
 func$mod(a, b) => {
-    ::print a % b
+    ::print a % b;
 }
 
 func$abs(x) => {
     if$ x < 0 {
-        ::print x * 0 - 1
+        ::print x * 0 - 1;
     }
     else {
-        ::print x
+        ::print x;
     }
 }
 
 func$pow(base, exponent) => {
-    let$result := 1
+    let$result := 1;
     loop$i := 1 => exponent {
         let$ result := result * base;
     }
-    ::print result
+    ::print result;
 }
 
 func$sqrt(n) => {
@@ -48,7 +48,7 @@ func$sqrt(n) => {
             let$ i := 100;
         }
     }
-    ::print guess
+    ::print guess;
 }
 
 func$sin(x) => {
@@ -60,7 +60,7 @@ func$sin(x) => {
         let$ term := term * (0-1) * x * x / ((2 * n) * (2 * n + 1));
         let$ n := n + 1;
     }
-    ::print result
+    ::print result;
 }
 
 func$cos(x) => {
@@ -72,11 +72,11 @@ func$cos(x) => {
         let$ result := result + term;
         let$ n := n + 1;
     }
-    ::print result
+    ::print result;
 }
 
 func$tan(x) => {
-    ::print sin(x) / cos(x)
+    ::print sin(x) / cos(x);
 }
 
 func$max(a, b, c, d) => {
@@ -90,7 +90,7 @@ func$max(a, b, c, d) => {
     if$ d > m {
         let$ m := d;
     }
-    ::print m
+    ::print m;
 }
 
 func$min(a, b, c, d) => {
@@ -104,5 +104,5 @@ func$min(a, b, c, d) => {
     if$ d < m {
         let$ m := d;
     }
-    ::print  dm
+    ::print m;
 }
