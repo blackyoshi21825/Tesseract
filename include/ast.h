@@ -86,6 +86,8 @@ typedef enum
     NODE_TERNARY,        // Ternary operator (condition ? true_val : false_val)
     NODE_TEMPORAL_VAR,   // Temporal variable access (x@2)
     NODE_TEMPORAL_LOOP,  // Temporal loop (temporal$i in x)
+    NODE_TEMPORAL_AGGREGATE, // Temporal aggregation function
+    NODE_TEMPORAL_PATTERN,   // Temporal pattern detection function
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -368,6 +370,18 @@ struct ASTNode
             char temporal_var[64]; // Variable to iterate through
             ASTNode *body;
         } temporal_loop;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            char operation[16];   // "sum", "avg", "min", "max"
+            ASTNode *window_size; // Size of sliding window
+        } temporal_aggregate;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            char pattern_type[16]; // "trend", "cycle", "anomaly"
+            ASTNode *threshold;   // Threshold for pattern detection
+        } temporal_pattern;
     };
 };
 
@@ -480,5 +494,7 @@ ASTNode *ast_new_ternary(ASTNode *condition, ASTNode *true_expr, ASTNode *false_
 // Temporal variables and loops
 ASTNode *ast_new_temporal_var(const char *varname, ASTNode *time_offset);
 ASTNode *ast_new_temporal_loop(const char *varname, const char *temporal_var, ASTNode *body);
+ASTNode *ast_new_temporal_aggregate(const char *varname, const char *operation, ASTNode *window_size);
+ASTNode *ast_new_temporal_pattern(const char *varname, const char *pattern_type, ASTNode *threshold);
 
 #endif

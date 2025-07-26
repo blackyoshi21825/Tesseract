@@ -142,6 +142,43 @@ temporal$ variable in temporal_var {
 }
 ```
 
+### Complex Temporal Functions
+
+**Temporal Aggregation:**
+```tesseract
+::temporal_aggregate(variable_name, operation, window_size)
+```
+
+Performs aggregation operations over a sliding window of temporal history:
+- `operation`: "sum", "avg", "min", "max"
+- `window_size`: Number of historical values to include
+
+**Temporal Pattern Detection:**
+```tesseract
+::temporal_pattern(variable_name, pattern_type, threshold)
+```
+
+Detects patterns in temporal data:
+- `pattern_type`: "trend", "cycle", "anomaly"
+- `threshold`: Sensitivity threshold for pattern detection
+
+**Examples:**
+```tesseract
+let$sensor := <temp@10>
+let$sensor := 100
+let$sensor := 105
+let$sensor := 110
+
+# Calculate average of last 3 values
+::print ::temporal_aggregate("sensor", "avg", 3)  # prints 105
+
+# Detect upward trend (threshold 3%)
+::print ::temporal_pattern("sensor", "trend", 3.0)  # prints 1 (upward)
+
+# Detect anomalies (z-score threshold 2.0)
+::print ::temporal_pattern("sensor", "anomaly", 2.0)  # prints 0 (no anomaly)
+```
+
 **Ternary Operator:**
 ```tesseract
 condition ? true_value : false_value

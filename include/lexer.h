@@ -106,6 +106,8 @@ typedef enum
     TOK_TEMPORAL,            // temporal$
     TOK_IN,                  // in
     TOK_TEMP_NEW,            // <temp@N>
+    TOK_TEMPORAL_AGGREGATE,  // ::temporal_aggregate
+    TOK_TEMPORAL_PATTERN,    // ::temporal_pattern
 } TokenType;
 
 typedef struct

@@ -607,7 +607,9 @@ static ASTNode *parse_primary()
         current_token.type == TOK_HTTP_GET ||
         current_token.type == TOK_HTTP_POST ||
         current_token.type == TOK_HTTP_PUT ||
-        current_token.type == TOK_HTTP_DELETE)
+        current_token.type == TOK_HTTP_DELETE ||
+        current_token.type == TOK_TEMPORAL_AGGREGATE ||
+        current_token.type == TOK_TEMPORAL_PATTERN)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -692,6 +694,42 @@ static ASTNode *parse_primary()
             }
             expect(TOK_RPAREN);
             return ast_new_http_put(url, data, headers);
+        }
+        else if (func_type == TOK_TEMPORAL_AGGREGATE)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *operation_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *window_size = parse_expression();
+            expect(TOK_RPAREN);
+            
+            // Extract variable name and operation from string nodes
+            if (varname_node->type != NODE_STRING || operation_node->type != NODE_STRING)
+            {
+                printf("Parse error: temporal_aggregate expects string arguments for variable name and operation\n");
+                exit(1);
+            }
+            
+            return ast_new_temporal_aggregate(varname_node->string, operation_node->string, window_size);
+        }
+        else if (func_type == TOK_TEMPORAL_PATTERN)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *pattern_type_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *threshold = parse_expression();
+            expect(TOK_RPAREN);
+            
+            // Extract variable name and pattern type from string nodes
+            if (varname_node->type != NODE_STRING || pattern_type_node->type != NODE_STRING)
+            {
+                printf("Parse error: temporal_pattern expects string arguments for variable name and pattern type\n");
+                exit(1);
+            }
+            
+            return ast_new_temporal_pattern(varname_node->string, pattern_type_node->string, threshold);
         }
         else // TOK_HTTP_DELETE
         {

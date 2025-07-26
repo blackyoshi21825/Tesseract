@@ -551,6 +551,20 @@ Token lexer_next_token()
         pos += 11;
         return token;
     }
+    if (starts_with("::temporal_aggregate"))
+    {
+        token.type = TOK_TEMPORAL_AGGREGATE;
+        strcpy(token.text, "::temporal_aggregate");
+        pos += 20;
+        return token;
+    }
+    if (starts_with("::temporal_pattern"))
+    {
+        token.type = TOK_TEMPORAL_PATTERN;
+        strcpy(token.text, "::temporal_pattern");
+        pos += 18;
+        return token;
+    }
     if (starts_with("temporal$"))
     {
         token.type = TOK_TEMPORAL;

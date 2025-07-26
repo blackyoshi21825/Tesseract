@@ -1077,7 +1077,8 @@ void interpret(ASTNode *root)
              root->type == NODE_FILE_WRITE || root->type == NODE_FILE_CLOSE ||
              root->type == NODE_TO_STR || root->type == NODE_TO_INT ||
              root->type == NODE_HTTP_GET || root->type == NODE_HTTP_POST ||
-             root->type == NODE_HTTP_PUT || root->type == NODE_HTTP_DELETE)
+             root->type == NODE_HTTP_PUT || root->type == NODE_HTTP_DELETE ||
+             root->type == NODE_TEMPORAL_AGGREGATE || root->type == NODE_TEMPORAL_PATTERN)
     {
         eval_expression(root);
     }
@@ -2664,6 +2665,154 @@ static double eval_expression(ASTNode *node)
             // This is a temporal variable creation node, return the max_history
             return node->number;
         }
+    }
+    case NODE_TEMPORAL_AGGREGATE:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->temporal_aggregate.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->temporal_aggregate.varname);
+            exit(1);
+        }
+        
+        int window_size = (int)eval_expression(node->temporal_aggregate.window_size);
+        if (window_size <= 0 || window_size > temp_var->count)
+            window_size = temp_var->count;
+        
+        const char *operation = node->temporal_aggregate.operation;
+        double result = 0.0;
+        
+        if (strcmp(operation, "sum") == 0)
+        {
+            for (int i = temp_var->count - window_size; i < temp_var->count; i++)
+            {
+                result += strtod(temp_var->history[i].value, NULL);
+            }
+        }
+        else if (strcmp(operation, "avg") == 0)
+        {
+            for (int i = temp_var->count - window_size; i < temp_var->count; i++)
+            {
+                result += strtod(temp_var->history[i].value, NULL);
+            }
+            result /= window_size;
+        }
+        else if (strcmp(operation, "min") == 0)
+        {
+            result = strtod(temp_var->history[temp_var->count - window_size].value, NULL);
+            for (int i = temp_var->count - window_size + 1; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                if (val < result) result = val;
+            }
+        }
+        else if (strcmp(operation, "max") == 0)
+        {
+            result = strtod(temp_var->history[temp_var->count - window_size].value, NULL);
+            for (int i = temp_var->count - window_size + 1; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                if (val > result) result = val;
+            }
+        }
+        else
+        {
+            printf("Runtime error: Unknown aggregation operation '%s'\n", operation);
+            exit(1);
+        }
+        
+        return result;
+    }
+    case NODE_TEMPORAL_PATTERN:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->temporal_pattern.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->temporal_pattern.varname);
+            exit(1);
+        }
+        
+        if (temp_var->count < 3)
+        {
+            return 0; // Not enough data for pattern detection
+        }
+        
+        double threshold = eval_expression(node->temporal_pattern.threshold);
+        const char *pattern_type = node->temporal_pattern.pattern_type;
+        
+        if (strcmp(pattern_type, "trend") == 0)
+        {
+            // Detect upward or downward trend
+            int increasing = 0, decreasing = 0;
+            for (int i = 1; i < temp_var->count; i++)
+            {
+                double prev = strtod(temp_var->history[i-1].value, NULL);
+                double curr = strtod(temp_var->history[i].value, NULL);
+                double change = (curr - prev) / (prev == 0 ? 1 : prev) * 100; // percentage change
+                
+                if (change > threshold) increasing++;
+                else if (change < -threshold) decreasing++;
+            }
+            
+            if (increasing > decreasing) return 1; // upward trend
+            else if (decreasing > increasing) return -1; // downward trend
+            else return 0; // no clear trend
+        }
+        else if (strcmp(pattern_type, "cycle") == 0)
+        {
+            // Simple cycle detection - look for alternating increases/decreases
+            if (temp_var->count < 4) return 0;
+            
+            int pattern_matches = 0;
+            for (int i = 2; i < temp_var->count - 1; i++)
+            {
+                double val1 = strtod(temp_var->history[i-2].value, NULL);
+                double val2 = strtod(temp_var->history[i-1].value, NULL);
+                double val3 = strtod(temp_var->history[i].value, NULL);
+                double val4 = strtod(temp_var->history[i+1].value, NULL);
+                
+                // Check for peak or valley pattern
+                if ((val2 > val1 && val2 > val3) || (val2 < val1 && val2 < val3))
+                {
+                    pattern_matches++;
+                }
+            }
+            
+            return pattern_matches >= 2 ? 1 : 0; // cycle detected if multiple peaks/valleys
+        }
+        else if (strcmp(pattern_type, "anomaly") == 0)
+        {
+            // Detect values that deviate significantly from the mean
+            double sum = 0, mean, variance = 0, std_dev;
+            
+            // Calculate mean
+            for (int i = 0; i < temp_var->count; i++)
+            {
+                sum += strtod(temp_var->history[i].value, NULL);
+            }
+            mean = sum / temp_var->count;
+            
+            // Calculate standard deviation
+            for (int i = 0; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                variance += (val - mean) * (val - mean);
+            }
+            std_dev = sqrt(variance / temp_var->count);
+            
+            // Check if current value is an anomaly
+            double current = strtod(temp_var->history[temp_var->count - 1].value, NULL);
+            double z_score = (current - mean) / (std_dev == 0 ? 1 : std_dev);
+            
+            return fabs(z_score) > threshold ? 1 : 0; // anomaly if z-score exceeds threshold
+        }
+        else
+        {
+            printf("Runtime error: Unknown pattern type '%s'\n", pattern_type);
+            exit(1);
+        }
+        
+        return 0;
     }
 
     case NODE_REGEX_MATCH:

@@ -859,6 +859,30 @@ ASTNode *ast_new_temporal_loop(const char *varname, const char *temporal_var, AS
     return node;
 }
 
+ASTNode *ast_new_temporal_aggregate(const char *varname, const char *operation, ASTNode *window_size)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_AGGREGATE;
+    strncpy(node->temporal_aggregate.varname, varname, sizeof(node->temporal_aggregate.varname));
+    node->temporal_aggregate.varname[sizeof(node->temporal_aggregate.varname) - 1] = '\0';
+    strncpy(node->temporal_aggregate.operation, operation, sizeof(node->temporal_aggregate.operation));
+    node->temporal_aggregate.operation[sizeof(node->temporal_aggregate.operation) - 1] = '\0';
+    node->temporal_aggregate.window_size = window_size;
+    return node;
+}
+
+ASTNode *ast_new_temporal_pattern(const char *varname, const char *pattern_type, ASTNode *threshold)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_PATTERN;
+    strncpy(node->temporal_pattern.varname, varname, sizeof(node->temporal_pattern.varname));
+    node->temporal_pattern.varname[sizeof(node->temporal_pattern.varname) - 1] = '\0';
+    strncpy(node->temporal_pattern.pattern_type, pattern_type, sizeof(node->temporal_pattern.pattern_type));
+    node->temporal_pattern.pattern_type[sizeof(node->temporal_pattern.pattern_type) - 1] = '\0';
+    node->temporal_pattern.threshold = threshold;
+    return node;
+}
+
 
 
 // --- AST Free ---
@@ -1092,6 +1116,12 @@ void ast_free(ASTNode *node)
         break;
     case NODE_TEMPORAL_LOOP:
         ast_free(node->temporal_loop.body);
+        break;
+    case NODE_TEMPORAL_AGGREGATE:
+        ast_free(node->temporal_aggregate.window_size);
+        break;
+    case NODE_TEMPORAL_PATTERN:
+        ast_free(node->temporal_pattern.threshold);
         break;
 
     default:
