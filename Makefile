@@ -9,7 +9,11 @@ endif
 NUM_CORES := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
 # Add optimization flags and enable faster math operations
-CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O3 -ffast-math -flto -march=native `curl-config --cflags`
+ifeq ($(CC),clang)
+    CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O3 -ffast-math -flto `curl-config --cflags`
+else
+    CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O3 -ffast-math -flto -march=native `curl-config --cflags`
+endif
 LDFLAGS = `curl-config --libs` -flto
 
 # Precompiled header settings
