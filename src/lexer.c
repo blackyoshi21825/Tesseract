@@ -558,6 +558,13 @@ Token lexer_next_token()
         pos += 20;
         return token;
     }
+    if (starts_with("::temporal_condition"))
+    {
+        token.type = TOK_TEMPORAL_CONDITION;
+        strcpy(token.text, "::temporal_condition");
+        pos += 20;
+        return token;
+    }
     if (starts_with("::temporal_pattern"))
     {
         token.type = TOK_TEMPORAL_PATTERN;

@@ -1078,7 +1078,8 @@ void interpret(ASTNode *root)
              root->type == NODE_TO_STR || root->type == NODE_TO_INT ||
              root->type == NODE_HTTP_GET || root->type == NODE_HTTP_POST ||
              root->type == NODE_HTTP_PUT || root->type == NODE_HTTP_DELETE ||
-             root->type == NODE_TEMPORAL_AGGREGATE || root->type == NODE_TEMPORAL_PATTERN)
+             root->type == NODE_TEMPORAL_AGGREGATE || root->type == NODE_TEMPORAL_PATTERN ||
+             root->type == NODE_TEMPORAL_CONDITION)
     {
         eval_expression(root);
     }
@@ -2814,6 +2815,111 @@ static double eval_expression(ASTNode *node)
         
         return 0;
     }
+    case NODE_TEMPORAL_CONDITION:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->temporal_condition.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->temporal_condition.varname);
+            exit(1);
+        }
+        
+        int start_index = (int)eval_expression(node->temporal_condition.start_index);
+        int window_size = (int)eval_expression(node->temporal_condition.window_size);
+        const char *condition = node->temporal_condition.condition;
+        
+        // Validate indices
+        if (start_index < 0 || start_index >= temp_var->count)
+            return 0; // Invalid start index
+        if (window_size <= 0 || start_index + window_size > temp_var->count)
+            window_size = temp_var->count - start_index; // Adjust window size
+        
+        // Parse condition string
+        if (strncmp(condition, "> ", 2) == 0)
+        {
+            double threshold = strtod(condition + 2, NULL);
+            for (int i = start_index; i < start_index + window_size; i++)
+            {
+                double val = strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+                if (val <= threshold) return 0;
+            }
+            return 1;
+        }
+        else if (strncmp(condition, "< ", 2) == 0)
+        {
+            double threshold = strtod(condition + 2, NULL);
+            for (int i = start_index; i < start_index + window_size; i++)
+            {
+                double val = strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+                if (val >= threshold) return 0;
+            }
+            return 1;
+        }
+        else if (strncmp(condition, "== ", 3) == 0)
+        {
+            double target = strtod(condition + 3, NULL);
+            for (int i = start_index; i < start_index + window_size; i++)
+            {
+                double val = strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+                if (val == target) return 1; // Any match returns true
+            }
+            return 0;
+        }
+        else if (strncmp(condition, "between ", 8) == 0)
+        {
+            char *rest = (char *)(condition + 8);
+            double min_val = strtod(rest, &rest);
+            while (*rest == ' ') rest++; // Skip spaces
+            double max_val = strtod(rest, NULL);
+            
+            for (int i = start_index; i < start_index + window_size; i++)
+            {
+                double val = strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+                if (val < min_val || val > max_val) return 0;
+            }
+            return 1;
+        }
+        else if (strcmp(condition, "increasing") == 0)
+        {
+            if (window_size < 2) return 0;
+            for (int i = start_index; i < start_index + window_size - 1; i++)
+            {
+                double curr = strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+                double next = strtod(temp_var->history[temp_var->count - 1 - (i + 1)].value, NULL);
+                if (curr <= next) return 0; // Not strictly increasing
+            }
+            return 1;
+        }
+        else if (strncmp(condition, "stable ", 7) == 0)
+        {
+            double variance_threshold = strtod(condition + 7, NULL);
+            if (window_size < 2) return 1;
+            
+            // Calculate variance
+            double sum = 0, mean, variance = 0;
+            for (int i = start_index; i < start_index + window_size; i++)
+            {
+                sum += strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+            }
+            mean = sum / window_size;
+            
+            for (int i = start_index; i < start_index + window_size; i++)
+            {
+                double val = strtod(temp_var->history[temp_var->count - 1 - i].value, NULL);
+                variance += (val - mean) * (val - mean);
+            }
+            variance /= window_size;
+            
+            return variance < variance_threshold ? 1 : 0;
+        }
+        else
+        {
+            printf("Runtime error: Unknown temporal condition '%s'\n", condition);
+            exit(1);
+        }
+        
+        return 0;
+    }
 
     case NODE_REGEX_MATCH:
     {
@@ -3366,6 +3472,7 @@ static void print_node(ASTNode *node)
         // Check if this is a boolean result (0 or 1 from boolean operations)
         else if ((result == 0.0 || result == 1.0) && 
             (node->type == NODE_AND || node->type == NODE_OR || node->type == NODE_NOT ||
+             node->type == NODE_TEMPORAL_CONDITION ||
              (node->type == NODE_BINOP && 
               (node->binop.op == TOK_EQ || node->binop.op == TOK_NEQ ||
                node->binop.op == TOK_LT || node->binop.op == TOK_GT ||

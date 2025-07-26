@@ -883,6 +883,19 @@ ASTNode *ast_new_temporal_pattern(const char *varname, const char *pattern_type,
     return node;
 }
 
+ASTNode *ast_new_temporal_condition(const char *varname, const char *condition, ASTNode *start_index, ASTNode *window_size)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_CONDITION;
+    strncpy(node->temporal_condition.varname, varname, sizeof(node->temporal_condition.varname));
+    node->temporal_condition.varname[sizeof(node->temporal_condition.varname) - 1] = '\0';
+    strncpy(node->temporal_condition.condition, condition, sizeof(node->temporal_condition.condition));
+    node->temporal_condition.condition[sizeof(node->temporal_condition.condition) - 1] = '\0';
+    node->temporal_condition.start_index = start_index;
+    node->temporal_condition.window_size = window_size;
+    return node;
+}
+
 
 
 // --- AST Free ---
@@ -1122,6 +1135,10 @@ void ast_free(ASTNode *node)
         break;
     case NODE_TEMPORAL_PATTERN:
         ast_free(node->temporal_pattern.threshold);
+        break;
+    case NODE_TEMPORAL_CONDITION:
+        ast_free(node->temporal_condition.start_index);
+        ast_free(node->temporal_condition.window_size);
         break;
 
     default:

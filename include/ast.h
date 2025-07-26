@@ -88,6 +88,7 @@ typedef enum
     NODE_TEMPORAL_LOOP,  // Temporal loop (temporal$i in x)
     NODE_TEMPORAL_AGGREGATE, // Temporal aggregation function
     NODE_TEMPORAL_PATTERN,   // Temporal pattern detection function
+    NODE_TEMPORAL_CONDITION, // Temporal condition checking function
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -382,6 +383,13 @@ struct ASTNode
             char pattern_type[16]; // "trend", "cycle", "anomaly"
             ASTNode *threshold;   // Threshold for pattern detection
         } temporal_pattern;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            char condition[64];   // Condition string (">", "<", "==", "between", etc.)
+            ASTNode *start_index; // Starting position in history
+            ASTNode *window_size; // Number of consecutive values to check
+        } temporal_condition;
     };
 };
 
@@ -496,5 +504,6 @@ ASTNode *ast_new_temporal_var(const char *varname, ASTNode *time_offset);
 ASTNode *ast_new_temporal_loop(const char *varname, const char *temporal_var, ASTNode *body);
 ASTNode *ast_new_temporal_aggregate(const char *varname, const char *operation, ASTNode *window_size);
 ASTNode *ast_new_temporal_pattern(const char *varname, const char *pattern_type, ASTNode *threshold);
+ASTNode *ast_new_temporal_condition(const char *varname, const char *condition, ASTNode *start_index, ASTNode *window_size);
 
 #endif

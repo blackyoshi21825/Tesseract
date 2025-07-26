@@ -103,7 +103,66 @@ let$sensor := 200
 ::print ::temporal_pattern("sensor", "anomaly", 1.5)  # prints 1 (anomaly detected)
 ```
 
+### Temporal Condition Checking
+
+`::temporal_condition(variable_name, condition, start_index, window_size)`
+
+Checks if a specific condition is met within a temporal window:
+
+**Parameters:**
+- `variable_name`: String name of the temporal variable
+- `condition`: Condition string (">", "<", "==", "between", "increasing", "stable")
+- `start_index`: Starting position in history (0 = current, 1 = previous, etc.)
+- `window_size`: Number of consecutive values to check
+
+**Examples:**
+```tesseract
+let$temp := <temp@20>
+let$temp := 95
+let$temp := 98
+let$temp := 102
+let$temp := 105
+
+# Check if last 3 values were all above 100
+::print ::temporal_condition("temp", "> 100", 0, 3)  # prints 0 (false)
+
+# Check if values 2-4 steps back were all below 100
+::print ::temporal_condition("temp", "< 100", 2, 3)  # prints 1 (true)
+
+# Check if any value in last 5 was exactly 98
+::print ::temporal_condition("temp", "== 98", 0, 5)  # prints 1 (true)
+
+# Check if all values in window are between 90-110
+::print ::temporal_condition("temp", "between 90 110", 0, 4)  # prints 1 (true)
+
+# Check if values are increasing for 3 consecutive steps
+::print ::temporal_condition("temp", "increasing", 0, 3)  # prints 1 (true)
+
+# Check if variance is low (stable period)
+::print ::temporal_condition("temp", "stable 5", 0, 4)  # prints 1 (variance < 5)
+```
+
 ## Use Cases
+
+### Temporal Condition Monitoring
+```tesseract
+let$ pressure := <temp@50>
+
+# Monitor if pressure stayed in safe range for last 10 readings
+func$ pressure_safe() => {
+    ::temporal_condition("pressure", "between 10 50", 0, 10)
+}
+
+# Check if there's been consistent increase (trend detection)
+func$ pressure_rising() => {
+    ::temporal_condition("pressure", "increasing", 0, 5)
+}
+
+# Alert system based on temporal conditions
+if$ not ::temporal_condition("pressure", "< 60", 0, 3) {
+    ::print "WARNING: High pressure detected!"
+}
+```
 
 ### Moving Averages
 ```tesseract
@@ -183,6 +242,22 @@ func$ get_last_valid() => {
         }
     }
     0  # default if none found
+}
+```
+
+### Temporal Window Validation
+```tesseract
+let$ sensor := <temp@10>
+# ... sensor readings ...
+
+# Check if system was stable for last 5 readings
+func$ system_stable() => {
+    ::temporal_condition("sensor", "stable 2", 0, 5)
+}
+
+# Alert if any reading in danger zone
+func$ check_danger() => {
+    ::temporal_condition("sensor", "> 150", 0, 10) ? "DANGER" : "SAFE"
 }
 ```
 

@@ -609,7 +609,8 @@ static ASTNode *parse_primary()
         current_token.type == TOK_HTTP_PUT ||
         current_token.type == TOK_HTTP_DELETE ||
         current_token.type == TOK_TEMPORAL_AGGREGATE ||
-        current_token.type == TOK_TEMPORAL_PATTERN)
+        current_token.type == TOK_TEMPORAL_PATTERN ||
+        current_token.type == TOK_TEMPORAL_CONDITION)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -730,6 +731,26 @@ static ASTNode *parse_primary()
             }
             
             return ast_new_temporal_pattern(varname_node->string, pattern_type_node->string, threshold);
+        }
+        else if (func_type == TOK_TEMPORAL_CONDITION)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *condition_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *start_index = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *window_size = parse_expression();
+            expect(TOK_RPAREN);
+            
+            // Extract variable name and condition from string nodes
+            if (varname_node->type != NODE_STRING || condition_node->type != NODE_STRING)
+            {
+                printf("Parse error: temporal_condition expects string arguments for variable name and condition\n");
+                exit(1);
+            }
+            
+            return ast_new_temporal_condition(varname_node->string, condition_node->string, start_index, window_size);
         }
         else // TOK_HTTP_DELETE
         {
