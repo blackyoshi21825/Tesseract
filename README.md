@@ -376,41 +376,7 @@ let$ b := 20
 ::print a == b   # prints false
 ```
 
-### Temporal Variables
 
-**Creation:**
-```tesseract
-let$ var := <temp@N>  # N is the history size
-```
-
-**Access:**
-```tesseract
-var@0  # current value
-var@1  # previous value
-var@2  # value before that
-```
-
-**Temporal Loop:**
-```tesseract
-temporal$ t in var {
-    ::print "History: @s" (t)
-}
-```
-
-**Example:**
-```tesseract
-let$ x := <temp@3>
-let$ x := 10
-let$ x := 20
-let$ x := 30
-::print x@0  # prints 30
-::print x@1  # prints 20
-::print x@2  # prints 10
-
-temporal$ value in x {
-    ::print "Historical value: @s" (value)
-}
-```
 
 ### Bitwise Operators
 
