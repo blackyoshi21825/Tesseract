@@ -586,6 +586,27 @@ Token lexer_next_token()
         pos += 23;
         return token;
     }
+    if (starts_with("::temporal_query"))
+    {
+        token.type = TOK_TEMPORAL_QUERY;
+        strcpy(token.text, "::temporal_query");
+        pos += 16;
+        return token;
+    }
+    if (starts_with("::temporal_correlate"))
+    {
+        token.type = TOK_TEMPORAL_CORRELATE;
+        strcpy(token.text, "::temporal_correlate");
+        pos += 20;
+        return token;
+    }
+    if (starts_with("::temporal_interpolate"))
+    {
+        token.type = TOK_TEMPORAL_INTERPOLATE;
+        strcpy(token.text, "::temporal_interpolate");
+        pos += 22;
+        return token;
+    }
     if (starts_with("temporal$"))
     {
         token.type = TOK_TEMPORAL;

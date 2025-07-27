@@ -919,6 +919,41 @@ ASTNode *ast_new_sensitivity_threshold(const char *varname, ASTNode *threshold_v
     return node;
 }
 
+ASTNode *ast_new_temporal_query(const char *varname, const char *time_window, const char *condition)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_QUERY;
+    strncpy(node->temporal_query.varname, varname, sizeof(node->temporal_query.varname));
+    node->temporal_query.varname[sizeof(node->temporal_query.varname) - 1] = '\0';
+    strncpy(node->temporal_query.time_window, time_window, sizeof(node->temporal_query.time_window));
+    node->temporal_query.time_window[sizeof(node->temporal_query.time_window) - 1] = '\0';
+    strncpy(node->temporal_query.condition, condition, sizeof(node->temporal_query.condition));
+    node->temporal_query.condition[sizeof(node->temporal_query.condition) - 1] = '\0';
+    return node;
+}
+
+ASTNode *ast_new_temporal_correlate(const char *var1, const char *var2, ASTNode *window_size)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_CORRELATE;
+    strncpy(node->temporal_correlate.var1, var1, sizeof(node->temporal_correlate.var1));
+    node->temporal_correlate.var1[sizeof(node->temporal_correlate.var1) - 1] = '\0';
+    strncpy(node->temporal_correlate.var2, var2, sizeof(node->temporal_correlate.var2));
+    node->temporal_correlate.var2[sizeof(node->temporal_correlate.var2) - 1] = '\0';
+    node->temporal_correlate.window_size = window_size;
+    return node;
+}
+
+ASTNode *ast_new_temporal_interpolate(const char *varname, ASTNode *missing_index)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TEMPORAL_INTERPOLATE;
+    strncpy(node->temporal_interpolate.varname, varname, sizeof(node->temporal_interpolate.varname));
+    node->temporal_interpolate.varname[sizeof(node->temporal_interpolate.varname) - 1] = '\0';
+    node->temporal_interpolate.missing_index = missing_index;
+    return node;
+}
+
 
 
 // --- AST Free ---

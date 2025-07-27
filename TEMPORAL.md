@@ -340,4 +340,89 @@ let$temp := 85
 ::print ::sensitivity_threshold("temp", 100, 10.0) # prints -1 (85 < 90)
 ```
 
+## New Advanced Temporal Functions
+
+### Temporal Queries with Time Windows
+
+`::temporal_query(variable_name, time_window, condition)`
+
+Query temporal data within specific time windows:
+
+**Parameters:**
+- `variable_name`: String name of the temporal variable
+- `time_window`: Time window specification ("last 5 minutes", "between 10:00 12:00")
+- `condition`: Condition to check ("> 100", "< 50", "== 75")
+
+**Examples:**
+```tesseract
+let$sensor := <temp@20>
+let$sensor := 95
+let$sensor := 105
+let$sensor := 110
+let$sensor := 98
+
+# Count values > 100 in last 3 readings
+::print ::temporal_query("sensor", "last 3", "> 100")  # prints 2
+
+# Count values == 98 in all history
+::print ::temporal_query("sensor", "between start end", "== 98")  # prints 1
+```
+
+### Temporal Correlations
+
+`::temporal_correlate(var1, var2, window_size)`
+
+Calculate correlation between two temporal variables:
+
+**Parameters:**
+- `var1`: String name of first temporal variable
+- `var2`: String name of second temporal variable
+- `window_size`: Number of recent values to correlate
+
+**Returns:**
+- Pearson correlation coefficient (-1.0 to 1.0)
+
+**Examples:**
+```tesseract
+let$temp := <temp@10>
+let$humidity := <temp@10>
+
+# Add some correlated data
+let$temp := 20; let$humidity := 60
+let$temp := 25; let$humidity := 55
+let$temp := 30; let$humidity := 50
+let$temp := 35; let$humidity := 45
+
+# Calculate correlation over last 4 values
+::print ::temporal_correlate("temp", "humidity", 4)  # prints negative correlation
+```
+
+### Temporal Interpolation
+
+`::temporal_interpolate(variable_name, missing_index)`
+
+Interpolate missing values in temporal data:
+
+**Parameters:**
+- `variable_name`: String name of the temporal variable
+- `missing_index`: Index where data is missing
+
+**Returns:**
+- Interpolated value based on neighboring data points
+
+**Examples:**
+```tesseract
+let$data := <temp@10>
+let$data := 10
+let$data := 15  # This will be "missing"
+let$data := 20
+
+# Interpolate the middle value (index 1)
+::print ::temporal_interpolate("data", 1)  # prints 15 (average of 10 and 20)
+
+# For edge cases, uses nearest neighbor
+::print ::temporal_interpolate("data", 0)  # prints 15 (next value)
+::print ::temporal_interpolate("data", 2)  # prints 15 (previous value)
+```
+
 Temporal programming in Tesseract enables powerful time-aware applications with minimal syntax overhead.

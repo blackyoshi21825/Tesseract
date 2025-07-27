@@ -612,7 +612,10 @@ static ASTNode *parse_primary()
         current_token.type == TOK_TEMPORAL_PATTERN ||
         current_token.type == TOK_TEMPORAL_CONDITION ||
         current_token.type == TOK_SLIDING_WINDOW_STATS ||
-        current_token.type == TOK_SENSITIVITY_THRESHOLD)
+        current_token.type == TOK_SENSITIVITY_THRESHOLD ||
+        current_token.type == TOK_TEMPORAL_QUERY ||
+        current_token.type == TOK_TEMPORAL_CORRELATE ||
+        current_token.type == TOK_TEMPORAL_INTERPOLATE)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -789,6 +792,55 @@ static ASTNode *parse_primary()
             }
             
             return ast_new_sensitivity_threshold(varname_node->string, threshold_value, sensitivity_percent);
+        }
+        else if (func_type == TOK_TEMPORAL_QUERY)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *time_window_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *condition_node = parse_expression();
+            expect(TOK_RPAREN);
+            
+            if (varname_node->type != NODE_STRING || time_window_node->type != NODE_STRING || condition_node->type != NODE_STRING)
+            {
+                printf("Parse error: temporal_query expects string arguments\n");
+                exit(1);
+            }
+            
+            return ast_new_temporal_query(varname_node->string, time_window_node->string, condition_node->string);
+        }
+        else if (func_type == TOK_TEMPORAL_CORRELATE)
+        {
+            ASTNode *var1_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *var2_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *window_size = parse_expression();
+            expect(TOK_RPAREN);
+            
+            if (var1_node->type != NODE_STRING || var2_node->type != NODE_STRING)
+            {
+                printf("Parse error: temporal_correlate expects string arguments for variable names\n");
+                exit(1);
+            }
+            
+            return ast_new_temporal_correlate(var1_node->string, var2_node->string, window_size);
+        }
+        else if (func_type == TOK_TEMPORAL_INTERPOLATE)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *missing_index = parse_expression();
+            expect(TOK_RPAREN);
+            
+            if (varname_node->type != NODE_STRING)
+            {
+                printf("Parse error: temporal_interpolate expects string argument for variable name\n");
+                exit(1);
+            }
+            
+            return ast_new_temporal_interpolate(varname_node->string, missing_index);
         }
         else // TOK_HTTP_DELETE
         {

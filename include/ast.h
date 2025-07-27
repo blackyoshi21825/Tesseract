@@ -91,6 +91,9 @@ typedef enum
     NODE_TEMPORAL_CONDITION, // Temporal condition checking function
     NODE_SLIDING_WINDOW_STATS, // Sliding window statistics function
     NODE_SENSITIVITY_THRESHOLD, // Sensitivity threshold monitoring function
+    NODE_TEMPORAL_QUERY,       // Temporal queries with time windows
+    NODE_TEMPORAL_CORRELATE,   // Temporal correlations between variables
+    NODE_TEMPORAL_INTERPOLATE, // Temporal interpolation for missing data
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -404,6 +407,23 @@ struct ASTNode
             ASTNode *threshold_value; // Base threshold value
             ASTNode *sensitivity_percent; // Sensitivity as percentage
         } sensitivity_threshold;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            char time_window[64]; // Time window specification ("last 5 minutes", "between 10:00 12:00")
+            char condition[64];   // Condition to check
+        } temporal_query;
+        struct
+        {
+            char var1[64];        // First temporal variable
+            char var2[64];        // Second temporal variable
+            ASTNode *window_size; // Window size for correlation
+        } temporal_correlate;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            ASTNode *missing_index; // Index where data is missing
+        } temporal_interpolate;
     };
 };
 
@@ -521,5 +541,8 @@ ASTNode *ast_new_temporal_pattern(const char *varname, const char *pattern_type,
 ASTNode *ast_new_temporal_condition(const char *varname, const char *condition, ASTNode *start_index, ASTNode *window_size);
 ASTNode *ast_new_sliding_window_stats(const char *varname, ASTNode *window_size, const char *stat_type);
 ASTNode *ast_new_sensitivity_threshold(const char *varname, ASTNode *threshold_value, ASTNode *sensitivity_percent);
+ASTNode *ast_new_temporal_query(const char *varname, const char *time_window, const char *condition);
+ASTNode *ast_new_temporal_correlate(const char *var1, const char *var2, ASTNode *window_size);
+ASTNode *ast_new_temporal_interpolate(const char *varname, ASTNode *missing_index);
 
 #endif

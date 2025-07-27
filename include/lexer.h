@@ -111,6 +111,9 @@ typedef enum
     TOK_TEMPORAL_CONDITION,  // ::temporal_condition
     TOK_SLIDING_WINDOW_STATS, // ::sliding_window_stats
     TOK_SENSITIVITY_THRESHOLD, // ::sensitivity_threshold
+    TOK_TEMPORAL_QUERY,      // ::temporal_query
+    TOK_TEMPORAL_CORRELATE,  // ::temporal_correlate
+    TOK_TEMPORAL_INTERPOLATE, // ::temporal_interpolate
 } TokenType;
 
 typedef struct

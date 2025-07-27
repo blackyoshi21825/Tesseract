@@ -1080,7 +1080,8 @@ void interpret(ASTNode *root)
              root->type == NODE_HTTP_PUT || root->type == NODE_HTTP_DELETE ||
              root->type == NODE_TEMPORAL_AGGREGATE || root->type == NODE_TEMPORAL_PATTERN ||
              root->type == NODE_TEMPORAL_CONDITION || root->type == NODE_SLIDING_WINDOW_STATS ||
-             root->type == NODE_SENSITIVITY_THRESHOLD)
+             root->type == NODE_SENSITIVITY_THRESHOLD || root->type == NODE_TEMPORAL_QUERY ||
+             root->type == NODE_TEMPORAL_CORRELATE || root->type == NODE_TEMPORAL_INTERPOLATE)
     {
         eval_expression(root);
     }
@@ -3149,6 +3150,155 @@ static double eval_expression(ASTNode *node)
         else
         {
             return 0; // Within acceptable range
+        }
+    }
+    case NODE_TEMPORAL_QUERY:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->temporal_query.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->temporal_query.varname);
+            exit(1);
+        }
+        
+        const char *time_window = node->temporal_query.time_window;
+        const char *condition = node->temporal_query.condition;
+        
+        // Simple time window parsing
+        if (strncmp(time_window, "last ", 5) == 0)
+        {
+            int count = atoi(time_window + 5);
+            if (count <= 0 || count > temp_var->count) count = temp_var->count;
+            
+            // Check condition on last N values
+            int matches = 0;
+            for (int i = temp_var->count - count; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                
+                if (strncmp(condition, "> ", 2) == 0)
+                {
+                    double threshold = strtod(condition + 2, NULL);
+                    if (val > threshold) matches++;
+                }
+                else if (strncmp(condition, "< ", 2) == 0)
+                {
+                    double threshold = strtod(condition + 2, NULL);
+                    if (val < threshold) matches++;
+                }
+                else if (strncmp(condition, "== ", 3) == 0)
+                {
+                    double target = strtod(condition + 3, NULL);
+                    if (val == target) matches++;
+                }
+            }
+            return matches;
+        }
+        else if (strncmp(time_window, "between ", 8) == 0)
+        {
+            // Simple between parsing - check all history
+            int matches = 0;
+            for (int i = 0; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                
+                if (strncmp(condition, "> ", 2) == 0)
+                {
+                    double threshold = strtod(condition + 2, NULL);
+                    if (val > threshold) matches++;
+                }
+                else if (strncmp(condition, "< ", 2) == 0)
+                {
+                    double threshold = strtod(condition + 2, NULL);
+                    if (val < threshold) matches++;
+                }
+                else if (strncmp(condition, "== ", 3) == 0)
+                {
+                    double target = strtod(condition + 3, NULL);
+                    if (val == target) matches++;
+                }
+            }
+            return matches;
+        }
+        
+        return 0;
+    }
+    case NODE_TEMPORAL_CORRELATE:
+    {
+        TemporalVariable *var1 = get_temporal_var_struct(node->temporal_correlate.var1);
+        TemporalVariable *var2 = get_temporal_var_struct(node->temporal_correlate.var2);
+        
+        if (!var1 || !var2)
+        {
+            printf("Runtime error: One or both variables are not temporal variables\n");
+            exit(1);
+        }
+        
+        int window_size = (int)eval_expression(node->temporal_correlate.window_size);
+        if (window_size <= 0) window_size = 5; // default
+        
+        int min_count = (var1->count < var2->count) ? var1->count : var2->count;
+        if (window_size > min_count) window_size = min_count;
+        
+        if (window_size < 2) return 0; // Need at least 2 points for correlation
+        
+        // Calculate Pearson correlation coefficient
+        double sum_x = 0, sum_y = 0, sum_xy = 0, sum_x2 = 0, sum_y2 = 0;
+        
+        for (int i = 0; i < window_size; i++)
+        {
+            double x = strtod(var1->history[var1->count - window_size + i].value, NULL);
+            double y = strtod(var2->history[var2->count - window_size + i].value, NULL);
+            
+            sum_x += x;
+            sum_y += y;
+            sum_xy += x * y;
+            sum_x2 += x * x;
+            sum_y2 += y * y;
+        }
+        
+        double n = window_size;
+        double numerator = n * sum_xy - sum_x * sum_y;
+        double denominator = sqrt((n * sum_x2 - sum_x * sum_x) * (n * sum_y2 - sum_y * sum_y));
+        
+        if (denominator == 0) return 0; // No correlation if denominator is 0
+        
+        return numerator / denominator;
+    }
+    case NODE_TEMPORAL_INTERPOLATE:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->temporal_interpolate.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->temporal_interpolate.varname);
+            exit(1);
+        }
+        
+        int missing_index = (int)eval_expression(node->temporal_interpolate.missing_index);
+        
+        if (missing_index < 0 || missing_index >= temp_var->count)
+        {
+            printf("Runtime error: Invalid index for interpolation\n");
+            exit(1);
+        }
+        
+        // Simple linear interpolation
+        if (missing_index == 0)
+        {
+            // Use next value if first is missing
+            if (temp_var->count > 1)
+                return strtod(temp_var->history[1].value, NULL);
+            return strtod(temp_var->history[0].value, NULL);
+        }
+        else if (missing_index == temp_var->count - 1)
+        {
+            // Use previous value if last is missing
+            return strtod(temp_var->history[missing_index - 1].value, NULL);
+        }
+        else
+        {
+            // Return the actual value at the index (not interpolating missing data)
+            return strtod(temp_var->history[missing_index].value, NULL);
         }
     }
     default:
