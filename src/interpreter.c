@@ -1079,7 +1079,8 @@ void interpret(ASTNode *root)
              root->type == NODE_HTTP_GET || root->type == NODE_HTTP_POST ||
              root->type == NODE_HTTP_PUT || root->type == NODE_HTTP_DELETE ||
              root->type == NODE_TEMPORAL_AGGREGATE || root->type == NODE_TEMPORAL_PATTERN ||
-             root->type == NODE_TEMPORAL_CONDITION)
+             root->type == NODE_TEMPORAL_CONDITION || root->type == NODE_SLIDING_WINDOW_STATS ||
+             root->type == NODE_SENSITIVITY_THRESHOLD)
     {
         eval_expression(root);
     }
@@ -3013,6 +3014,142 @@ static double eval_expression(ASTNode *node)
         free(text_str);
         free(replacement_str);
         return 0;
+    }
+    case NODE_SLIDING_WINDOW_STATS:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->sliding_window_stats.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->sliding_window_stats.varname);
+            exit(1);
+        }
+        
+        int window_size = (int)eval_expression(node->sliding_window_stats.window_size);
+        if (window_size <= 0 || window_size > temp_var->count)
+            window_size = temp_var->count;
+        
+        const char *stat_type = node->sliding_window_stats.stat_type;
+        
+        if (strcmp(stat_type, "variance") == 0)
+        {
+            double sum = 0, mean, variance = 0;
+            for (int i = temp_var->count - window_size; i < temp_var->count; i++)
+            {
+                sum += strtod(temp_var->history[i].value, NULL);
+            }
+            mean = sum / window_size;
+            
+            for (int i = temp_var->count - window_size; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                variance += (val - mean) * (val - mean);
+            }
+            return variance / window_size;
+        }
+        else if (strcmp(stat_type, "stddev") == 0)
+        {
+            double sum = 0, mean, variance = 0;
+            for (int i = temp_var->count - window_size; i < temp_var->count; i++)
+            {
+                sum += strtod(temp_var->history[i].value, NULL);
+            }
+            mean = sum / window_size;
+            
+            for (int i = temp_var->count - window_size; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                variance += (val - mean) * (val - mean);
+            }
+            return sqrt(variance / window_size);
+        }
+        else if (strcmp(stat_type, "range") == 0)
+        {
+            double min_val = strtod(temp_var->history[temp_var->count - window_size].value, NULL);
+            double max_val = min_val;
+            
+            for (int i = temp_var->count - window_size + 1; i < temp_var->count; i++)
+            {
+                double val = strtod(temp_var->history[i].value, NULL);
+                if (val < min_val) min_val = val;
+                if (val > max_val) max_val = val;
+            }
+            return max_val - min_val;
+        }
+        else if (strcmp(stat_type, "median") == 0)
+        {
+            double values[window_size];
+            for (int i = 0; i < window_size; i++)
+            {
+                values[i] = strtod(temp_var->history[temp_var->count - window_size + i].value, NULL);
+            }
+            
+            // Simple bubble sort
+            for (int i = 0; i < window_size - 1; i++)
+            {
+                for (int j = 0; j < window_size - i - 1; j++)
+                {
+                    if (values[j] > values[j + 1])
+                    {
+                        double temp = values[j];
+                        values[j] = values[j + 1];
+                        values[j + 1] = temp;
+                    }
+                }
+            }
+            
+            if (window_size % 2 == 0)
+            {
+                return (values[window_size / 2 - 1] + values[window_size / 2]) / 2.0;
+            }
+            else
+            {
+                return values[window_size / 2];
+            }
+        }
+        else
+        {
+            printf("Runtime error: Unknown statistic type '%s'\n", stat_type);
+            exit(1);
+        }
+        
+        return 0;
+    }
+    case NODE_SENSITIVITY_THRESHOLD:
+    {
+        TemporalVariable *temp_var = get_temporal_var_struct(node->sensitivity_threshold.varname);
+        if (!temp_var)
+        {
+            printf("Runtime error: Variable '%s' is not a temporal variable\n", node->sensitivity_threshold.varname);
+            exit(1);
+        }
+        
+        if (temp_var->count == 0)
+        {
+            return 0; // No data to check
+        }
+        
+        double threshold_value = eval_expression(node->sensitivity_threshold.threshold_value);
+        double sensitivity_percent = eval_expression(node->sensitivity_threshold.sensitivity_percent);
+        
+        // Get current value
+        double current_value = strtod(temp_var->history[temp_var->count - 1].value, NULL);
+        
+        // Calculate upper and lower bounds
+        double upper_bound = threshold_value + (threshold_value * sensitivity_percent / 100.0);
+        double lower_bound = threshold_value - (threshold_value * sensitivity_percent / 100.0);
+        
+        if (current_value > upper_bound)
+        {
+            return 1; // Above threshold + sensitivity
+        }
+        else if (current_value < lower_bound)
+        {
+            return -1; // Below threshold - sensitivity
+        }
+        else
+        {
+            return 0; // Within acceptable range
+        }
     }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);

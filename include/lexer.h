@@ -109,6 +109,8 @@ typedef enum
     TOK_TEMPORAL_AGGREGATE,  // ::temporal_aggregate
     TOK_TEMPORAL_PATTERN,    // ::temporal_pattern
     TOK_TEMPORAL_CONDITION,  // ::temporal_condition
+    TOK_SLIDING_WINDOW_STATS, // ::sliding_window_stats
+    TOK_SENSITIVITY_THRESHOLD, // ::sensitivity_threshold
 } TokenType;
 
 typedef struct

@@ -896,6 +896,29 @@ ASTNode *ast_new_temporal_condition(const char *varname, const char *condition, 
     return node;
 }
 
+ASTNode *ast_new_sliding_window_stats(const char *varname, ASTNode *window_size, const char *stat_type)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SLIDING_WINDOW_STATS;
+    strncpy(node->sliding_window_stats.varname, varname, sizeof(node->sliding_window_stats.varname));
+    node->sliding_window_stats.varname[sizeof(node->sliding_window_stats.varname) - 1] = '\0';
+    node->sliding_window_stats.window_size = window_size;
+    strncpy(node->sliding_window_stats.stat_type, stat_type, sizeof(node->sliding_window_stats.stat_type));
+    node->sliding_window_stats.stat_type[sizeof(node->sliding_window_stats.stat_type) - 1] = '\0';
+    return node;
+}
+
+ASTNode *ast_new_sensitivity_threshold(const char *varname, ASTNode *threshold_value, ASTNode *sensitivity_percent)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SENSITIVITY_THRESHOLD;
+    strncpy(node->sensitivity_threshold.varname, varname, sizeof(node->sensitivity_threshold.varname));
+    node->sensitivity_threshold.varname[sizeof(node->sensitivity_threshold.varname) - 1] = '\0';
+    node->sensitivity_threshold.threshold_value = threshold_value;
+    node->sensitivity_threshold.sensitivity_percent = sensitivity_percent;
+    return node;
+}
+
 
 
 // --- AST Free ---
@@ -1139,6 +1162,13 @@ void ast_free(ASTNode *node)
     case NODE_TEMPORAL_CONDITION:
         ast_free(node->temporal_condition.start_index);
         ast_free(node->temporal_condition.window_size);
+        break;
+    case NODE_SLIDING_WINDOW_STATS:
+        ast_free(node->sliding_window_stats.window_size);
+        break;
+    case NODE_SENSITIVITY_THRESHOLD:
+        ast_free(node->sensitivity_threshold.threshold_value);
+        ast_free(node->sensitivity_threshold.sensitivity_percent);
         break;
 
     default:

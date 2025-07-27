@@ -572,6 +572,20 @@ Token lexer_next_token()
         pos += 18;
         return token;
     }
+    if (starts_with("::sliding_window_stats"))
+    {
+        token.type = TOK_SLIDING_WINDOW_STATS;
+        strcpy(token.text, "::sliding_window_stats");
+        pos += 22;
+        return token;
+    }
+    if (starts_with("::sensitivity_threshold"))
+    {
+        token.type = TOK_SENSITIVITY_THRESHOLD;
+        strcpy(token.text, "::sensitivity_threshold");
+        pos += 23;
+        return token;
+    }
     if (starts_with("temporal$"))
     {
         token.type = TOK_TEMPORAL;

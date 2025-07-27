@@ -274,4 +274,70 @@ func$ is_stable() => {
 }
 ```
 
+## Advanced Temporal Functions
+
+### Sliding Window Analysis
+
+`::sliding_window_stats(variable_name, window_size, stat_type)`
+
+Performs statistical analysis over a sliding window of temporal data:
+
+**Parameters:**
+- `variable_name`: String name of the temporal variable
+- `window_size`: Size of the sliding window
+- `stat_type`: "variance", "stddev", "range", "median"
+
+**Examples:**
+```tesseract
+let$data := <temp@20>
+let$data := 10
+let$data := 15
+let$data := 12
+let$data := 18
+let$data := 14
+
+# Calculate variance over sliding window of 4
+::print ::sliding_window_stats("data", 4, "variance")  # prints variance
+
+# Get standard deviation
+::print ::sliding_window_stats("data", 3, "stddev")    # prints std deviation
+
+# Calculate range (max - min)
+::print ::sliding_window_stats("data", 5, "range")     # prints range
+```
+
+### Sensitivity Threshold Monitor
+
+`::sensitivity_threshold(variable_name, threshold_value, sensitivity_percent)`
+
+Monitors if values exceed a threshold with configurable sensitivity:
+
+**Parameters:**
+- `variable_name`: String name of the temporal variable
+- `threshold_value`: Base threshold value
+- `sensitivity_percent`: Sensitivity as percentage (e.g., 10.0 for 10%)
+
+**Returns:**
+- `1`: Value exceeds threshold + sensitivity
+- `0`: Value within acceptable range
+- `-1`: Value below threshold - sensitivity
+
+**Examples:**
+```tesseract
+let$temp := <temp@10>
+let$temp := 100
+let$temp := 108
+let$temp := 95
+
+# Monitor with 5% sensitivity around threshold of 100
+::print ::sensitivity_threshold("temp", 100, 5.0)  # prints 1 (108 > 105)
+
+# Check with 10% sensitivity
+::print ::sensitivity_threshold("temp", 100, 10.0) # prints 0 (108 within 90-110)
+
+# Lower value triggers negative response
+let$temp := 85
+::print ::sensitivity_threshold("temp", 100, 10.0) # prints -1 (85 < 90)
+```
+
 Temporal programming in Tesseract enables powerful time-aware applications with minimal syntax overhead.

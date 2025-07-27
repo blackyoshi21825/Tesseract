@@ -610,7 +610,9 @@ static ASTNode *parse_primary()
         current_token.type == TOK_HTTP_DELETE ||
         current_token.type == TOK_TEMPORAL_AGGREGATE ||
         current_token.type == TOK_TEMPORAL_PATTERN ||
-        current_token.type == TOK_TEMPORAL_CONDITION)
+        current_token.type == TOK_TEMPORAL_CONDITION ||
+        current_token.type == TOK_SLIDING_WINDOW_STATS ||
+        current_token.type == TOK_SENSITIVITY_THRESHOLD)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -751,6 +753,42 @@ static ASTNode *parse_primary()
             }
             
             return ast_new_temporal_condition(varname_node->string, condition_node->string, start_index, window_size);
+        }
+        else if (func_type == TOK_SLIDING_WINDOW_STATS)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *window_size = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *stat_type_node = parse_expression();
+            expect(TOK_RPAREN);
+            
+            // Extract variable name and stat type from string nodes
+            if (varname_node->type != NODE_STRING || stat_type_node->type != NODE_STRING)
+            {
+                printf("Parse error: sliding_window_stats expects string arguments for variable name and stat type\n");
+                exit(1);
+            }
+            
+            return ast_new_sliding_window_stats(varname_node->string, window_size, stat_type_node->string);
+        }
+        else if (func_type == TOK_SENSITIVITY_THRESHOLD)
+        {
+            ASTNode *varname_node = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *threshold_value = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *sensitivity_percent = parse_expression();
+            expect(TOK_RPAREN);
+            
+            // Extract variable name from string node
+            if (varname_node->type != NODE_STRING)
+            {
+                printf("Parse error: sensitivity_threshold expects string argument for variable name\n");
+                exit(1);
+            }
+            
+            return ast_new_sensitivity_threshold(varname_node->string, threshold_value, sensitivity_percent);
         }
         else // TOK_HTTP_DELETE
         {

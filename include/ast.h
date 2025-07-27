@@ -89,6 +89,8 @@ typedef enum
     NODE_TEMPORAL_AGGREGATE, // Temporal aggregation function
     NODE_TEMPORAL_PATTERN,   // Temporal pattern detection function
     NODE_TEMPORAL_CONDITION, // Temporal condition checking function
+    NODE_SLIDING_WINDOW_STATS, // Sliding window statistics function
+    NODE_SENSITIVITY_THRESHOLD, // Sensitivity threshold monitoring function
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -390,6 +392,18 @@ struct ASTNode
             ASTNode *start_index; // Starting position in history
             ASTNode *window_size; // Number of consecutive values to check
         } temporal_condition;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            ASTNode *window_size; // Size of the sliding window
+            char stat_type[16];   // "variance", "stddev", "range", "median"
+        } sliding_window_stats;
+        struct
+        {
+            char varname[64];     // Temporal variable name
+            ASTNode *threshold_value; // Base threshold value
+            ASTNode *sensitivity_percent; // Sensitivity as percentage
+        } sensitivity_threshold;
     };
 };
 
@@ -505,5 +519,7 @@ ASTNode *ast_new_temporal_loop(const char *varname, const char *temporal_var, AS
 ASTNode *ast_new_temporal_aggregate(const char *varname, const char *operation, ASTNode *window_size);
 ASTNode *ast_new_temporal_pattern(const char *varname, const char *pattern_type, ASTNode *threshold);
 ASTNode *ast_new_temporal_condition(const char *varname, const char *condition, ASTNode *start_index, ASTNode *window_size);
+ASTNode *ast_new_sliding_window_stats(const char *varname, ASTNode *window_size, const char *stat_type);
+ASTNode *ast_new_sensitivity_threshold(const char *varname, ASTNode *threshold_value, ASTNode *sensitivity_percent);
 
 #endif
