@@ -124,19 +124,19 @@ let$temp := 102
 let$temp := 105
 
 # Check if last 3 values were all above 100
-::print ::temporal_condition("temp", "> 100", 0, 3)  # prints 0 (false)
+::print ::temporal_condition("temp", "> 100", 0, 3)  # prints false
 
 # Check if values 2-4 steps back were all below 100
-::print ::temporal_condition("temp", "< 100", 2, 3)  # prints 1 (true)
+::print ::temporal_condition("temp", "< 100", 2, 3)  # prints true
 
 # Check if any value in last 5 was exactly 98
-::print ::temporal_condition("temp", "== 98", 0, 5)  # prints 1 (true)
+::print ::temporal_condition("temp", "== 98", 0, 5)  # prints true
 
 # Check if all values in window are between 90-110
-::print ::temporal_condition("temp", "between 90 110", 0, 4)  # prints 1 (true)
+::print ::temporal_condition("temp", "between 90 110", 0, 4)  # prints true
 
 # Check if values are increasing for 3 consecutive steps
-::print ::temporal_condition("temp", "increasing", 0, 3)  # prints 1 (true)
+::print ::temporal_condition("temp", "increasing", 0, 3)  # prints true
 
 # Check if variance is low (stable period)
 ::print ::temporal_condition("temp", "stable 5", 0, 4)  # prints 1 (variance < 5)
