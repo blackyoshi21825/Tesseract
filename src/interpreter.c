@@ -514,6 +514,26 @@ void interpret(ASTNode *root)
                 }
             }
         }
+        else if (value_node->type == NODE_FUNC_CALL)
+        {
+            // Handle function calls in assignments
+            double result = eval_expression(value_node);
+            
+            // Check if the function returned a string
+            const char *str_result = get_variable("__function_return_str");
+            if (str_result)
+            {
+                set_variable(root->assign.varname, str_result);
+                // Clear the temporary variable
+                set_variable("__function_return_str", "");
+            }
+            else
+            {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", result);
+                set_variable(root->assign.varname, buf);
+            }
+        }
         else if (value_node->type == NODE_CLASS_INSTANCE)
         {
             // Create the object instance
@@ -3300,6 +3320,106 @@ static double eval_expression(ASTNode *node)
             // Return the actual value at the index (not interpolating missing data)
             return strtod(temp_var->history[missing_index].value, NULL);
         }
+    }
+    case NODE_FUNC_CALL:
+    {
+        Function *fn = find_function(node->func_call.name);
+        if (!fn)
+        {
+            printf("Runtime error: Undefined function '%s'\n", node->func_call.name);
+            exit(1);
+        }
+        if (fn->param_count != node->func_call.arg_count)
+        {
+            printf("Runtime error: Function '%s' expects %d args but got %d\n",
+                   node->func_call.name, fn->param_count, node->func_call.arg_count);
+            exit(1);
+        }
+
+        // Save current variable state to restore later
+        // This is a simplified approach - in a full implementation you'd want proper scoping
+        
+        // Set function parameters
+        for (int i = 0; i < fn->param_count; i++)
+        {
+            ASTNode *arg = node->func_call.args[i];
+            if (arg->type == NODE_STRING)
+            {
+                set_variable(fn->params[i], arg->string);
+            }
+            else
+            {
+                double val = eval_expression(arg);
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%g", val);
+                set_variable(fn->params[i], buf);
+            }
+        }
+
+        // Execute function body and capture the last expression result
+        // In Tesseract, the last expression in a function is the return value
+        if (fn->body->type == NODE_BLOCK && fn->body->block.count > 0)
+        {
+            // Execute all statements except the last one
+            for (int i = 0; i < fn->body->block.count - 1; i++)
+            {
+                if (fn->body->block.statements[i])
+                    interpret(fn->body->block.statements[i]);
+            }
+            
+            // Evaluate the last statement as the return value
+            ASTNode *last_stmt = fn->body->block.statements[fn->body->block.count - 1];
+            if (last_stmt)
+            {
+                if (last_stmt->type == NODE_VAR)
+                {
+                    // If it's a variable, get its value
+                    const char *val = get_variable(last_stmt->varname);
+                    if (val)
+                    {
+                        // Store the return value for string results
+                        set_variable("__function_return_str", val);
+                        char *endptr;
+                        double dval = strtod(val, &endptr);
+                        if (endptr == val)
+                            return 0.0;
+                        return dval;
+                    }
+                }
+                else if (last_stmt->type == NODE_STRING)
+                {
+                    set_variable("__function_return_str", last_stmt->string);
+                    return 0.0; // String return
+                }
+                else
+                {
+                    return eval_expression(last_stmt);
+                }
+            }
+        }
+        else
+        {
+            // Single statement function
+            if (fn->body->type == NODE_VAR)
+            {
+                const char *val = get_variable(fn->body->varname);
+                if (val)
+                {
+                    set_variable("__function_return_str", val);
+                    char *endptr;
+                    double dval = strtod(val, &endptr);
+                    if (endptr == val)
+                        return 0.0;
+                    return dval;
+                }
+            }
+            else
+            {
+                return eval_expression(fn->body);
+            }
+        }
+        
+        return 0; // Default return value
     }
     default:
         fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
