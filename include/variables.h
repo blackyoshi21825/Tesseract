@@ -23,6 +23,7 @@ void set_stack_variable(const char *name, ASTNode *stack);
 void set_queue_variable(const char *name, ASTNode *queue);
 void set_linked_list_variable(const char *name, ASTNode *list);
 void set_regex_variable(const char *name, ASTNode *regex);
+void set_set_variable(const char *name, ASTNode *set);
 const char *get_variable(const char *name);
 ASTNode *get_list_variable(const char *name);
 ASTNode *get_dict_variable(const char *name);
@@ -30,6 +31,7 @@ ASTNode *get_stack_variable(const char *name);
 ASTNode *get_queue_variable(const char *name);
 ASTNode *get_linked_list_variable(const char *name);
 ASTNode *get_regex_variable(const char *name);
+ASTNode *get_set_variable(const char *name);
 
 // Temporal variable functions
 void set_temporal_variable(const char *name, const char *value, int max_history);

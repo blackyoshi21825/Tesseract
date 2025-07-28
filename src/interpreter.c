@@ -441,6 +441,10 @@ void interpret(ASTNode *root)
         {
             set_regex_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_SET)
+        {
+            set_set_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_FILE_READ)
         {
             eval_expression(value_node); // This will read input and set __last_file_read
@@ -2317,6 +2321,9 @@ static double eval_expression(ASTNode *node)
     case NODE_LINKED_LIST:
         print_node(node);
         return 0;
+    case NODE_SET:
+        print_node(node);
+        return 0;
     case NODE_LINKED_LIST_ADD:
     {
         ASTNode *list_node = node->linked_list_op.list;
@@ -3699,6 +3706,21 @@ static void print_node(ASTNode *node)
         printf("/%s/%s\n", node->regex.pattern, node->regex.flags);
         break;
     }
+    case NODE_SET:
+    {
+        printf("{");
+        for (int i = 0; i < node->set.count; i++)
+        {
+            if (node->set.elements[i]->type == NODE_STRING)
+                printf("%s", node->set.elements[i]->string);
+            else if (node->set.elements[i]->type == NODE_NUMBER)
+                printf("%g", node->set.elements[i]->number);
+            if (i < node->set.count - 1)
+                printf(", ");
+        }
+        printf("}\n");
+        break;
+    }
 
     case NODE_VAR:
     {
@@ -3753,6 +3775,12 @@ static void print_node(ASTNode *node)
         {
             ASTNode *regex = get_regex_variable(node->varname);
             print_node(regex);
+        }
+        // Check if it's a set variable
+        else if (get_set_variable(node->varname))
+        {
+            ASTNode *set = get_set_variable(node->varname);
+            print_node(set);
         }
         else
         {

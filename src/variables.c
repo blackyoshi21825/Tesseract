@@ -479,6 +479,65 @@ ASTNode *get_regex_variable(const char *name)
     return entry->value.regex_val;
 }
 
+void set_set_variable(const char *name, ASTNode *set)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (set->type != NODE_SET)
+    {
+        fprintf(stderr, "Attempt to set non-set value as set variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+        entry->value.list_val = set; // Reuse list_val for set
+        entry->type = 8; // New type for sets
+        return;
+    }
+
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.list_val = set;
+    vars[var_count].type = 8;
+    var_count++;
+}
+
+ASTNode *get_set_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 8)
+    {
+        return NULL;
+    }
+    return entry->value.list_val;
+}
+
 void set_temporal_variable(const char *name, const char *value, int max_history)
 {
     if (strlen(name) > MAX_VAR_NAME_LEN)
