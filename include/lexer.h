@@ -123,6 +123,13 @@ typedef enum
     TOK_SET_NEW,             // {1, 2, 3}
     TOK_TYPE,                // ::type
     TOK_UNDEF,               // UNDEF
+    TOK_STRING_SPLIT,        // ::split
+    TOK_STRING_JOIN,         // ::join
+    TOK_STRING_REPLACE,      // ::replace
+    TOK_STRING_SUBSTRING,    // ::substring
+    TOK_STRING_LENGTH,       // ::length
+    TOK_STRING_UPPER,        // ::upper
+    TOK_STRING_LOWER,        // ::lower
 } TokenType;
 
 typedef struct

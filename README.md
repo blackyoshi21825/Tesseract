@@ -499,6 +499,50 @@ let$result := undefined + 5  # result is 5
 - `"temporal"` - Temporal variables
 - `"undef"` - Undefined/null values
 
+### String Methods
+
+Tesseract provides several built-in string manipulation methods:
+
+**String Split:**
+```tesseract
+::split(string, delimiter)  # Split string by delimiter, returns list
+::split("hello,world", ",")  # returns ["hello", "world"]
+```
+
+**String Join:**
+```tesseract
+::join(list, separator)  # Join list elements with separator
+let$words := ["hello", "world"]
+::join(words, " ")  # returns "hello world"
+```
+
+**String Replace:**
+```tesseract
+::replace(string, old, new)  # Replace occurrences of old with new
+::replace("hello world", "world", "tesseract")  # returns "hello tesseract"
+```
+
+**String Substring:**
+```tesseract
+::substring(string, start, length)  # Extract substring
+::substring("hello world", 6, 5)  # returns "world"
+```
+
+**String Length:**
+```tesseract
+::length(string)  # Get string length
+::length("hello")  # returns 5
+```
+
+**String Case Conversion:**
+```tesseract
+::upper(string)  # Convert to uppercase
+::upper("hello")  # returns "HELLO"
+
+::lower(string)  # Convert to lowercase
+::lower("HELLO")  # returns "hello"
+```
+
 ### String Formatting
 
 Currently supports formatting with `@s`:

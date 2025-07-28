@@ -104,6 +104,13 @@ typedef enum
     NODE_SET,                  // Set data structure
     NODE_TYPE,                 // Type checking function
     NODE_UNDEF,                // Undefined value
+    NODE_STRING_SPLIT,         // String split operation
+    NODE_STRING_JOIN,          // String join operation
+    NODE_STRING_REPLACE,       // String replace operation
+    NODE_STRING_SUBSTRING,     // String substring operation
+    NODE_STRING_LENGTH,        // String length operation
+    NODE_STRING_UPPER,         // String uppercase operation
+    NODE_STRING_LOWER,         // String lowercase operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -486,6 +493,32 @@ struct ASTNode
         {
             ASTNode *value;
         } type_check;
+        struct
+        {
+            ASTNode *string;
+            ASTNode *delimiter;
+        } string_split;
+        struct
+        {
+            ASTNode *list;
+            ASTNode *separator;
+        } string_join;
+        struct
+        {
+            ASTNode *string;
+            ASTNode *old_str;
+            ASTNode *new_str;
+        } string_replace;
+        struct
+        {
+            ASTNode *string;
+            ASTNode *start;
+            ASTNode *length;
+        } string_substring;
+        struct
+        {
+            ASTNode *string;
+        } string_op;
     };
 };
 
@@ -618,6 +651,16 @@ ASTNode *ast_new_set();
 void ast_set_add_element(ASTNode *set, ASTNode *element);
 ASTNode *ast_new_type(ASTNode *value);
 ASTNode *ast_new_undef();
+
+// String operation functions
+ASTNode *ast_new_string_split(ASTNode *string, ASTNode *delimiter);
+ASTNode *ast_new_string_join(ASTNode *list, ASTNode *separator);
+ASTNode *ast_new_string_replace(ASTNode *string, ASTNode *old_str, ASTNode *new_str);
+ASTNode *ast_new_string_substring(ASTNode *string, ASTNode *start, ASTNode *length);
+ASTNode *ast_new_string_length(ASTNode *string);
+ASTNode *ast_new_string_upper(ASTNode *string);
+ASTNode *ast_new_string_lower(ASTNode *string);
+
 void ast_set_node_location(ASTNode *node, int line, int column);
 
 #endif

@@ -1078,6 +1078,69 @@ void ast_set_node_location(ASTNode *node, int line, int column)
     ast_set_location(node, line, column);
 }
 
+// String operation AST functions
+ASTNode *ast_new_string_split(ASTNode *string, ASTNode *delimiter)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_SPLIT;
+    node->string_split.string = string;
+    node->string_split.delimiter = delimiter;
+    return node;
+}
+
+ASTNode *ast_new_string_join(ASTNode *list, ASTNode *separator)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_JOIN;
+    node->string_join.list = list;
+    node->string_join.separator = separator;
+    return node;
+}
+
+ASTNode *ast_new_string_replace(ASTNode *string, ASTNode *old_str, ASTNode *new_str)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_REPLACE;
+    node->string_replace.string = string;
+    node->string_replace.old_str = old_str;
+    node->string_replace.new_str = new_str;
+    return node;
+}
+
+ASTNode *ast_new_string_substring(ASTNode *string, ASTNode *start, ASTNode *length)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_SUBSTRING;
+    node->string_substring.string = string;
+    node->string_substring.start = start;
+    node->string_substring.length = length;
+    return node;
+}
+
+ASTNode *ast_new_string_length(ASTNode *string)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_LENGTH;
+    node->string_op.string = string;
+    return node;
+}
+
+ASTNode *ast_new_string_upper(ASTNode *string)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_UPPER;
+    node->string_op.string = string;
+    return node;
+}
+
+ASTNode *ast_new_string_lower(ASTNode *string)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_LOWER;
+    node->string_op.string = string;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -1339,6 +1402,29 @@ void ast_free(ASTNode *node)
             ast_free(node->set.elements[i]);
         }
         free(node->set.elements);
+        break;
+    case NODE_STRING_SPLIT:
+        ast_free(node->string_split.string);
+        ast_free(node->string_split.delimiter);
+        break;
+    case NODE_STRING_JOIN:
+        ast_free(node->string_join.list);
+        ast_free(node->string_join.separator);
+        break;
+    case NODE_STRING_REPLACE:
+        ast_free(node->string_replace.string);
+        ast_free(node->string_replace.old_str);
+        ast_free(node->string_replace.new_str);
+        break;
+    case NODE_STRING_SUBSTRING:
+        ast_free(node->string_substring.string);
+        ast_free(node->string_substring.start);
+        ast_free(node->string_substring.length);
+        break;
+    case NODE_STRING_LENGTH:
+    case NODE_STRING_UPPER:
+    case NODE_STRING_LOWER:
+        ast_free(node->string_op.string);
         break;
 
     default:

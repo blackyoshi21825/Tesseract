@@ -743,7 +743,14 @@ static ASTNode *parse_primary()
         current_token.type == TOK_SENSITIVITY_THRESHOLD ||
         current_token.type == TOK_TEMPORAL_QUERY ||
         current_token.type == TOK_TEMPORAL_CORRELATE ||
-        current_token.type == TOK_TEMPORAL_INTERPOLATE)
+        current_token.type == TOK_TEMPORAL_INTERPOLATE ||
+        current_token.type == TOK_STRING_SPLIT ||
+        current_token.type == TOK_STRING_JOIN ||
+        current_token.type == TOK_STRING_REPLACE ||
+        current_token.type == TOK_STRING_SUBSTRING ||
+        current_token.type == TOK_STRING_LENGTH ||
+        current_token.type == TOK_STRING_UPPER ||
+        current_token.type == TOK_STRING_LOWER)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -975,6 +982,60 @@ static ASTNode *parse_primary()
             }
             
             return ast_new_temporal_interpolate(varname_node->string, missing_index);
+        }
+        else if (func_type == TOK_STRING_SPLIT)
+        {
+            ASTNode *string = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *delimiter = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_split(string, delimiter);
+        }
+        else if (func_type == TOK_STRING_JOIN)
+        {
+            ASTNode *list = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *separator = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_join(list, separator);
+        }
+        else if (func_type == TOK_STRING_REPLACE)
+        {
+            ASTNode *string = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *old_str = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *new_str = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_replace(string, old_str, new_str);
+        }
+        else if (func_type == TOK_STRING_SUBSTRING)
+        {
+            ASTNode *string = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *start = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *length = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_substring(string, start, length);
+        }
+        else if (func_type == TOK_STRING_LENGTH)
+        {
+            ASTNode *string = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_length(string);
+        }
+        else if (func_type == TOK_STRING_UPPER)
+        {
+            ASTNode *string = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_upper(string);
+        }
+        else if (func_type == TOK_STRING_LOWER)
+        {
+            ASTNode *string = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_string_lower(string);
         }
         else // TOK_HTTP_DELETE
         {

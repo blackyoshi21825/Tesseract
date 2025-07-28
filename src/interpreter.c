@@ -1175,7 +1175,11 @@ void interpret(ASTNode *root)
              root->type == NODE_TEMPORAL_AGGREGATE || root->type == NODE_TEMPORAL_PATTERN ||
              root->type == NODE_TEMPORAL_CONDITION || root->type == NODE_SLIDING_WINDOW_STATS ||
              root->type == NODE_SENSITIVITY_THRESHOLD || root->type == NODE_TEMPORAL_QUERY ||
-             root->type == NODE_TEMPORAL_CORRELATE || root->type == NODE_TEMPORAL_INTERPOLATE)
+             root->type == NODE_TEMPORAL_CORRELATE || root->type == NODE_TEMPORAL_INTERPOLATE ||
+             root->type == NODE_STRING_SPLIT || root->type == NODE_STRING_JOIN ||
+             root->type == NODE_STRING_REPLACE || root->type == NODE_STRING_SUBSTRING ||
+             root->type == NODE_STRING_LENGTH || root->type == NODE_STRING_UPPER ||
+             root->type == NODE_STRING_LOWER)
     {
         eval_expression(root);
     }
@@ -3538,6 +3542,198 @@ static double eval_expression(ASTNode *node)
     case NODE_UNDEF:
     {
         return 0; // UNDEF evaluates to 0
+    }
+    case NODE_STRING_SPLIT:
+    {
+        char *string_val = get_string_value(node->string_split.string);
+        char *delimiter_val = get_string_value(node->string_split.delimiter);
+        
+        if (!string_val || !delimiter_val) {
+            if (string_val) free(string_val);
+            if (delimiter_val) free(delimiter_val);
+            error_throw_at_line(ERROR_RUNTIME, "Invalid arguments for split", node->line);
+        }
+        
+        ASTNode *result_list = ast_new_list();
+        
+        if (strlen(delimiter_val) == 0) {
+            // Split into individual characters
+            for (int i = 0; string_val[i]; i++) {
+                char char_str[2] = {string_val[i], '\0'};
+                ast_list_add_element(result_list, ast_new_string(char_str));
+            }
+        } else {
+            char *str_copy = strdup(string_val);
+            char *token = strtok(str_copy, delimiter_val);
+            while (token) {
+                ast_list_add_element(result_list, ast_new_string(token));
+                token = strtok(NULL, delimiter_val);
+            }
+            free(str_copy);
+        }
+        
+        // Store result in a temporary variable for printing
+        char *list_str = list_to_string(result_list);
+        printf("%s\n", list_str);
+        free(list_str);
+        
+        free(string_val);
+        free(delimiter_val);
+        ast_free(result_list);
+        return 0;
+    }
+    case NODE_STRING_JOIN:
+    {
+        ASTNode *list_node = node->string_join.list;
+        if (list_node->type == NODE_VAR) {
+            list_node = get_list_variable(list_node->varname);
+        }
+        
+        if (!list_node || list_node->type != NODE_LIST) {
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "join() expects a list", node->line);
+        }
+        
+        char *separator = get_string_value(node->string_join.separator);
+        if (!separator) {
+            error_throw_at_line(ERROR_RUNTIME, "Invalid separator for join", node->line);
+        }
+        
+        char result[1024] = "";
+        for (int i = 0; i < list_node->list.count; i++) {
+            if (list_node->list.elements[i]->type == NODE_STRING) {
+                strcat(result, list_node->list.elements[i]->string);
+            } else if (list_node->list.elements[i]->type == NODE_NUMBER) {
+                char num_str[64];
+                snprintf(num_str, sizeof(num_str), "%g", list_node->list.elements[i]->number);
+                strcat(result, num_str);
+            }
+            if (i < list_node->list.count - 1) {
+                strcat(result, separator);
+            }
+        }
+        
+        printf("%s\n", result);
+        set_variable("__string_result", result);
+        
+        free(separator);
+        return 0;
+    }
+    case NODE_STRING_REPLACE:
+    {
+        char *string_val = get_string_value(node->string_replace.string);
+        char *old_str = get_string_value(node->string_replace.old_str);
+        char *new_str = get_string_value(node->string_replace.new_str);
+        
+        if (!string_val || !old_str || !new_str) {
+            if (string_val) free(string_val);
+            if (old_str) free(old_str);
+            if (new_str) free(new_str);
+            error_throw_at_line(ERROR_RUNTIME, "Invalid arguments for replace", node->line);
+        }
+        
+        char result[1024] = "";
+        char *pos = string_val;
+        char *found;
+        
+        while ((found = strstr(pos, old_str)) != NULL) {
+            // Copy part before the match
+            int len = found - pos;
+            strncat(result, pos, len);
+            // Add replacement
+            strcat(result, new_str);
+            // Move past the match
+            pos = found + strlen(old_str);
+        }
+        // Copy remaining part
+        strcat(result, pos);
+        
+        printf("%s\n", result);
+        set_variable("__string_result", result);
+        
+        free(string_val);
+        free(old_str);
+        free(new_str);
+        return 0;
+    }
+    case NODE_STRING_SUBSTRING:
+    {
+        char *string_val = get_string_value(node->string_substring.string);
+        if (!string_val) {
+            error_throw_at_line(ERROR_RUNTIME, "Invalid string for substring", node->line);
+        }
+        
+        int start = (int)eval_expression(node->string_substring.start);
+        int length = (int)eval_expression(node->string_substring.length);
+        int str_len = strlen(string_val);
+        
+        if (start < 0 || start >= str_len) {
+            free(string_val);
+            error_throw_at_line(ERROR_INDEX_OUT_OF_BOUNDS, "Substring start index out of bounds", node->line);
+        }
+        
+        if (length < 0 || start + length > str_len) {
+            length = str_len - start;
+        }
+        
+        char result[1024];
+        strncpy(result, string_val + start, length);
+        result[length] = '\0';
+        
+        printf("%s\n", result);
+        set_variable("__string_result", result);
+        
+        free(string_val);
+        return 0;
+    }
+    case NODE_STRING_LENGTH:
+    {
+        char *string_val = get_string_value(node->string_op.string);
+        if (!string_val) {
+            error_throw_at_line(ERROR_RUNTIME, "Invalid string for length", node->line);
+        }
+        
+        int length = strlen(string_val);
+        printf("%d\n", length);
+        free(string_val);
+        return length;
+    }
+    case NODE_STRING_UPPER:
+    {
+        char *string_val = get_string_value(node->string_op.string);
+        if (!string_val) {
+            error_throw_at_line(ERROR_RUNTIME, "Invalid string for upper", node->line);
+        }
+        
+        char result[1024];
+        strcpy(result, string_val);
+        for (int i = 0; result[i]; i++) {
+            result[i] = toupper(result[i]);
+        }
+        
+        printf("%s\n", result);
+        set_variable("__string_result", result);
+        
+        free(string_val);
+        return 0;
+    }
+    case NODE_STRING_LOWER:
+    {
+        char *string_val = get_string_value(node->string_op.string);
+        if (!string_val) {
+            error_throw_at_line(ERROR_RUNTIME, "Invalid string for lower", node->line);
+        }
+        
+        char result[1024];
+        strcpy(result, string_val);
+        for (int i = 0; result[i]; i++) {
+            result[i] = tolower(result[i]);
+        }
+        
+        printf("%s\n", result);
+        set_variable("__string_result", result);
+        
+        free(string_val);
+        return 0;
     }
     case NODE_FUNC_CALL:
     {

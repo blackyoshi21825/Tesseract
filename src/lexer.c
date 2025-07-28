@@ -336,6 +336,13 @@ Token lexer_next_token()
         pos += 7;
         return token;
     }
+    if (starts_with("::length"))
+    {
+        token.type = TOK_STRING_LENGTH;
+        strcpy(token.text, "::length");
+        pos += 8;
+        return token;
+    }
     if (starts_with("::len"))
     {
         token.type = TOK_LIST_LEN;
@@ -537,6 +544,48 @@ Token lexer_next_token()
         token.type = TOK_TYPE;
         strcpy(token.text, "::type");
         pos += 6;
+        return token;
+    }
+    if (starts_with("::split"))
+    {
+        token.type = TOK_STRING_SPLIT;
+        strcpy(token.text, "::split");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::join"))
+    {
+        token.type = TOK_STRING_JOIN;
+        strcpy(token.text, "::join");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::replace"))
+    {
+        token.type = TOK_STRING_REPLACE;
+        strcpy(token.text, "::replace");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::substring"))
+    {
+        token.type = TOK_STRING_SUBSTRING;
+        strcpy(token.text, "::substring");
+        pos += 11;
+        return token;
+    }
+    if (starts_with("::upper"))
+    {
+        token.type = TOK_STRING_UPPER;
+        strcpy(token.text, "::upper");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::lower"))
+    {
+        token.type = TOK_STRING_LOWER;
+        strcpy(token.text, "::lower");
+        pos += 7;
         return token;
     }
     if (starts_with("::http_get"))
