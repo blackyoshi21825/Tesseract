@@ -7,6 +7,7 @@
 jmp_buf exception_env;
 TesseractError current_error;
 int exception_active = 0;
+static char current_filename[256] = "<unknown>";
 
 void error_init() {
     exception_active = 0;
@@ -20,6 +21,12 @@ void error_throw(ErrorType type, const char* message) {
     current_error.type = type;
     strncpy(current_error.message, message, sizeof(current_error.message) - 1);
     current_error.message[sizeof(current_error.message) - 1] = '\0';
+    
+    // Use current filename if file is not already set
+    if (current_error.file[0] == '\0') {
+        strncpy(current_error.file, current_filename, sizeof(current_error.file) - 1);
+        current_error.file[sizeof(current_error.file) - 1] = '\0';
+    }
     
     if (exception_active) {
         longjmp(exception_env, 1);
@@ -36,6 +43,35 @@ void error_set_location(const char* file, int line) {
         current_error.file[sizeof(current_error.file) - 1] = '\0';
     }
     current_error.line = line;
+}
+
+void error_set_current_file(const char* filename) {
+    if (filename) {
+        strncpy(current_filename, filename, sizeof(current_filename) - 1);
+        current_filename[sizeof(current_filename) - 1] = '\0';
+        // Also set it in the current error for immediate use
+        strncpy(current_error.file, filename, sizeof(current_error.file) - 1);
+        current_error.file[sizeof(current_error.file) - 1] = '\0';
+    }
+}
+
+void error_throw_at_line(ErrorType type, const char* message, int line) {
+    current_error.type = type;
+    strncpy(current_error.message, message, sizeof(current_error.message) - 1);
+    current_error.message[sizeof(current_error.message) - 1] = '\0';
+    current_error.line = line;
+    
+    // Use current filename
+    strncpy(current_error.file, current_filename, sizeof(current_error.file) - 1);
+    current_error.file[sizeof(current_error.file) - 1] = '\0';
+    
+    if (exception_active) {
+        longjmp(exception_env, 1);
+    } else {
+        // No exception handler, print error and exit
+        error_print(&current_error);
+        exit(1);
+    }
 }
 
 const char* error_type_to_string(ErrorType type) {

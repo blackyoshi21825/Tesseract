@@ -22,6 +22,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - String Interpolation
 - Sets and Advanced Data Types
 - Destructuring Assignment
+- Enhanced Error Handling with Line Numbers
 - Improved REPL with Error Recovery
 
 ## Getting Started
@@ -620,9 +621,11 @@ let$response := ::http_delete("http://example.com/api/resource")
 - Functions stored in function table
 
 ### Error Handling
-- Syntax errors cause immediate termination
-- Runtime errors terminate with error messages
-- No error recovery mechanism
+- **Enhanced Error System**: Comprehensive error handling with line numbers and better error messages
+- **Line Number Tracking**: Errors show exact line and file location
+- **Error Types**: Syntax, runtime, division by zero, undefined variables, type mismatches, index out of bounds, file not found
+- **Error Format**: `Error: [Type] - [Message] (in [file]:[line])`
+- **Example**: `Error: Division by Zero - Division by zero (in test.tesseract:6)`
 
 ### Current Limitations
 - Maximum 4 function parameters

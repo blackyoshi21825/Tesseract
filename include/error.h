@@ -30,7 +30,9 @@ extern int exception_active;
 // Error functions
 void error_init();
 void error_throw(ErrorType type, const char* message);
+void error_throw_at_line(ErrorType type, const char* message, int line);
 void error_set_location(const char* file, int line);
+void error_set_current_file(const char* filename);
 const char* error_type_to_string(ErrorType type);
 void error_print(const TesseractError* error);
 

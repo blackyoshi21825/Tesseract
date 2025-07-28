@@ -24,7 +24,7 @@ static void expect(TokenType type)
     {
         char error_msg[256];
         snprintf(error_msg, sizeof(error_msg), "Expected token type %d, but got %d", type, current_token.type);
-        THROW(ERROR_SYNTAX, error_msg);
+        error_throw_at_line(ERROR_SYNTAX, error_msg, current_token.line);
     }
     next_token();
 }
@@ -141,12 +141,13 @@ static ASTNode *parse_primary()
 {
     if (current_token.type == TOK_RBRACE)
     {
-        THROW(ERROR_SYNTAX, "Unexpected closing '}' found while parsing an expression");
+        error_throw_at_line(ERROR_SYNTAX, "Unexpected closing '}' found while parsing an expression", current_token.line);
     }
     if (current_token.type == TOK_NUMBER)
     {
         double val = strtod(current_token.text, NULL);
         ASTNode *node = ast_new_number(val);
+        ast_set_node_location(node, current_token.line, current_token.column);
         next_token();
         return node;
     }
@@ -226,6 +227,7 @@ static ASTNode *parse_primary()
         {
             // Regular string without formatting
             ASTNode *node = ast_new_string(current_token.text);
+            ast_set_node_location(node, current_token.line, current_token.column);
             next_token();
             return node;
         }
@@ -1082,6 +1084,7 @@ static ASTNode *parse_binop_rhs(int expr_prec, ASTNode *lhs)
         }
 
         lhs = ast_new_binop(lhs, rhs, binop);
+        ast_set_node_location(lhs, current_token.line, current_token.column);
     }
 
     return lhs; // defensive
@@ -1218,8 +1221,7 @@ static ASTNode *parse_statement()
         
         if (current_token.type != TOK_ID && current_token.type != TOK_SELF)
         {
-            printf("Parse error: Expected variable name after let$\n");
-            exit(1);
+            error_throw_at_line(ERROR_SYNTAX, "Expected variable name after let$", current_token.line);
         }
 
         // Handle both regular variables and self.member
@@ -1310,8 +1312,7 @@ static ASTNode *parse_statement()
         next_token();
         if (current_token.type != TOK_ID)
         {
-            printf("Parse error: Expected loop variable name\n");
-            exit(1);
+            error_throw_at_line(ERROR_SYNTAX, "Expected loop variable name", current_token.line);
         }
         char loop_var[64];
         strcpy(loop_var, current_token.text);
@@ -1480,8 +1481,7 @@ static ASTNode *parse_statement()
         next_token();
         if (current_token.type != TOK_ID)
         {
-            printf("Parse error: Expected function name after func$\n");
-            exit(1);
+            error_throw_at_line(ERROR_SYNTAX, "Expected function name after func$", current_token.line);
         }
 
         char fname[64];
@@ -1499,13 +1499,11 @@ static ASTNode *parse_statement()
             {
                 if (param_count >= 4)
                 {
-                    printf("Parse error: Too many function parameters (max 4)\n");
-                    exit(1);
+                    error_throw_at_line(ERROR_SYNTAX, "Too many function parameters (max 4)", current_token.line);
                 }
                 if (current_token.type != TOK_ID && current_token.type != TOK_SELF)
                 {
-                    printf("Parse error: Expected parameter name\n");
-                    exit(1);
+                    error_throw_at_line(ERROR_SYNTAX, "Expected parameter name", current_token.line);
                 }
                 strcpy(params[param_count++], current_token.text);
                 next_token();

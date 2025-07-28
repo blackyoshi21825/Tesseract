@@ -757,8 +757,7 @@ void interpret(ASTNode *root)
         
         if (increment == 0)
         {
-            printf("Runtime error: Loop increment cannot be zero\n");
-            exit(1);
+            error_throw_at_line(ERROR_RUNTIME, "Loop increment cannot be zero", root->line);
         }
         
         if (increment > 0)
@@ -796,8 +795,9 @@ void interpret(ASTNode *root)
         TemporalVariable *temp_var = get_temporal_var_struct(root->temporal_loop.temporal_var);
         if (!temp_var)
         {
-            printf("Runtime error: Variable '%s' is not a temporal variable\n", root->temporal_loop.temporal_var);
-            exit(1);
+            char error_msg[256];
+            snprintf(error_msg, sizeof(error_msg), "Variable '%s' is not a temporal variable", root->temporal_loop.temporal_var);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, error_msg, root->line);
         }
         
         // Iterate through the temporal history
@@ -838,8 +838,9 @@ void interpret(ASTNode *root)
         char *source = read_file(root->string);
         if (!source)
         {
-            printf("Import error: Could not open file '%s'\n", root->string);
-            exit(1);
+            char error_msg[256];
+            snprintf(error_msg, sizeof(error_msg), "Could not open file '%s'", root->string);
+            error_throw_at_line(ERROR_FILE_NOT_FOUND, error_msg, root->line);
         }
         parser_init(source);
         ASTNode *import_root = parse_program();
@@ -1190,8 +1191,7 @@ static double eval_expression(ASTNode *node)
 {
     if (!node)
     {
-        fprintf(stderr, "Runtime error: Null AST node in eval\n");
-        exit(1);
+        error_throw_at_line(ERROR_RUNTIME, "Null AST node in eval", 0);
     }
 
     switch (node->type)
@@ -1275,7 +1275,7 @@ static double eval_expression(ASTNode *node)
         case TOK_DIV:
             if (right == 0)
             {
-                THROW(ERROR_DIVISION_BY_ZERO, "Division by zero");
+                error_throw_at_line(ERROR_DIVISION_BY_ZERO, "Division by zero", node->line);
             }
             return left / right;
         case TOK_MOD:
@@ -1293,8 +1293,11 @@ static double eval_expression(ASTNode *node)
         case TOK_GTE:
             return left >= right;
         default:
-            fprintf(stderr, "Runtime error: Unknown binary operator %d\n", node->binop.op);
-            exit(1);
+            {
+                char error_msg[256];
+                snprintf(error_msg, sizeof(error_msg), "Unknown binary operator %d", node->binop.op);
+                error_throw_at_line(ERROR_RUNTIME, error_msg, node->line);
+            }
         }
     }
 
@@ -1327,14 +1330,12 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST)
         {
-            printf("Runtime error: List access only supported on list nodes\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "List access only supported on list nodes", node->line);
         }
 
         if (i < 0 || i >= list_node->list.count)
         {
-            printf("Runtime error: List index out of bounds\n");
-            exit(1);
+            error_throw_at_line(ERROR_INDEX_OUT_OF_BOUNDS, "List index out of bounds", node->line);
         }
 
         ASTNode *element = list_node->list.elements[i];
@@ -1349,8 +1350,7 @@ static double eval_expression(ASTNode *node)
         }
         else
         {
-            printf("Runtime error: Unsupported list element type\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "Unsupported list element type", node->line);
         }
     }
 
@@ -1368,8 +1368,7 @@ static double eval_expression(ASTNode *node)
         }
         if (list_node->type != NODE_LIST)
         {
-            printf("Runtime error: len() expects a list\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "len() expects a list", node->line);
         }
         return list_node->list.count;
     }
@@ -1392,8 +1391,7 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST)
         {
-            printf("Runtime error: append() expects a list\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "append() expects a list", node->line);
         }
 
         ast_list_add_element(list_node, value_node);
@@ -1418,8 +1416,7 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST)
         {
-            printf("Runtime error: prepend() expects a list\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "prepend() expects a list", node->line);
         }
 
         // Shift all elements to make room at the beginning
@@ -1450,8 +1447,7 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST || list_node->list.count == 0)
         {
-            printf("Runtime error: pop() expects a non-empty list\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "pop() expects a non-empty list", node->line);
         }
 
         double val = eval_expression(list_node->list.elements[list_node->list.count - 1]);
@@ -1467,15 +1463,13 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST)
         {
-            fprintf(stderr, "runtime error: insert() expects a list\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "insert() expects a list", node->line);
         }
 
         int index = (int)eval_expression(index_node);
         if (index < 0 || index > list_node->list.count)
         {
-            fprintf(stderr, "runtime error: Index out of bounds in insert()\n");
-            exit(1);
+            error_throw_at_line(ERROR_INDEX_OUT_OF_BOUNDS, "Index out of bounds in insert()", node->line);
         }
 
         ASTNode *new_value = ast_new_number(eval_expression(value_node));
@@ -1524,8 +1518,7 @@ static double eval_expression(ASTNode *node)
 
         if (list_node->type != NODE_LIST)
         {
-            printf("Runtime error: remove() expects a list\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "remove() expects a list", node->line);
         }
 
         double value = eval_expression(value_node);
@@ -1549,8 +1542,7 @@ static double eval_expression(ASTNode *node)
 
         if (!found)
         {
-            printf("Runtime error: Value not found in list\n");
-            exit(1);
+            error_throw_at_line(ERROR_RUNTIME, "Value not found in list", node->line);
         }
         return 0; // Return success
     }
@@ -1933,8 +1925,7 @@ static double eval_expression(ASTNode *node)
         }
         if (dict_node->type != NODE_DICT)
         {
-            printf("Runtime error: get() expects a dictionary\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "get() expects a dictionary", node->line);
         }
 
         ASTNode *key = node->dict_get.key;
@@ -1952,8 +1943,7 @@ static double eval_expression(ASTNode *node)
                 }
             }
         }
-        printf("Runtime error: Key not found in dictionary\n");
-        exit(1);
+        error_throw_at_line(ERROR_RUNTIME, "Key not found in dictionary", node->line);
     }
     case NODE_DICT_SET:
     {
@@ -1969,8 +1959,7 @@ static double eval_expression(ASTNode *node)
         }
         if (dict_node->type != NODE_DICT)
         {
-            printf("Runtime error: set() expects a dictionary\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "set() expects a dictionary", node->line);
         }
 
         ASTNode *key = node->dict_set.key;
@@ -2005,8 +1994,7 @@ static double eval_expression(ASTNode *node)
         }
         if (dict_node->type != NODE_DICT)
         {
-            printf("Runtime error: keys() expects a dictionary\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "keys() expects a dictionary", node->line);
         }
         printf("[");
         for (int i = 0; i < dict_node->dict.count; i++)
@@ -2035,8 +2023,7 @@ static double eval_expression(ASTNode *node)
         }
         if (dict_node->type != NODE_DICT)
         {
-            printf("Runtime error: values() expects a dictionary\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "values() expects a dictionary", node->line);
         }
         printf("[");
         for (int i = 0; i < dict_node->dict.count; i++)
@@ -2072,15 +2059,15 @@ static double eval_expression(ASTNode *node)
 
         if (!obj)
         {
-            printf("Runtime error: Member access on non-object\n");
-            exit(1);
+            error_throw_at_line(ERROR_RUNTIME, "Member access on non-object", node->line);
         }
 
         FieldEntry *field = object_get_field(obj, member_name);
         if (!field)
         {
-            printf("Runtime error: Field '%s' not found\n", member_name);
-            exit(1);
+            char error_msg[256];
+            snprintf(error_msg, sizeof(error_msg), "Field '%s' not found", member_name);
+            error_throw_at_line(ERROR_RUNTIME, error_msg, node->line);
         }
 
         if (field->type == FIELD_NUMBER)
@@ -2116,8 +2103,7 @@ static double eval_expression(ASTNode *node)
 
         if (stack_node->type != NODE_STACK)
         {
-            printf("Runtime error: push() expects a stack\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "push() expects a stack", node->line);
         }
 
         ast_stack_add_element(stack_node, value_node);
@@ -2140,8 +2126,7 @@ static double eval_expression(ASTNode *node)
 
         if (stack_node->type != NODE_STACK || stack_node->stack.count == 0)
         {
-            printf("Runtime error: pop() expects a non-empty stack\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "pop() expects a non-empty stack", node->line);
         }
 
         ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
@@ -2169,8 +2154,7 @@ static double eval_expression(ASTNode *node)
 
         if (stack_node->type != NODE_STACK || stack_node->stack.count == 0)
         {
-            printf("Runtime error: peek() expects a non-empty stack\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "peek() expects a non-empty stack", node->line);
         }
 
         ASTNode *top_element = stack_node->stack.elements[stack_node->stack.count - 1];
@@ -2203,8 +2187,7 @@ static double eval_expression(ASTNode *node)
 
         if (stack_node->type != NODE_STACK)
         {
-            printf("Runtime error: size() expects a stack\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "size() expects a stack", node->line);
         }
 
         return stack_node->stack.count;
@@ -2226,8 +2209,7 @@ static double eval_expression(ASTNode *node)
 
         if (stack_node->type != NODE_STACK)
         {
-            printf("Runtime error: empty() expects a stack\n");
-            exit(1);
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "empty() expects a stack", node->line);
         }
 
         return stack_node->stack.count == 0 ? 1 : 0;
@@ -3562,14 +3544,16 @@ static double eval_expression(ASTNode *node)
         Function *fn = find_function(node->func_call.name);
         if (!fn)
         {
-            printf("Runtime error: Undefined function '%s'\n", node->func_call.name);
-            exit(1);
+            char error_msg[256];
+            snprintf(error_msg, sizeof(error_msg), "Undefined function '%s'", node->func_call.name);
+            error_throw_at_line(ERROR_UNDEFINED_VARIABLE, error_msg, node->line);
         }
         if (fn->param_count != node->func_call.arg_count)
         {
-            printf("Runtime error: Function '%s' expects %d args but got %d\n",
+            char error_msg[256];
+            snprintf(error_msg, sizeof(error_msg), "Function '%s' expects %d args but got %d",
                    node->func_call.name, fn->param_count, node->func_call.arg_count);
-            exit(1);
+            error_throw_at_line(ERROR_RUNTIME, error_msg, node->line);
         }
 
         // Save current variable state to restore later
@@ -3658,8 +3642,11 @@ static double eval_expression(ASTNode *node)
         return 0; // Default return value
     }
     default:
-        fprintf(stderr, "Runtime error: Unsupported AST node type %d\n", node->type);
-        exit(1);
+        {
+            char error_msg[256];
+            snprintf(error_msg, sizeof(error_msg), "Unsupported AST node type %d", node->type);
+            error_throw_at_line(ERROR_RUNTIME, error_msg, node->line);
+        }
     }
 }
 

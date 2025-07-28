@@ -5,10 +5,20 @@
 
 // --- AST Node Creation ---
 
+static void ast_set_location(ASTNode *node, int line, int column)
+{
+    if (node) {
+        node->line = line;
+        node->column = column;
+    }
+}
+
 ASTNode *ast_new_number(double value)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_NUMBER;
+    node->line = 0;
+    node->column = 0;
     node->number = value;
     return node;
 }
@@ -17,6 +27,8 @@ ASTNode *ast_new_string(const char *str)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_STRING;
+    node->line = 0;
+    node->column = 0;
     strncpy(node->string, str, sizeof(node->string));
     node->string[sizeof(node->string) - 1] = '\0';
     return node;
@@ -26,6 +38,8 @@ ASTNode *ast_new_var(const char *name)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_VAR;
+    node->line = 0;
+    node->column = 0;
     strncpy(node->varname, name, sizeof(node->varname));
     node->varname[sizeof(node->varname) - 1] = '\0';
     return node;
@@ -1054,7 +1068,14 @@ ASTNode *ast_new_undef()
 {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_UNDEF;
+    node->line = 0;
+    node->column = 0;
     return node;
+}
+
+void ast_set_node_location(ASTNode *node, int line, int column)
+{
+    ast_set_location(node, line, column);
 }
 
 // --- AST Free ---

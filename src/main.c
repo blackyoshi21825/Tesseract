@@ -35,6 +35,9 @@ void run_repl()
         exception_active = 1;
         
         if (TRY()) {
+            // Set current filename for REPL
+            error_set_current_file("<repl>");
+            
             parser_init(input);
             ASTNode *root = parse_program();
             if (root)
@@ -92,6 +95,9 @@ int main(int argc, char **argv)
             return 1;
         }
 
+        // Set current filename for error reporting
+        error_set_current_file(argv[1]);
+        
         parser_init(source);
         ASTNode *root = parse_program();
         interpret(root);

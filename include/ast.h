@@ -111,6 +111,8 @@ typedef struct ASTNode ASTNode;
 struct ASTNode
 {
     NodeType type;
+    int line;
+    int column;
     union
     {
         double number; // Directly store the number here
@@ -616,5 +618,6 @@ ASTNode *ast_new_set();
 void ast_set_add_element(ASTNode *set, ASTNode *element);
 ASTNode *ast_new_type(ASTNode *value);
 ASTNode *ast_new_undef();
+void ast_set_node_location(ASTNode *node, int line, int column);
 
 #endif

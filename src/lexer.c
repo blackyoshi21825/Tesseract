@@ -6,17 +6,40 @@
 
 static const char *input;
 static int pos;
+static int current_line;
+static int current_column;
 
 void lexer_init(const char *source)
 {
     input = source;
     pos = 0;
+    current_line = 1;
+    current_column = 1;
+}
+
+static void advance_pos(int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        if (input[pos] == '\n')
+        {
+            current_line++;
+            current_column = 1;
+        }
+        else
+        {
+            current_column++;
+        }
+        pos++;
+    }
 }
 
 static void skip_whitespace()
 {
     while (isspace(input[pos]))
-        pos++;
+    {
+        advance_pos(1);
+    }
 }
 
 static int starts_with(const char *str)
@@ -36,8 +59,14 @@ Token lexer_next_token()
     Token token;
     token.type = TOK_UNKNOWN;
     token.text[0] = '\0';
+    token.line = current_line;
+    token.column = current_column;
 
     skip_whitespace();
+    
+    // Update token position after skipping whitespace
+    token.line = current_line;
+    token.column = current_column;
 
     if (input[pos] == '\0')
     {
@@ -49,7 +78,7 @@ Token lexer_next_token()
     if (input[pos] == '#')
     {
         while (input[pos] != '\n' && input[pos] != '\0')
-            pos++;
+            advance_pos(1);
         return lexer_next_token(); // Skip the comment and get the next token
     }
 
@@ -58,7 +87,7 @@ Token lexer_next_token()
     {
         token.type = TOK_LET;
         strcpy(token.text, "let$");
-        pos += 4;
+        advance_pos(4);
         return token;
     }
     if (starts_with("::print"))

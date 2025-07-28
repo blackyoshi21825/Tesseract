@@ -131,6 +131,8 @@ typedef struct
     char string_value[256];
     char text[64];
     double number_value;
+    int line;
+    int column;
 } Token;
 
 void lexer_init(const char *source);
