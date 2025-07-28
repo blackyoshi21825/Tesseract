@@ -111,6 +111,7 @@ typedef enum
     NODE_STRING_LENGTH,        // String length operation
     NODE_STRING_UPPER,         // String uppercase operation
     NODE_STRING_LOWER,         // String lowercase operation
+    NODE_RANDOM,               // Random number generation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -519,6 +520,12 @@ struct ASTNode
         {
             ASTNode *string;
         } string_op;
+        struct
+        {
+            ASTNode *start;
+            ASTNode *end;
+            ASTNode *increment;
+        } random_op;
     };
 };
 
@@ -660,6 +667,7 @@ ASTNode *ast_new_string_substring(ASTNode *string, ASTNode *start, ASTNode *leng
 ASTNode *ast_new_string_length(ASTNode *string);
 ASTNode *ast_new_string_upper(ASTNode *string);
 ASTNode *ast_new_string_lower(ASTNode *string);
+ASTNode *ast_new_random(ASTNode *start, ASTNode *end, ASTNode *increment);
 
 void ast_set_node_location(ASTNode *node, int line, int column);
 

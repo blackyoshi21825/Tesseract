@@ -750,7 +750,8 @@ static ASTNode *parse_primary()
         current_token.type == TOK_STRING_SUBSTRING ||
         current_token.type == TOK_STRING_LENGTH ||
         current_token.type == TOK_STRING_UPPER ||
-        current_token.type == TOK_STRING_LOWER)
+        current_token.type == TOK_STRING_LOWER ||
+        current_token.type == TOK_RANDOM)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -1036,6 +1037,20 @@ static ASTNode *parse_primary()
             ASTNode *string = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_string_lower(string);
+        }
+        else if (func_type == TOK_RANDOM)
+        {
+            ASTNode *start = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *end = parse_expression();
+            ASTNode *increment = NULL;
+            if (current_token.type == TOK_COMMA)
+            {
+                next_token();
+                increment = parse_expression();
+            }
+            expect(TOK_RPAREN);
+            return ast_new_random(start, end, increment);
         }
         else // TOK_HTTP_DELETE
         {

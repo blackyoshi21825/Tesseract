@@ -588,6 +588,13 @@ Token lexer_next_token()
         pos += 7;
         return token;
     }
+    if (starts_with("::random"))
+    {
+        token.type = TOK_RANDOM;
+        strcpy(token.text, "::random");
+        pos += 8;
+        return token;
+    }
     if (starts_with("::http_get"))
     {
         token.type = TOK_HTTP_GET;

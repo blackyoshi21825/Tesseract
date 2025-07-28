@@ -1141,6 +1141,16 @@ ASTNode *ast_new_string_lower(ASTNode *string)
     return node;
 }
 
+ASTNode *ast_new_random(ASTNode *start, ASTNode *end, ASTNode *increment)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_RANDOM;
+    node->random_op.start = start;
+    node->random_op.end = end;
+    node->random_op.increment = increment;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -1425,6 +1435,12 @@ void ast_free(ASTNode *node)
     case NODE_STRING_UPPER:
     case NODE_STRING_LOWER:
         ast_free(node->string_op.string);
+        break;
+    case NODE_RANDOM:
+        ast_free(node->random_op.start);
+        ast_free(node->random_op.end);
+        if (node->random_op.increment)
+            ast_free(node->random_op.increment);
         break;
 
     default:

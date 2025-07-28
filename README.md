@@ -558,6 +558,23 @@ Find patterns in strings:
 ::pattern_match(pattern, noise)  # returns list of starting indices
 ```
 
+### Random Number Generation
+
+The `::random(start, end, increment)` function generates random numbers within specified constraints.
+
+**Syntax:**
+```tesseract
+::random(start, end)           # Random number between start and end (increment = 1)
+::random(start, end, increment) # Random number with custom increment
+```
+
+**Examples:**
+```tesseract
+::random(1, 10)        # Random integer between 1 and 10
+::random(0, 20, 2)     # Random even number between 0 and 20
+::random(1, 5, 0.5)    # Random number: 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, or 5
+```
+
 ### Input Function
 
 The `::input()` function prompts the user for input and returns the entered value as a string.

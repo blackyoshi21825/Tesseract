@@ -130,6 +130,7 @@ typedef enum
     TOK_STRING_LENGTH,       // ::length
     TOK_STRING_UPPER,        // ::upper
     TOK_STRING_LOWER,        // ::lower
+    TOK_RANDOM,              // ::random
 } TokenType;
 
 typedef struct

@@ -1179,7 +1179,7 @@ void interpret(ASTNode *root)
              root->type == NODE_STRING_SPLIT || root->type == NODE_STRING_JOIN ||
              root->type == NODE_STRING_REPLACE || root->type == NODE_STRING_SUBSTRING ||
              root->type == NODE_STRING_LENGTH || root->type == NODE_STRING_UPPER ||
-             root->type == NODE_STRING_LOWER)
+             root->type == NODE_STRING_LOWER || root->type == NODE_RANDOM)
     {
         eval_expression(root);
     }
@@ -3734,6 +3734,38 @@ static double eval_expression(ASTNode *node)
         
         free(string_val);
         return 0;
+    }
+    case NODE_RANDOM:
+    {
+        double start = eval_expression(node->random_op.start);
+        double end = eval_expression(node->random_op.end);
+        double increment = 1.0;
+        
+        if (node->random_op.increment) {
+            increment = eval_expression(node->random_op.increment);
+        }
+        
+        if (increment <= 0) {
+            error_throw_at_line(ERROR_RUNTIME, "Random increment must be positive", node->line);
+        }
+        
+        if (start > end) {
+            double temp = start;
+            start = end;
+            end = temp;
+        }
+        
+        // Calculate number of possible values
+        int num_values = (int)((end - start) / increment) + 1;
+        
+        // Generate random index
+        int random_index = rand() % num_values;
+        
+        // Calculate the random value
+        double result = start + (random_index * increment);
+        
+        printf("%g\n", result);
+        return result;
     }
     case NODE_FUNC_CALL:
     {
