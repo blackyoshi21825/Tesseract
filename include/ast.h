@@ -102,6 +102,8 @@ typedef enum
     NODE_STRING_INTERPOLATION, // String interpolation
     NODE_DESTRUCTURE,          // Destructuring assignment
     NODE_SET,                  // Set data structure
+    NODE_TYPE,                 // Type checking function
+    NODE_UNDEF,                // Undefined value
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -478,6 +480,10 @@ struct ASTNode
             ASTNode **elements;
             int count;
         } set;
+        struct
+        {
+            ASTNode *value;
+        } type_check;
     };
 };
 
@@ -608,5 +614,7 @@ ASTNode *ast_new_lambda(char params[][64], int param_count, ASTNode *body);
 ASTNode *ast_new_string_interpolation(const char *template, ASTNode **expressions, int expr_count);
 ASTNode *ast_new_set();
 void ast_set_add_element(ASTNode *set, ASTNode *element);
+ASTNode *ast_new_type(ASTNode *value);
+ASTNode *ast_new_undef();
 
 #endif

@@ -188,6 +188,13 @@ Token lexer_next_token()
         pos += 5;
         return token;
     }
+    if (starts_with("UNDEF") && !isalnum(input[pos + 5]))
+    {
+        token.type = TOK_UNDEF;
+        strcpy(token.text, "UNDEF");
+        pos += 5;
+        return token;
+    }
     if (starts_with("not"))
     {
         token.type = TOK_NOT;
@@ -494,6 +501,13 @@ Token lexer_next_token()
         token.type = TOK_TO_INT;
         strcpy(token.text, "::to_int");
         pos += 8;
+        return token;
+    }
+    if (starts_with("::type"))
+    {
+        token.type = TOK_TYPE;
+        strcpy(token.text, "::type");
+        pos += 6;
         return token;
     }
     if (starts_with("::http_get"))

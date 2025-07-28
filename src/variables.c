@@ -21,7 +21,7 @@ typedef struct
         ASTNode *linked_list_val; // For linked list values
         ASTNode *regex_val; // For regex values
     } value;
-    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex, 7=temporal
+    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex, 7=temporal, 8=set, 9=undef
     TemporalVariable *temporal_val; // For temporal variables
 } VarEntry;
 
@@ -212,7 +212,12 @@ const char *get_variable(const char *name)
     VarEntry *entry = find_variable(name);
     if (!entry)
     {
-        fprintf(stderr, "Undefined variable: %s\n", name);
+        // Auto-create UNDEF variable
+        set_undef_variable(name);
+        return NULL;
+    }
+    if (entry->type == 9) // UNDEF type
+    {
         return NULL;
     }
     if (entry->type != 0)
@@ -657,4 +662,70 @@ TemporalVariable *get_temporal_var_struct(const char *name)
         return NULL;
     }
     return entry->temporal_val;
+}
+
+void set_undef_variable(const char *name)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        // Free existing value
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+        else if (entry->type == 7)
+        {
+            for (int i = 0; i < entry->temporal_val->count; i++)
+            {
+                free(entry->temporal_val->history[i].value);
+            }
+            free(entry->temporal_val);
+        }
+        
+        entry->type = 9; // UNDEF type
+        entry->value.string_val = NULL;
+        return;
+    }
+
+    // New variable
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.string_val = NULL;
+    vars[var_count].type = 9; // UNDEF type
+    var_count++;
+}
+
+int is_undef_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry)
+    {
+        // Auto-create UNDEF variable
+        set_undef_variable(name);
+        return 1;
+    }
+    return entry->type == 9;
 }

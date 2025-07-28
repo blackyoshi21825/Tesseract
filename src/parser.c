@@ -550,6 +550,12 @@ static ASTNode *parse_primary()
         return ast_new_number(0.0);
     }
 
+    if (current_token.type == TOK_UNDEF)
+    {
+        next_token();
+        return ast_new_undef();
+    }
+
     if (current_token.type == TOK_DICT_GET ||
         current_token.type == TOK_DICT_SET ||
         current_token.type == TOK_DICT_KEYS ||
@@ -723,6 +729,7 @@ static ASTNode *parse_primary()
         current_token.type == TOK_FILE_CLOSE ||
         current_token.type == TOK_TO_STR ||
         current_token.type == TOK_TO_INT ||
+        current_token.type == TOK_TYPE ||
         current_token.type == TOK_HTTP_GET ||
         current_token.type == TOK_HTTP_POST ||
         current_token.type == TOK_HTTP_PUT ||
@@ -779,6 +786,12 @@ static ASTNode *parse_primary()
             ASTNode *value = parse_expression();
             expect(TOK_RPAREN);
             return ast_new_to_int(value);
+        }
+        else if (func_type == TOK_TYPE)
+        {
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            return ast_new_type(value);
         }
         else if (func_type == TOK_HTTP_GET)
         {

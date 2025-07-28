@@ -444,7 +444,7 @@ let$ b := 20
 
 ## Advanced Features
 
-### Type Conversion
+### Type Conversion and Checking
 
 **String/Number Conversion:**
 ```tesseract
@@ -452,15 +452,51 @@ let$ b := 20
 ::to_int("123")   # converts string to number
 ```
 
+**Type Checking:**
+```tesseract
+::type(variable)  # returns the type of a variable as a string
+```
+
+**UNDEF (Null) Values:**
+```tesseract
+let$x := UNDEF    # assigns undefined value
+::print x         # prints "UNDEF"
+::type(x)         # returns "undef"
+
+# Variables are automatically UNDEF when accessed without assignment
+::print undefined_var  # prints "UNDEF" (auto-created)
+::type(undefined_var)  # returns "undef"
+```
+
 **Example:**
 ```tesseract
 let$num := 42
-let$str := ::to_str(num)   # "42"
-let$parsed := ::to_int("123")   # 123
+let$str := "hello"
+let$list := [1, 2, 3]
+let$undefined := UNDEF
 
-# Can be used in format strings
-::print "Value: @s" (::to_str(num))
+::print ::type(num)        # prints "number"
+::print ::type(str)        # prints "string"
+::print ::type(list)       # prints "list"
+::print ::type(undefined)  # prints "undef"
+::print ::type(nonexistent) # prints "undef"
+
+# UNDEF evaluates to 0 in numeric contexts
+let$result := undefined + 5  # result is 5
 ```
+
+**Supported Types:**
+- `"number"` - Numeric values
+- `"string"` - String values
+- `"list"` - Lists/arrays
+- `"dict"` - Dictionaries
+- `"stack"` - Stack data structures
+- `"queue"` - Queue data structures
+- `"linked_list"` - Linked list data structures
+- `"regex"` - Regular expressions
+- `"set"` - Set data structures
+- `"temporal"` - Temporal variables
+- `"undef"` - Undefined/null values
 
 ### String Formatting
 

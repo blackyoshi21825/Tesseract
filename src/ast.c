@@ -1042,6 +1042,21 @@ void ast_set_add_element(ASTNode *set, ASTNode *element)
     set->set.elements[set->set.count++] = element;
 }
 
+ASTNode *ast_new_type(ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TYPE;
+    node->type_check.value = value;
+    return node;
+}
+
+ASTNode *ast_new_undef()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_UNDEF;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -1290,6 +1305,19 @@ void ast_free(ASTNode *node)
     case NODE_SENSITIVITY_THRESHOLD:
         ast_free(node->sensitivity_threshold.threshold_value);
         ast_free(node->sensitivity_threshold.sensitivity_percent);
+        break;
+    case NODE_TYPE:
+        ast_free(node->type_check.value);
+        break;
+    case NODE_UNDEF:
+        // No dynamic memory to free
+        break;
+    case NODE_SET:
+        for (int i = 0; i < node->set.count; i++)
+        {
+            ast_free(node->set.elements[i]);
+        }
+        free(node->set.elements);
         break;
 
     default:

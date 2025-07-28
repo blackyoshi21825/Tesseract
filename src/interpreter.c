@@ -445,6 +445,10 @@ void interpret(ASTNode *root)
         {
             set_set_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_UNDEF)
+        {
+            set_undef_variable(root->assign.varname);
+        }
         else if (value_node->type == NODE_FILE_READ)
         {
             eval_expression(value_node); // This will read input and set __last_file_read
@@ -470,6 +474,18 @@ void interpret(ASTNode *root)
                 char buf[64];
                 snprintf(buf, sizeof(buf), "%g", result);
                 set_variable(root->assign.varname, buf);
+            }
+        }
+        else if (value_node->type == NODE_TYPE)
+        {
+            double result = eval_expression(value_node);
+            if (result == -12345.6789)
+            {
+                const char *str_result = get_variable("__type_result");
+                if (str_result)
+                {
+                    set_variable(root->assign.varname, str_result);
+                }
             }
         }
         else if (value_node->type == NODE_TERNARY)
@@ -1217,11 +1233,16 @@ static double eval_expression(ASTNode *node)
             return dval;
         }
         
+        // Check if it's an UNDEF variable
+        if (is_undef_variable(node->varname))
+        {
+            return 0.0; // UNDEF evaluates to 0
+        }
+        
         const char *val = get_variable(node->varname);
         if (!val)
         {
-            printf("Runtime error: Undefined variable '%s'\n", node->varname);
-            exit(1);
+            return 0.0; // Undefined variables are treated as UNDEF (0)
         }
         char *endptr;
         double dval = strtod(val, &endptr);
@@ -3420,6 +3441,122 @@ static double eval_expression(ASTNode *node)
         set_variable("__string_interp_result", result);
         return 0;
     }
+    case NODE_TYPE:
+    {
+        ASTNode *value = node->type_check.value;
+        const char *type_name = "unknown";
+        
+        if (value->type == NODE_VAR)
+        {
+            // Check variable type
+            if (is_undef_variable(value->varname))
+            {
+                type_name = "undef";
+            }
+            else if (get_list_variable(value->varname))
+            {
+                type_name = "list";
+            }
+            else if (get_dict_variable(value->varname))
+            {
+                type_name = "dict";
+            }
+            else if (get_stack_variable(value->varname))
+            {
+                type_name = "stack";
+            }
+            else if (get_queue_variable(value->varname))
+            {
+                type_name = "queue";
+            }
+            else if (get_linked_list_variable(value->varname))
+            {
+                type_name = "linked_list";
+            }
+            else if (get_regex_variable(value->varname))
+            {
+                type_name = "regex";
+            }
+            else if (get_set_variable(value->varname))
+            {
+                type_name = "set";
+            }
+            else if (get_temporal_var_struct(value->varname))
+            {
+                type_name = "temporal";
+            }
+            else
+            {
+                const char *str_val = get_variable(value->varname);
+                if (str_val)
+                {
+                    // Check if it's a number or string
+                    char *endptr;
+                    strtod(str_val, &endptr);
+                    if (endptr != str_val && *endptr == '\0')
+                    {
+                        type_name = "number";
+                    }
+                    else
+                    {
+                        type_name = "string";
+                    }
+                }
+                else
+                {
+                    type_name = "undef";
+                }
+            }
+        }
+        else if (value->type == NODE_NUMBER)
+        {
+            type_name = "number";
+        }
+        else if (value->type == NODE_STRING)
+        {
+            type_name = "string";
+        }
+        else if (value->type == NODE_LIST)
+        {
+            type_name = "list";
+        }
+        else if (value->type == NODE_DICT)
+        {
+            type_name = "dict";
+        }
+        else if (value->type == NODE_STACK)
+        {
+            type_name = "stack";
+        }
+        else if (value->type == NODE_QUEUE)
+        {
+            type_name = "queue";
+        }
+        else if (value->type == NODE_LINKED_LIST)
+        {
+            type_name = "linked_list";
+        }
+        else if (value->type == NODE_REGEX)
+        {
+            type_name = "regex";
+        }
+        else if (value->type == NODE_SET)
+        {
+            type_name = "set";
+        }
+        else if (value->type == NODE_UNDEF)
+        {
+            type_name = "undef";
+        }
+        
+        // Store result for string return
+        set_variable("__type_result", type_name);
+        return -12345.6789; // Special marker for string return
+    }
+    case NODE_UNDEF:
+    {
+        return 0; // UNDEF evaluates to 0
+    }
     case NODE_FUNC_CALL:
     {
         Function *fn = find_function(node->func_call.name);
@@ -3782,6 +3919,11 @@ static void print_node(ASTNode *node)
             ASTNode *set = get_set_variable(node->varname);
             print_node(set);
         }
+        // Check if it's an UNDEF variable
+        else if (is_undef_variable(node->varname))
+        {
+            printf("UNDEF\n");
+        }
         else
         {
             const char *val = get_variable(node->varname);
@@ -3791,7 +3933,7 @@ static void print_node(ASTNode *node)
             }
             else
             {
-                printf("Runtime Error: Undefined variable '%s'\n", node->varname);
+                printf("UNDEF\n"); // Undefined variables are UNDEF
             }
         }
 
@@ -3828,6 +3970,24 @@ static void print_node(ASTNode *node)
         {
             printf("%g\n", result);
         }
+        break;
+    }
+    case NODE_TYPE:
+    {
+        double result = eval_expression(node);
+        if (result == -12345.6789)
+        {
+            const char *str_result = get_variable("__type_result");
+            if (str_result)
+            {
+                printf("%s\n", str_result);
+            }
+        }
+        break;
+    }
+    case NODE_UNDEF:
+    {
+        printf("UNDEF\n");
         break;
     }
     case NODE_HTTP_GET:

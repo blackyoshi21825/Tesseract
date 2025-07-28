@@ -121,6 +121,8 @@ typedef enum
     TOK_LAMBDA,              // =>
     TOK_INTERPOLATED_STRING, // "Hello ${name}"
     TOK_SET_NEW,             // {1, 2, 3}
+    TOK_TYPE,                // ::type
+    TOK_UNDEF,               // UNDEF
 } TokenType;
 
 typedef struct
