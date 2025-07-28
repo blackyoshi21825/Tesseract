@@ -94,6 +94,11 @@ typedef enum
     NODE_TEMPORAL_QUERY,       // Temporal queries with time windows
     NODE_TEMPORAL_CORRELATE,   // Temporal correlations between variables
     NODE_TEMPORAL_INTERPOLATE, // Temporal interpolation for missing data
+    NODE_TRY,                  // Try block
+    NODE_CATCH,                // Catch block
+    NODE_THROW,                // Throw statement
+    NODE_FINALLY,              // Finally block
+    NODE_LAMBDA,               // Lambda expression
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -424,6 +429,33 @@ struct ASTNode
             char varname[64];     // Temporal variable name
             ASTNode *missing_index; // Index where data is missing
         } temporal_interpolate;
+        struct
+        {
+            ASTNode *try_body;
+            ASTNode **catch_blocks;
+            int catch_count;
+            ASTNode *finally_block;
+        } try_stmt;
+        struct
+        {
+            char exception_type[64];
+            char variable_name[64];
+            ASTNode *catch_body;
+        } catch_stmt;
+        struct
+        {
+            ASTNode *exception_expr;
+        } throw_stmt;
+        struct
+        {
+            ASTNode *finally_body;
+        } finally_stmt;
+        struct
+        {
+            char params[4][64];
+            int param_count;
+            ASTNode *body;
+        } lambda;
     };
 };
 
@@ -544,5 +576,12 @@ ASTNode *ast_new_sensitivity_threshold(const char *varname, ASTNode *threshold_v
 ASTNode *ast_new_temporal_query(const char *varname, const char *time_window, const char *condition);
 ASTNode *ast_new_temporal_correlate(const char *var1, const char *var2, ASTNode *window_size);
 ASTNode *ast_new_temporal_interpolate(const char *varname, ASTNode *missing_index);
+
+// Exception handling functions
+ASTNode *ast_new_try(ASTNode *try_body, ASTNode **catch_blocks, int catch_count, ASTNode *finally_block);
+ASTNode *ast_new_catch(const char *exception_type, const char *variable_name, ASTNode *catch_body);
+ASTNode *ast_new_throw(ASTNode *exception_expr);
+ASTNode *ast_new_finally(ASTNode *finally_body);
+ASTNode *ast_new_lambda(char params[][64], int param_count, ASTNode *body);
 
 #endif

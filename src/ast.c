@@ -954,7 +954,58 @@ ASTNode *ast_new_temporal_interpolate(const char *varname, ASTNode *missing_inde
     return node;
 }
 
+// Exception handling AST functions
+ASTNode *ast_new_try(ASTNode *try_body, ASTNode **catch_blocks, int catch_count, ASTNode *finally_block)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TRY;
+    node->try_stmt.try_body = try_body;
+    node->try_stmt.catch_blocks = catch_blocks;
+    node->try_stmt.catch_count = catch_count;
+    node->try_stmt.finally_block = finally_block;
+    return node;
+}
 
+ASTNode *ast_new_catch(const char *exception_type, const char *variable_name, ASTNode *catch_body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_CATCH;
+    strncpy(node->catch_stmt.exception_type, exception_type, 63);
+    node->catch_stmt.exception_type[63] = '\0';
+    strncpy(node->catch_stmt.variable_name, variable_name, 63);
+    node->catch_stmt.variable_name[63] = '\0';
+    node->catch_stmt.catch_body = catch_body;
+    return node;
+}
+
+ASTNode *ast_new_throw(ASTNode *exception_expr)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_THROW;
+    node->throw_stmt.exception_expr = exception_expr;
+    return node;
+}
+
+ASTNode *ast_new_finally(ASTNode *finally_body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FINALLY;
+    node->finally_stmt.finally_body = finally_body;
+    return node;
+}
+
+ASTNode *ast_new_lambda(char params[][64], int param_count, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LAMBDA;
+    node->lambda.param_count = param_count;
+    for (int i = 0; i < param_count && i < 4; i++) {
+        strncpy(node->lambda.params[i], params[i], 63);
+        node->lambda.params[i][63] = '\0';
+    }
+    node->lambda.body = body;
+    return node;
+}
 
 // --- AST Free ---
 

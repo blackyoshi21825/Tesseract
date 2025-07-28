@@ -1,16 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include "parser.h"
 #include "lexer.h"
 #include "ast.h"
+#include "error.h"
 
 static Token current_token;
+static int pos = 0; // Track position for lambda lookahead
 
 // Helper function to get the next token
 static void next_token()
 {
     current_token = lexer_next_token();
+    pos++;
 }
 
 // Helper function to expect a specific token type
@@ -18,8 +22,9 @@ static void expect(TokenType type)
 {
     if (current_token.type != type)
     {
-        fprintf(stderr, "Expected token type %d, but got %d\n", type, current_token.type);
-        exit(1);
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg), "Expected token type %d, but got %d", type, current_token.type);
+        THROW(ERROR_SYNTAX, error_msg);
     }
     next_token();
 }
@@ -136,8 +141,7 @@ static ASTNode *parse_primary()
 {
     if (current_token.type == TOK_RBRACE)
     {
-        printf("Parse error: Unexpected closing '}' found while parsing an expression\n");
-        exit(1);
+        THROW(ERROR_SYNTAX, "Unexpected closing '}' found while parsing an expression");
     }
     if (current_token.type == TOK_NUMBER)
     {
@@ -303,10 +307,57 @@ static ASTNode *parse_primary()
 
     if (current_token.type == TOK_LPAREN)
     {
-        next_token();
-        ASTNode *expr = parse_expression();
-        expect(TOK_RPAREN);
-        return expr;
+        // Check if this might be a lambda expression
+        // Look ahead to see if we have parameters followed by =>
+        int saved_pos = pos;
+        Token saved_token = current_token;
+        
+        next_token(); // consume '('
+        
+        // Try to parse as lambda parameters
+        char params[4][64];
+        int param_count = 0;
+        bool is_lambda = false;
+        
+        if (current_token.type == TOK_RPAREN) {
+            // Empty parameter list: () => ...
+            next_token();
+            if (current_token.type == TOK_ARROW) {
+                is_lambda = true;
+            }
+        } else if (current_token.type == TOK_ID) {
+            // Parse parameter list
+            while (current_token.type == TOK_ID && param_count < 4) {
+                strcpy(params[param_count++], current_token.text);
+                next_token();
+                if (current_token.type == TOK_COMMA) {
+                    next_token();
+                } else {
+                    break;
+                }
+            }
+            
+            if (current_token.type == TOK_RPAREN) {
+                next_token();
+                if (current_token.type == TOK_ARROW) {
+                    is_lambda = true;
+                }
+            }
+        }
+        
+        if (is_lambda) {
+            next_token(); // consume '=>'
+            ASTNode *body = parse_expression();
+            return ast_new_lambda(params, param_count, body);
+        } else {
+            // Not a lambda, restore position and parse as parenthesized expression
+            pos = saved_pos;
+            current_token = saved_token;
+            next_token();
+            ASTNode *expr = parse_expression();
+            expect(TOK_RPAREN);
+            return expr;
+        }
     }
 
     if (current_token.type == TOK_LBRACE)
@@ -1270,6 +1321,64 @@ static ASTNode *parse_statement()
         
         expect(TOK_RBRACE); // Closing brace for switch block
         return switch_node;
+    }
+
+    if (current_token.type == TOK_TRY)
+    {
+        next_token();
+        ASTNode *try_body = parse_statement();
+        
+        ASTNode **catch_blocks = NULL;
+        int catch_count = 0;
+        
+        // Parse catch blocks
+        while (current_token.type == TOK_CATCH)
+        {
+            next_token();
+            
+            // Parse exception type (optional)
+            char exception_type[64] = "Exception";
+            char variable_name[64] = "e";
+            
+            if (current_token.type == TOK_LPAREN)
+            {
+                next_token();
+                if (current_token.type == TOK_ID)
+                {
+                    strcpy(exception_type, current_token.text);
+                    next_token();
+                    if (current_token.type == TOK_ID)
+                    {
+                        strcpy(variable_name, current_token.text);
+                        next_token();
+                    }
+                }
+                expect(TOK_RPAREN);
+            }
+            
+            ASTNode *catch_body = parse_statement();
+            ASTNode *catch_node = ast_new_catch(exception_type, variable_name, catch_body);
+            
+            catch_blocks = realloc(catch_blocks, sizeof(ASTNode*) * (catch_count + 1));
+            catch_blocks[catch_count++] = catch_node;
+        }
+        
+        // Parse finally block (optional)
+        ASTNode *finally_block = NULL;
+        if (current_token.type == TOK_FINALLY)
+        {
+            next_token();
+            finally_block = parse_statement();
+        }
+        
+        return ast_new_try(try_body, catch_blocks, catch_count, finally_block);
+    }
+
+    if (current_token.type == TOK_THROW)
+    {
+        next_token();
+        ASTNode *exception_expr = parse_expression();
+        return ast_new_throw(exception_expr);
     }
 
     if (current_token.type == TOK_IMPORT)

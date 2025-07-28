@@ -114,6 +114,12 @@ typedef enum
     TOK_TEMPORAL_QUERY,      // ::temporal_query
     TOK_TEMPORAL_CORRELATE,  // ::temporal_correlate
     TOK_TEMPORAL_INTERPOLATE, // ::temporal_interpolate
+    TOK_TRY,                 // try$
+    TOK_CATCH,               // catch$
+    TOK_THROW,               // throw$
+    TOK_FINALLY,             // finally$
+    TOK_LAMBDA,              // =>
+    TOK_INTERPOLATED_STRING, // "Hello ${name}"
 } TokenType;
 
 typedef struct

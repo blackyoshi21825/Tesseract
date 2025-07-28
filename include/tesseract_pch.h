@@ -18,5 +18,6 @@
 #include "interpreter.h"
 #include "variables.h"
 #include "object.h"
+#include "error.h"
 
 #endif // TESSERACT_PCH_H

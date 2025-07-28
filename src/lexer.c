@@ -621,6 +621,34 @@ Token lexer_next_token()
         pos += 2;
         return token;
     }
+    if (starts_with("try$"))
+    {
+        token.type = TOK_TRY;
+        strcpy(token.text, "try$");
+        pos += 4;
+        return token;
+    }
+    if (starts_with("catch$"))
+    {
+        token.type = TOK_CATCH;
+        strcpy(token.text, "catch$");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("throw$"))
+    {
+        token.type = TOK_THROW;
+        strcpy(token.text, "throw$");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("finally$"))
+    {
+        token.type = TOK_FINALLY;
+        strcpy(token.text, "finally$");
+        pos += 8;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

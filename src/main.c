@@ -1,10 +1,11 @@
 #include "tesseract_pch.h"
+#include "error.h"
 
 #define MAX_INPUT 1024
 
 void run_repl()
 {
-    printf("Tesseract REPL (Type 'exit' to quit)\n> ");
+    printf("Tesseract REPL v1.0 (Type 'exit' to quit, 'help' for commands)\n> ");
     fflush(stdout);
 
     char input[MAX_INPUT];
@@ -15,19 +16,39 @@ void run_repl()
 
         if (strcmp(input, "exit") == 0)
             break;
+        if (strcmp(input, "help") == 0) {
+            printf("Commands:\n");
+            printf("  exit - Exit the REPL\n");
+            printf("  help - Show this help\n");
+            printf("  clear - Clear variables (not implemented)\n");
+            printf("> ");
+            continue;
+        }
         if (strlen(input) == 0)
         {
             printf("> ");
             continue;
         }
 
-        parser_init(input);
-        ASTNode *root = parse_program();
-        if (root)
-        {
-            interpret(root);
+        // Initialize error handling
+        error_init();
+        exception_active = 1;
+        
+        if (TRY()) {
+            parser_init(input);
+            ASTNode *root = parse_program();
+            if (root)
+            {
+                interpret(root);
+            }
+        } CATCH() {
+            // Error occurred, print it and continue
+            error_print(&current_error);
         }
+        
+        exception_active = 0;
         printf("> ");
+        fflush(stdout);
     }
 }
 

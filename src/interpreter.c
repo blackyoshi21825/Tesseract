@@ -1,4 +1,5 @@
 #include "tesseract_pch.h"
+#include "error.h"
 #include <ctype.h>
 
 #define MAX_FUNCTIONS 1000000
@@ -1093,6 +1094,58 @@ void interpret(ASTNode *root)
         // Evaluate top-level expressions (no side effects, but avoids error)
         eval_expression(root);
     }
+    else if (root->type == NODE_TRY)
+    {
+        // Save current exception state
+        int prev_exception_active = exception_active;
+        jmp_buf prev_env;
+        if (exception_active) {
+            memcpy(prev_env, exception_env, sizeof(jmp_buf));
+        }
+        
+        exception_active = 1;
+        
+        if (setjmp(exception_env) == 0) {
+            // Execute try block
+            interpret(root->try_stmt.try_body);
+        } else {
+            // Exception occurred, find matching catch block
+            int handled = 0;
+            for (int i = 0; i < root->try_stmt.catch_count; i++) {
+                ASTNode *catch_block = root->try_stmt.catch_blocks[i];
+                // For now, catch all exceptions (could add type matching later)
+                set_variable(catch_block->catch_stmt.variable_name, current_error.message);
+                interpret(catch_block->catch_stmt.catch_body);
+                handled = 1;
+                break;
+            }
+            
+            if (!handled && prev_exception_active) {
+                // Re-throw if not handled and there's an outer handler
+                memcpy(exception_env, prev_env, sizeof(jmp_buf));
+                longjmp(exception_env, 1);
+            }
+        }
+        
+        // Execute finally block if present
+        if (root->try_stmt.finally_block) {
+            interpret(root->try_stmt.finally_block);
+        }
+        
+        // Restore previous exception state
+        exception_active = prev_exception_active;
+        if (prev_exception_active) {
+            memcpy(exception_env, prev_env, sizeof(jmp_buf));
+        }
+    }
+    else if (root->type == NODE_THROW)
+    {
+        char *error_msg = "Custom exception";
+        if (root->throw_stmt.exception_expr->type == NODE_STRING) {
+            error_msg = root->throw_stmt.exception_expr->string;
+        }
+        THROW(ERROR_CUSTOM, error_msg);
+    }
     else if (root->type == NODE_FILE_OPEN || root->type == NODE_FILE_READ ||
              root->type == NODE_FILE_WRITE || root->type == NODE_FILE_CLOSE ||
              root->type == NODE_TO_STR || root->type == NODE_TO_INT ||
@@ -1197,8 +1250,7 @@ static double eval_expression(ASTNode *node)
         case TOK_DIV:
             if (right == 0)
             {
-                fprintf(stderr, "Runtime error: Division by zero\n");
-                exit(1);
+                THROW(ERROR_DIVISION_BY_ZERO, "Division by zero");
             }
             return left / right;
         case TOK_MOD:
@@ -3320,6 +3372,12 @@ static double eval_expression(ASTNode *node)
             // Return the actual value at the index (not interpolating missing data)
             return strtod(temp_var->history[missing_index].value, NULL);
         }
+    }
+    case NODE_LAMBDA:
+    {
+        // Lambdas are treated as anonymous functions
+        // For now, just return 0 (could store lambda in a variable later)
+        return 0;
     }
     case NODE_FUNC_CALL:
     {

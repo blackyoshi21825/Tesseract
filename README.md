@@ -17,6 +17,9 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - While Loops
 - HTTP Web Requests
 - Regular Expressions
+- Exception Handling (try/catch/finally)
+- Lambda Expressions
+- Improved REPL with Error Recovery
 
 ## Getting Started
 
@@ -356,6 +359,37 @@ let$ text2 := "hello world hello tesseract"
 **Flags:**
 - `i` - Case insensitive matching
 - `g` - Global matching (find/replace all occurrences)
+
+## Exception Handling
+
+**Try/Catch/Finally:**
+```tesseract
+try$ {
+    let$result := 10 / 0;  # Division by zero
+} catch$ {
+    ::print "Error caught";
+} finally$ {
+    ::print "Cleanup";
+}
+```
+
+**Custom Exceptions:**
+```tesseract
+try$ {
+    throw$ "Custom error message";
+} catch$ {
+    ::print "Caught custom exception";
+}
+```
+
+## Lambda Expressions
+
+**Basic Syntax:**
+```tesseract
+let$add := (x, y) => x + y;
+let$double := (x) => x * 2;
+let$hello := () => "Hello World";
+```
 
 ### Booleans
 
