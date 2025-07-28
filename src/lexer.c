@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include "lexer.h"
 
 static const char *input;
@@ -834,14 +835,35 @@ Token lexer_next_token()
         pos++;
         return token;
     }
-    // String literal or regex pattern
+    // String literal or interpolated string
     if (input[pos] == '"')
     {
         pos++;
         int start = pos;
+        bool has_interpolation = false;
+        
+        // Check for ${} patterns
+        int temp_pos = pos;
+        while (input[temp_pos] != '"' && input[temp_pos] != '\0')
+        {
+            if (input[temp_pos] == '$' && input[temp_pos + 1] == '{')
+            {
+                has_interpolation = true;
+                break;
+            }
+            if (input[temp_pos] == '\\' && input[temp_pos + 1] == '"')
+            {
+                temp_pos += 2;
+            }
+            else
+            {
+                temp_pos++;
+            }
+        }
+        
+        // Parse the string content
         while (input[pos] != '"' && input[pos] != '\0')
         {
-            // Handle escaped quotes
             if (input[pos] == '\\' && input[pos + 1] == '"')
             {
                 pos += 2;
@@ -851,12 +873,14 @@ Token lexer_next_token()
                 pos++;
             }
         }
+        
         int len = pos - start;
         if (len >= sizeof(token.text))
             len = sizeof(token.text) - 1;
         strncpy(token.text, &input[start], len);
         token.text[len] = '\0';
-        token.type = TOK_STRING;
+        
+        token.type = has_interpolation ? TOK_INTERPOLATED_STRING : TOK_STRING;
         if (input[pos] == '"')
             pos++;
         

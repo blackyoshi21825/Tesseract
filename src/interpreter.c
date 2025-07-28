@@ -3379,6 +3379,40 @@ static double eval_expression(ASTNode *node)
         // For now, just return 0 (could store lambda in a variable later)
         return 0;
     }
+    case NODE_STRING_INTERPOLATION:
+    {
+        char result[1024] = "";
+        char *template = node->string_interp.template;
+        int expr_idx = 0;
+        
+        for (int i = 0; template[i]; i++)
+        {
+            if (template[i] == '$' && i + 1 < strlen(template) && template[i+1] == '{')
+            {
+                // Find the end of the expression
+                int j = i + 2;
+                while (j < strlen(template) && template[j] != '}') j++;
+                
+                if (expr_idx < node->string_interp.expr_count)
+                {
+                    const char *val = get_variable(node->string_interp.expressions[expr_idx]->varname);
+                    if (val) strcat(result, val);
+                    expr_idx++;
+                }
+                
+                i = j; // Skip to after }, will be incremented by loop
+            }
+            else
+            {
+                char temp[2] = {template[i], '\0'};
+                strcat(result, temp);
+            }
+        }
+        
+        // Store result for print_node
+        set_variable("__string_interp_result", result);
+        return 0;
+    }
     case NODE_FUNC_CALL:
     {
         Function *fn = find_function(node->func_call.name);
@@ -3875,6 +3909,15 @@ static void print_node(ASTNode *node)
         // If we get here, something went wrong
         double result = eval_expression(node);
         printf("%g\n", result);
+        break;
+    }
+    case NODE_STRING_INTERPOLATION:
+    {
+        eval_expression(node);
+        const char *result = get_variable("__string_interp_result");
+        if (result) {
+            printf("%s\n", result);
+        }
         break;
     }
     default:

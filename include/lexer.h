@@ -120,6 +120,7 @@ typedef enum
     TOK_FINALLY,             // finally$
     TOK_LAMBDA,              // =>
     TOK_INTERPOLATED_STRING, // "Hello ${name}"
+    TOK_SET_NEW,             // {1, 2, 3}
 } TokenType;
 
 typedef struct

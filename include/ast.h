@@ -99,6 +99,9 @@ typedef enum
     NODE_THROW,                // Throw statement
     NODE_FINALLY,              // Finally block
     NODE_LAMBDA,               // Lambda expression
+    NODE_STRING_INTERPOLATION, // String interpolation
+    NODE_DESTRUCTURE,          // Destructuring assignment
+    NODE_SET,                  // Set data structure
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -455,7 +458,26 @@ struct ASTNode
             char params[4][64];
             int param_count;
             ASTNode *body;
+            char **captured_vars;
+            int captured_count;
         } lambda;
+        struct
+        {
+            char *template;
+            ASTNode **expressions;
+            int expr_count;
+        } string_interp;
+        struct
+        {
+            char **var_names;
+            int var_count;
+            ASTNode *source;
+        } destructure;
+        struct
+        {
+            ASTNode **elements;
+            int count;
+        } set;
     };
 };
 
@@ -583,5 +605,8 @@ ASTNode *ast_new_catch(const char *exception_type, const char *variable_name, AS
 ASTNode *ast_new_throw(ASTNode *exception_expr);
 ASTNode *ast_new_finally(ASTNode *finally_body);
 ASTNode *ast_new_lambda(char params[][64], int param_count, ASTNode *body);
+ASTNode *ast_new_string_interpolation(const char *template, ASTNode **expressions, int expr_count);
+ASTNode *ast_new_set();
+void ast_set_add_element(ASTNode *set, ASTNode *element);
 
 #endif

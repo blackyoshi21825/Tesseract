@@ -18,7 +18,10 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - HTTP Web Requests
 - Regular Expressions
 - Exception Handling (try/catch/finally)
-- Lambda Expressions
+- Lambda Expressions with Closures
+- String Interpolation
+- Sets and Advanced Data Types
+- Destructuring Assignment
 - Improved REPL with Error Recovery
 
 ## Getting Started
@@ -390,6 +393,26 @@ let$add := (x, y) => x + y;
 let$double := (x) => x * 2;
 let$hello := () => "Hello World";
 ```
+
+## String Interpolation
+
+**Syntax:**
+```tesseract
+let$name := "World";
+let$age := 25;
+::print "Hello ${name}!";  # prints "Hello World!"
+::print "I am ${age} years old";  # prints "I am 25 years old"
+```
+
+## Sets
+
+**Creation:**
+```tesseract
+let$mySet := {1, 2, 3, 2, 1};  # Automatically removes duplicates
+::print mySet;  # prints {1, 2, 3}
+```
+
+
 
 ### Booleans
 

@@ -1007,6 +1007,41 @@ ASTNode *ast_new_lambda(char params[][64], int param_count, ASTNode *body)
     return node;
 }
 
+ASTNode *ast_new_string_interpolation(const char *template, ASTNode **expressions, int expr_count)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_STRING_INTERPOLATION;
+    node->string_interp.template = strdup(template);
+    node->string_interp.expressions = expressions;
+    node->string_interp.expr_count = expr_count;
+    return node;
+}
+
+ASTNode *ast_new_set()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET;
+    node->set.elements = NULL;
+    node->set.count = 0;
+    return node;
+}
+
+void ast_set_add_element(ASTNode *set, ASTNode *element)
+{
+    if (set->type != NODE_SET) return;
+    
+    // Check for duplicates (simple value comparison)
+    for (int i = 0; i < set->set.count; i++) {
+        if (set->set.elements[i]->type == element->type) {
+            if (element->type == NODE_NUMBER && set->set.elements[i]->number == element->number) return;
+            if (element->type == NODE_STRING && strcmp(set->set.elements[i]->string, element->string) == 0) return;
+        }
+    }
+    
+    set->set.elements = realloc(set->set.elements, sizeof(ASTNode*) * (set->set.count + 1));
+    set->set.elements[set->set.count++] = element;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)

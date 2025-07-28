@@ -151,6 +151,41 @@ static ASTNode *parse_primary()
         return node;
     }
 
+    if (current_token.type == TOK_INTERPOLATED_STRING)
+    {
+        // Parse string interpolation "Hello ${name}"
+        char *original = strdup(current_token.text);
+        ASTNode **expressions = malloc(sizeof(ASTNode*) * 8);
+        int expr_count = 0;
+        
+        // Find ${} patterns and extract variable names
+        char *pos = original;
+        while ((pos = strstr(pos, "${")) != NULL && expr_count < 8)
+        {
+            pos += 2; // Skip ${
+            char *end = strchr(pos, '}');
+            if (end)
+            {
+                // Extract variable name
+                int var_len = end - pos;
+                char var_name[64];
+                strncpy(var_name, pos, var_len);
+                var_name[var_len] = '\0';
+                
+                // Create a variable node for the expression
+                expressions[expr_count++] = ast_new_var(var_name);
+                pos = end + 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        
+        next_token();
+        return ast_new_string_interpolation(original, expressions, expr_count);
+    }
+    
     if (current_token.type == TOK_STRING)
     {
         // Check if this is a format string (contains @)
