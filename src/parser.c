@@ -1271,6 +1271,33 @@ static ASTNode *parse_unary_expression()
             return ast_new_bitwise_not(operand);
         }
     }
+    
+    // Handle prefix increment/decrement
+    if (current_token.type == TOK_INCREMENT)
+    {
+        next_token();
+        if (current_token.type != TOK_ID)
+        {
+            error_throw_at_line(ERROR_SYNTAX, "Expected variable name after ++", current_token.line);
+        }
+        char varname[64];
+        strcpy(varname, current_token.text);
+        next_token();
+        return ast_new_increment(varname, 1); // prefix = 1
+    }
+    
+    if (current_token.type == TOK_DECREMENT)
+    {
+        next_token();
+        if (current_token.type != TOK_ID)
+        {
+            error_throw_at_line(ERROR_SYNTAX, "Expected variable name after --", current_token.line);
+        }
+        char varname[64];
+        strcpy(varname, current_token.text);
+        next_token();
+        return ast_new_decrement(varname, 1); // prefix = 1
+    }
 
     return parse_primary();
 }

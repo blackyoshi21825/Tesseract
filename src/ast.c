@@ -123,6 +123,24 @@ ASTNode *ast_new_continue()
     return node;
 }
 
+ASTNode *ast_new_increment(const char *varname, int is_prefix)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_INCREMENT;
+    strcpy(node->inc_dec.varname, varname);
+    node->inc_dec.is_prefix = is_prefix;
+    return node;
+}
+
+ASTNode *ast_new_decrement(const char *varname, int is_prefix)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_DECREMENT;
+    strcpy(node->inc_dec.varname, varname);
+    node->inc_dec.is_prefix = is_prefix;
+    return node;
+}
+
 ASTNode *ast_new_switch(ASTNode *expression)
 {
     ASTNode *node = malloc(sizeof(ASTNode));

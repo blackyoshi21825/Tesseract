@@ -1334,6 +1334,24 @@ void interpret(ASTNode *root)
     {
         continue_flag = 1;
     }
+    else if (root->type == NODE_INCREMENT)
+    {
+        const char *val = get_variable(root->inc_dec.varname);
+        double current = val ? strtod(val, NULL) : 0.0;
+        current += 1.0;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%g", current);
+        set_variable(root->inc_dec.varname, buf);
+    }
+    else if (root->type == NODE_DECREMENT)
+    {
+        const char *val = get_variable(root->inc_dec.varname);
+        double current = val ? strtod(val, NULL) : 0.0;
+        current -= 1.0;
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%g", current);
+        set_variable(root->inc_dec.varname, buf);
+    }
     else
     {
         // Print the node type for easier debugging
@@ -3917,6 +3935,46 @@ static double eval_expression(ASTNode *node)
         
         printf("%g\n", result);
         return result;
+    }
+    case NODE_INCREMENT:
+    {
+        const char *val = get_variable(node->inc_dec.varname);
+        double current = val ? strtod(val, NULL) : 0.0;
+        if (node->inc_dec.is_prefix)
+        {
+            current += 1.0;
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", current);
+            set_variable(node->inc_dec.varname, buf);
+            return current;
+        }
+        else
+        {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", current + 1.0);
+            set_variable(node->inc_dec.varname, buf);
+            return current;
+        }
+    }
+    case NODE_DECREMENT:
+    {
+        const char *val = get_variable(node->inc_dec.varname);
+        double current = val ? strtod(val, NULL) : 0.0;
+        if (node->inc_dec.is_prefix)
+        {
+            current -= 1.0;
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", current);
+            set_variable(node->inc_dec.varname, buf);
+            return current;
+        }
+        else
+        {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%g", current - 1.0);
+            set_variable(node->inc_dec.varname, buf);
+            return current;
+        }
     }
     case NODE_FUNC_CALL:
     {

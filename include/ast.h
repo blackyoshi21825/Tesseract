@@ -15,6 +15,8 @@ typedef enum
     NODE_FOREACH,
     NODE_BREAK,
     NODE_CONTINUE,
+    NODE_INCREMENT,
+    NODE_DECREMENT,
     NODE_WHILE,
     NODE_SWITCH,
     NODE_CASE,
@@ -535,6 +537,11 @@ struct ASTNode
             ASTNode *end;
             ASTNode *increment;
         } random_op;
+        struct
+        {
+            char varname[64];
+            int is_prefix;
+        } inc_dec;
     };
 };
 
@@ -549,6 +556,8 @@ ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
 ASTNode *ast_new_foreach(const char *varname, ASTNode *iterable, ASTNode *body);
 ASTNode *ast_new_break();
 ASTNode *ast_new_continue();
+ASTNode *ast_new_increment(const char *varname, int is_prefix);
+ASTNode *ast_new_decrement(const char *varname, int is_prefix);
 ASTNode *ast_new_switch(ASTNode *expression);
 ASTNode *ast_new_case(ASTNode *value, ASTNode *body);
 void ast_switch_add_case(ASTNode *switch_node, ASTNode *case_node);

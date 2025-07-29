@@ -775,16 +775,34 @@ Token lexer_next_token()
     switch (input[pos])
     {
     case '+':
-        token.type = TOK_PLUS;
-        token.text[0] = '+';
-        token.text[1] = '\0';
-        pos++;
+        if (safe_peek(1) == '+')
+        {
+            token.type = TOK_INCREMENT;
+            strcpy(token.text, "++");
+            pos += 2;
+        }
+        else
+        {
+            token.type = TOK_PLUS;
+            token.text[0] = '+';
+            token.text[1] = '\0';
+            pos++;
+        }
         return token;
     case '-':
-        token.type = TOK_MINUS;
-        token.text[0] = '-';
-        token.text[1] = '\0';
-        pos++;
+        if (safe_peek(1) == '-')
+        {
+            token.type = TOK_DECREMENT;
+            strcpy(token.text, "--");
+            pos += 2;
+        }
+        else
+        {
+            token.type = TOK_MINUS;
+            token.text[0] = '-';
+            token.text[1] = '\0';
+            pos++;
+        }
         return token;
     case '*':
         token.type = TOK_MUL;

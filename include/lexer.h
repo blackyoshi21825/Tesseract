@@ -26,6 +26,8 @@ typedef enum
     TOK_INPUT,
     TOK_PLUS,
     TOK_MINUS,
+    TOK_INCREMENT,
+    TOK_DECREMENT,
     TOK_MUL,
     TOK_DIV,
     TOK_MOD,
