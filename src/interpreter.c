@@ -378,6 +378,10 @@ static FieldEntry *object_get_field(ObjectInstance *obj, const char *field)
 // Store the current self object (for method calls)
 static ObjectInstance *current_self = NULL;
 
+// Loop control flags
+static int break_flag = 0;
+static int continue_flag = 0;
+
 void interpret(ASTNode *root)
 {
     if (!root)
@@ -387,7 +391,14 @@ void interpret(ASTNode *root)
         for (int i = 0; i < root->block.count; i++)
         {
             if (root->block.statements[i]) // Only interpret non-NULL statements
+            {
                 interpret(root->block.statements[i]);
+                // Check for break/continue flags and propagate them up
+                if (break_flag || continue_flag)
+                {
+                    return;
+                }
+            }
         }
         return;
     }
@@ -769,6 +780,17 @@ void interpret(ASTNode *root)
                 snprintf(buf, sizeof(buf), "%g", i);
                 set_variable(root->loop_stmt.varname, buf);
                 interpret(root->loop_stmt.body);
+                
+                if (break_flag)
+                {
+                    break_flag = 0;
+                    break;
+                }
+                if (continue_flag)
+                {
+                    continue_flag = 0;
+                    continue;
+                }
             }
         }
         else
@@ -780,6 +802,17 @@ void interpret(ASTNode *root)
                 snprintf(buf, sizeof(buf), "%g", i);
                 set_variable(root->loop_stmt.varname, buf);
                 interpret(root->loop_stmt.body);
+                
+                if (break_flag)
+                {
+                    break_flag = 0;
+                    break;
+                }
+                if (continue_flag)
+                {
+                    continue_flag = 0;
+                    continue;
+                }
             }
         }
     }
@@ -788,6 +821,17 @@ void interpret(ASTNode *root)
         while (eval_expression(root->while_stmt.condition) != 0)
         {
             interpret(root->while_stmt.body);
+            
+            if (break_flag)
+            {
+                break_flag = 0;
+                break;
+            }
+            if (continue_flag)
+            {
+                continue_flag = 0;
+                continue;
+            }
         }
     }
     else if (root->type == NODE_FOREACH)
@@ -820,6 +864,17 @@ void interpret(ASTNode *root)
                         set_list_variable(root->foreach_stmt.varname, element);
                     }
                     interpret(root->foreach_stmt.body);
+                    
+                    if (break_flag)
+                    {
+                        break_flag = 0;
+                        break;
+                    }
+                    if (continue_flag)
+                    {
+                        continue_flag = 0;
+                        continue;
+                    }
                 }
             }
             else
@@ -849,6 +904,17 @@ void interpret(ASTNode *root)
                     set_list_variable(root->foreach_stmt.varname, element);
                 }
                 interpret(root->foreach_stmt.body);
+                
+                if (break_flag)
+                {
+                    break_flag = 0;
+                    break;
+                }
+                if (continue_flag)
+                {
+                    continue_flag = 0;
+                    continue;
+                }
             }
         }
         else
@@ -872,6 +938,17 @@ void interpret(ASTNode *root)
             // Set the loop variable to current history entry
             set_variable(root->temporal_loop.varname, temp_var->history[i].value);
             interpret(root->temporal_loop.body);
+            
+            if (break_flag)
+            {
+                break_flag = 0;
+                break;
+            }
+            if (continue_flag)
+            {
+                continue_flag = 0;
+                continue;
+            }
         }
     }
     else if (root->type == NODE_SWITCH)
@@ -1248,6 +1325,14 @@ void interpret(ASTNode *root)
              root->type == NODE_STRING_LOWER || root->type == NODE_RANDOM)
     {
         eval_expression(root);
+    }
+    else if (root->type == NODE_BREAK)
+    {
+        break_flag = 1;
+    }
+    else if (root->type == NODE_CONTINUE)
+    {
+        continue_flag = 1;
     }
     else
     {

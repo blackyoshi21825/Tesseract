@@ -139,6 +139,20 @@ Token lexer_next_token()
         pos += 8;
         return token;
     }
+    if (starts_with("break") && !isalnum(input[pos + 5]))
+    {
+        token.type = TOK_BREAK;
+        strcpy(token.text, "break");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("continue") && !isalnum(input[pos + 8]))
+    {
+        token.type = TOK_CONTINUE;
+        strcpy(token.text, "continue");
+        pos += 8;
+        return token;
+    }
     if (starts_with("while$"))
     {
         token.type = TOK_WHILE;

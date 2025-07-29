@@ -6,7 +6,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 
 **Key Features:**
 - Dynamic typing
-- Control structures (if/else, loops)
+- Control structures (if/else, loops, break/continue)
 - Functions and classes
 - Lists and dictionaries
 - Pattern matching
@@ -178,7 +178,24 @@ foreach$item in list {
 }
 ```
 
+**Break and Continue:**
+```tesseract
+// Break - exits the current loop
+loop$i := 1 => 10 {
+    if$ i == 5 {
+        break$;
+    }
+    ::print i  // prints 1, 2, 3, 4
+}
 
+// Continue - skips to next iteration
+loop$i := 1 => 5 {
+    if$ i == 3 {
+        continue$;
+    }
+    ::print i  // prints 1, 2, 4, 5
+}
+```
 
 **Ternary Operator:**
 ```tesseract

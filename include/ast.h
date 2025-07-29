@@ -13,6 +13,8 @@ typedef enum
     NODE_IF,
     NODE_LOOP,
     NODE_FOREACH,
+    NODE_BREAK,
+    NODE_CONTINUE,
     NODE_WHILE,
     NODE_SWITCH,
     NODE_CASE,
@@ -545,6 +547,8 @@ ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch,
 ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *increment, ASTNode *body);
 ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
 ASTNode *ast_new_foreach(const char *varname, ASTNode *iterable, ASTNode *body);
+ASTNode *ast_new_break();
+ASTNode *ast_new_continue();
 ASTNode *ast_new_switch(ASTNode *expression);
 ASTNode *ast_new_case(ASTNode *value, ASTNode *body);
 void ast_switch_add_case(ASTNode *switch_node, ASTNode *case_node);

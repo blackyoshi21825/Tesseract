@@ -16,6 +16,8 @@ typedef enum
     TOK_ELSEIF,
     TOK_LOOP,
     TOK_FOREACH,
+    TOK_BREAK,
+    TOK_CONTINUE,
     TOK_WHILE,
     TOK_SWITCH,
     TOK_CASE,

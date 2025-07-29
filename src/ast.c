@@ -109,6 +109,20 @@ ASTNode *ast_new_foreach(const char *varname, ASTNode *iterable, ASTNode *body)
     return node;
 }
 
+ASTNode *ast_new_break()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_BREAK;
+    return node;
+}
+
+ASTNode *ast_new_continue()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_CONTINUE;
+    return node;
+}
+
 ASTNode *ast_new_switch(ASTNode *expression)
 {
     ASTNode *node = malloc(sizeof(ASTNode));

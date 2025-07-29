@@ -1438,6 +1438,18 @@ static ASTNode *parse_statement()
         return ast_new_foreach(loop_var, iterable, body);
     }
     
+    if (current_token.type == TOK_BREAK)
+    {
+        next_token();
+        return ast_new_break();
+    }
+    
+    if (current_token.type == TOK_CONTINUE)
+    {
+        next_token();
+        return ast_new_continue();
+    }
+    
     if (current_token.type == TOK_TEMPORAL)
     {
         next_token();
