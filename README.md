@@ -135,10 +135,46 @@ loop$i := 0 => 2, 0.5 {
 }
 ```
 
+**For-Each Examples:**
+```tesseract
+// Iterate through numbers
+let$numbers := [1, 2, 3, 4, 5]
+foreach$num in numbers {
+    ::print num  // prints each number
+}
+
+// Iterate through strings
+let$fruits := ["apple", "banana", "cherry"]
+foreach$fruit in fruits {
+    ::print fruit  // prints each fruit name
+}
+
+// Direct list iteration
+foreach$item in [10, 20, 30] {
+    ::print item  // prints 10, 20, 30
+}
+
+// Nested iteration (2D arrays)
+let$matrix := [[1, 2], [3, 4]]
+foreach$row in matrix {
+    foreach$cell in row {
+        ::print cell  // prints 1, 2, 3, 4
+    }
+}
+```
+
 **While Loops:**
 ```tesseract
 while$ condition {
     // loop body
+}
+```
+
+**For-Each Loops:**
+```tesseract
+foreach$item in list {
+    // loop body
+    // item contains current element
 }
 ```
 

@@ -98,6 +98,17 @@ ASTNode *ast_new_while(ASTNode *condition, ASTNode *body)
     return node;
 }
 
+ASTNode *ast_new_foreach(const char *varname, ASTNode *iterable, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_FOREACH;
+    strncpy(node->foreach_stmt.varname, varname, sizeof(node->foreach_stmt.varname));
+    node->foreach_stmt.varname[sizeof(node->foreach_stmt.varname) - 1] = '\0';
+    node->foreach_stmt.iterable = iterable;
+    node->foreach_stmt.body = body;
+    return node;
+}
+
 ASTNode *ast_new_switch(ASTNode *expression)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -1182,6 +1193,10 @@ void ast_free(ASTNode *node)
     case NODE_WHILE:
         ast_free(node->while_stmt.condition);
         ast_free(node->while_stmt.body);
+        break;
+    case NODE_FOREACH:
+        ast_free(node->foreach_stmt.iterable);
+        ast_free(node->foreach_stmt.body);
         break;
     case NODE_SWITCH:
         ast_free(node->switch_stmt.expression);

@@ -790,6 +790,72 @@ void interpret(ASTNode *root)
             interpret(root->while_stmt.body);
         }
     }
+    else if (root->type == NODE_FOREACH)
+    {
+        ASTNode *iterable_node = root->foreach_stmt.iterable;
+        
+        // Handle variable reference to list
+        if (iterable_node->type == NODE_VAR)
+        {
+            ASTNode *list = get_list_variable(iterable_node->varname);
+            if (list && list->type == NODE_LIST)
+            {
+                // Iterate through list elements
+                for (int i = 0; i < list->list.count; i++)
+                {
+                    ASTNode *element = list->list.elements[i];
+                    if (element->type == NODE_STRING)
+                    {
+                        set_variable(root->foreach_stmt.varname, element->string);
+                    }
+                    else if (element->type == NODE_NUMBER)
+                    {
+                        char buf[64];
+                        snprintf(buf, sizeof(buf), "%g", element->number);
+                        set_variable(root->foreach_stmt.varname, buf);
+                    }
+                    else if (element->type == NODE_LIST)
+                    {
+                        // For list elements, store the list as a variable
+                        set_list_variable(root->foreach_stmt.varname, element);
+                    }
+                    interpret(root->foreach_stmt.body);
+                }
+            }
+            else
+            {
+                error_throw_at_line(ERROR_TYPE_MISMATCH, "foreach expects a list variable", root->line);
+            }
+        }
+        // Handle direct list literal
+        else if (iterable_node->type == NODE_LIST)
+        {
+            for (int i = 0; i < iterable_node->list.count; i++)
+            {
+                ASTNode *element = iterable_node->list.elements[i];
+                if (element->type == NODE_STRING)
+                {
+                    set_variable(root->foreach_stmt.varname, element->string);
+                }
+                else if (element->type == NODE_NUMBER)
+                {
+                    char buf[64];
+                    snprintf(buf, sizeof(buf), "%g", element->number);
+                    set_variable(root->foreach_stmt.varname, buf);
+                }
+                else if (element->type == NODE_LIST)
+                {
+                    // For list elements, store the list as a variable
+                    set_list_variable(root->foreach_stmt.varname, element);
+                }
+                interpret(root->foreach_stmt.body);
+            }
+        }
+        else
+        {
+            error_throw_at_line(ERROR_TYPE_MISMATCH, "foreach expects a list", root->line);
+        }
+    }
     else if (root->type == NODE_TEMPORAL_LOOP)
     {
         TemporalVariable *temp_var = get_temporal_var_struct(root->temporal_loop.temporal_var);

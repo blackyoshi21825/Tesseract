@@ -1419,6 +1419,25 @@ static ASTNode *parse_statement()
         return ast_new_while(condition, body);
     }
     
+    if (current_token.type == TOK_FOREACH)
+    {
+        next_token();
+        if (current_token.type != TOK_ID)
+        {
+            error_throw_at_line(ERROR_SYNTAX, "Expected variable name after foreach$", current_token.line);
+        }
+        char loop_var[64];
+        strcpy(loop_var, current_token.text);
+        next_token();
+        
+        expect(TOK_IN);
+        
+        ASTNode *iterable = parse_expression();
+        ASTNode *body = parse_statement();
+        
+        return ast_new_foreach(loop_var, iterable, body);
+    }
+    
     if (current_token.type == TOK_TEMPORAL)
     {
         next_token();

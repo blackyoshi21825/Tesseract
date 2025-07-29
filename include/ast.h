@@ -12,6 +12,7 @@ typedef enum
     NODE_ASSIGN,
     NODE_IF,
     NODE_LOOP,
+    NODE_FOREACH,
     NODE_WHILE,
     NODE_SWITCH,
     NODE_CASE,
@@ -161,6 +162,12 @@ struct ASTNode
             ASTNode *condition;
             ASTNode *body;
         } while_stmt;
+        struct
+        {
+            char varname[64];
+            ASTNode *iterable;
+            ASTNode *body;
+        } foreach_stmt;
         struct
         {
             ASTNode *expression;
@@ -537,6 +544,7 @@ ASTNode *ast_new_assign(const char *name, ASTNode *value);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch);
 ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *increment, ASTNode *body);
 ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
+ASTNode *ast_new_foreach(const char *varname, ASTNode *iterable, ASTNode *body);
 ASTNode *ast_new_switch(ASTNode *expression);
 ASTNode *ast_new_case(ASTNode *value, ASTNode *body);
 void ast_switch_add_case(ASTNode *switch_node, ASTNode *case_node);

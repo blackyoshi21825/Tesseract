@@ -132,6 +132,13 @@ Token lexer_next_token()
         pos += 5;
         return token;
     }
+    if (starts_with("foreach$"))
+    {
+        token.type = TOK_FOREACH;
+        strcpy(token.text, "foreach$");
+        pos += 8;
+        return token;
+    }
     if (starts_with("while$"))
     {
         token.type = TOK_WHILE;
