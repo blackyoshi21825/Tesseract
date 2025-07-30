@@ -781,6 +781,12 @@ Token lexer_next_token()
             strcpy(token.text, "++");
             pos += 2;
         }
+        else if (safe_peek(1) == '=')
+        {
+            token.type = TOK_PLUS_ASSIGN;
+            strcpy(token.text, "+=");
+            pos += 2;
+        }
         else
         {
             token.type = TOK_PLUS;
@@ -796,6 +802,12 @@ Token lexer_next_token()
             strcpy(token.text, "--");
             pos += 2;
         }
+        else if (safe_peek(1) == '=')
+        {
+            token.type = TOK_MINUS_ASSIGN;
+            strcpy(token.text, "-=");
+            pos += 2;
+        }
         else
         {
             token.type = TOK_MINUS;
@@ -805,22 +817,49 @@ Token lexer_next_token()
         }
         return token;
     case '*':
-        token.type = TOK_MUL;
-        token.text[0] = '*';
-        token.text[1] = '\0';
-        pos++;
+        if (safe_peek(1) == '=')
+        {
+            token.type = TOK_MUL_ASSIGN;
+            strcpy(token.text, "*=");
+            pos += 2;
+        }
+        else
+        {
+            token.type = TOK_MUL;
+            token.text[0] = '*';
+            token.text[1] = '\0';
+            pos++;
+        }
         return token;
     case '/':
-        token.type = TOK_DIV;
-        token.text[0] = '/';
-        token.text[1] = '\0';
-        pos++;
+        if (safe_peek(1) == '=')
+        {
+            token.type = TOK_DIV_ASSIGN;
+            strcpy(token.text, "/=");
+            pos += 2;
+        }
+        else
+        {
+            token.type = TOK_DIV;
+            token.text[0] = '/';
+            token.text[1] = '\0';
+            pos++;
+        }
         return token;
     case '%':
-        token.type = TOK_MOD;
-        token.text[0] = '%';
-        token.text[1] = '\0';
-        pos++;
+        if (safe_peek(1) == '=')
+        {
+            token.type = TOK_MOD_ASSIGN;
+            strcpy(token.text, "%=");
+            pos += 2;
+        }
+        else
+        {
+            token.type = TOK_MOD;
+            token.text[0] = '%';
+            token.text[1] = '\0';
+            pos++;
+        }
         return token;
     case '(':
         token.type = TOK_LPAREN;

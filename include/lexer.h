@@ -7,6 +7,11 @@ typedef enum
     TOK_LET,
     TOK_ID,
     TOK_ASSIGN,
+    TOK_PLUS_ASSIGN,     // +=
+    TOK_MINUS_ASSIGN,    // -=
+    TOK_MUL_ASSIGN,      // *=
+    TOK_DIV_ASSIGN,      // /=
+    TOK_MOD_ASSIGN,      // %=
     TOK_STRING,
     TOK_COMMA,
     TOK_NUMBER,

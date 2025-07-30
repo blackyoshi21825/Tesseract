@@ -615,6 +615,58 @@ void interpret(ASTNode *root)
             }
         }
     }
+    else if (root->type == NODE_COMPOUND_ASSIGN)
+    {
+        // Handle compound assignment operators (+=, -=, *=, /=, %=)
+        const char *current_val = get_variable(root->compound_assign.varname);
+        double current_num = current_val ? strtod(current_val, NULL) : 0.0;
+        double new_val = eval_expression(root->compound_assign.value);
+        double result;
+        
+        switch (root->compound_assign.op)
+        {
+        case TOK_PLUS_ASSIGN:
+            result = current_num + new_val;
+            break;
+        case TOK_MINUS_ASSIGN:
+            result = current_num - new_val;
+            break;
+        case TOK_MUL_ASSIGN:
+            result = current_num * new_val;
+            break;
+        case TOK_DIV_ASSIGN:
+            if (new_val == 0)
+            {
+                error_throw_at_line(ERROR_DIVISION_BY_ZERO, "Division by zero in compound assignment", root->line);
+            }
+            result = current_num / new_val;
+            break;
+        case TOK_MOD_ASSIGN:
+            result = fmod(current_num, new_val);
+            break;
+        default:
+            {
+                char error_msg[256];
+                snprintf(error_msg, sizeof(error_msg), "Unknown compound assignment operator %d", root->compound_assign.op);
+                error_throw_at_line(ERROR_RUNTIME, error_msg, root->line);
+            }
+        }
+        
+        // Store the result back in the variable
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%g", result);
+        
+        // Check if this is a temporal variable
+        TemporalVariable *temp_var = get_temporal_var_struct(root->compound_assign.varname);
+        if (temp_var)
+        {
+            set_temporal_variable(root->compound_assign.varname, buf, temp_var->max_history);
+        }
+        else
+        {
+            set_variable(root->compound_assign.varname, buf);
+        }
+    }
     else if (root->type == NODE_INPUT)
     {
         if (root->input_stmt.prompt)

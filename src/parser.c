@@ -1373,6 +1373,66 @@ static ASTNode *parse_statement()
         ASTNode *val = parse_expression();
         return ast_new_assign(varname, val);
     }
+    
+    // Handle compound assignment (variable += value, etc.)
+    if (current_token.type == TOK_ID)
+    {
+        char varname[64];
+        strcpy(varname, current_token.text);
+        next_token();
+        
+        // Check for compound assignment operators
+        if (current_token.type == TOK_PLUS_ASSIGN ||
+            current_token.type == TOK_MINUS_ASSIGN ||
+            current_token.type == TOK_MUL_ASSIGN ||
+            current_token.type == TOK_DIV_ASSIGN ||
+            current_token.type == TOK_MOD_ASSIGN)
+        {
+            TokenType op = current_token.type;
+            next_token();
+            ASTNode *val = parse_expression();
+            return ast_new_compound_assign(varname, val, op);
+        }
+        else
+        {
+            // Not a compound assignment, backtrack and parse as expression
+            // This is a bit tricky without proper backtracking, so we'll create a variable node
+            // and let the expression parser handle it
+            ASTNode *var_node = ast_new_var(varname);
+            
+            // Check if this might be a function call or other expression
+            if (current_token.type == TOK_LPAREN)
+            {
+                // This is a function call, we need to parse it properly
+                next_token();
+                ASTNode *args[4];
+                int arg_count = 0;
+                if (current_token.type != TOK_RPAREN)
+                {
+                    while (1)
+                    {
+                        if (arg_count >= 4)
+                        {
+                            printf("Parse error: Too many function call arguments (max 4)\n");
+                            exit(1);
+                        }
+                        args[arg_count++] = parse_expression();
+                        if (current_token.type == TOK_COMMA)
+                            next_token();
+                        else
+                            break;
+                    }
+                }
+                expect(TOK_RPAREN);
+                return ast_new_func_call(varname, args, arg_count);
+            }
+            else
+            {
+                // Just return the variable node as an expression statement
+                return var_node;
+            }
+        }
+    }
 
     if (current_token.type == TOK_PRINT)
     {

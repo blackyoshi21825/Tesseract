@@ -65,6 +65,17 @@ ASTNode *ast_new_assign(const char *name, ASTNode *value)
     return node;
 }
 
+ASTNode *ast_new_compound_assign(const char *name, ASTNode *value, TokenType op)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_COMPOUND_ASSIGN;
+    strncpy(node->compound_assign.varname, name, sizeof(node->compound_assign.varname));
+    node->compound_assign.varname[sizeof(node->compound_assign.varname) - 1] = '\0';
+    node->compound_assign.value = value;
+    node->compound_assign.op = op;
+    return node;
+}
+
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -1208,6 +1219,9 @@ void ast_free(ASTNode *node)
         break;
     case NODE_ASSIGN:
         ast_free(node->assign.value);
+        break;
+    case NODE_COMPOUND_ASSIGN:
+        ast_free(node->compound_assign.value);
         break;
     case NODE_IF:
         ast_free(node->if_stmt.condition);

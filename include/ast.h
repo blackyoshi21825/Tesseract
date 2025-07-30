@@ -10,6 +10,7 @@ typedef enum
     NODE_VAR,
     NODE_BINOP,
     NODE_ASSIGN,
+    NODE_COMPOUND_ASSIGN,
     NODE_IF,
     NODE_LOOP,
     NODE_FOREACH,
@@ -146,6 +147,12 @@ struct ASTNode
             char varname[256];
             ASTNode *value;
         } assign;
+        struct
+        {
+            char varname[256];
+            ASTNode *value;
+            TokenType op; // The compound operator (TOK_PLUS_ASSIGN, etc.)
+        } compound_assign;
         struct
         {
             ASTNode *condition;
@@ -550,6 +557,7 @@ ASTNode *ast_new_string(const char *str);
 ASTNode *ast_new_var(const char *name);
 ASTNode *ast_new_binop(ASTNode *left, ASTNode *right, TokenType op);
 ASTNode *ast_new_assign(const char *name, ASTNode *value);
+ASTNode *ast_new_compound_assign(const char *name, ASTNode *value, TokenType op);
 ASTNode *ast_new_if(ASTNode *cond, ASTNode *then_branch, ASTNode *elseif_branch, ASTNode *else_branch);
 ASTNode *ast_new_loop(const char *varname, ASTNode *start, ASTNode *end, ASTNode *increment, ASTNode *body);
 ASTNode *ast_new_while(ASTNode *condition, ASTNode *body);
