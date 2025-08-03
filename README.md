@@ -39,6 +39,26 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 ### Installation
 The Tesseract interpreter is pre-compiled and ready to use.
 
+#### Adding Tesseract to System PATH
+To run Tesseract files from anywhere on your system:
+
+**Windows:**
+1. Press `Win + R`, type `sysdm.cpl`, press Enter
+2. Click "Environment Variables" button
+3. In "User variables" section, select "Path" and click "Edit"
+4. Click "New" and add the full path to your Tesseract directory (e.g., `C:\path\to\Tesseract`)
+5. Click OK on all dialogs
+6. Restart your command prompt/terminal
+7. You can now run `tesser filename.tesseract` from any directory
+
+**Linux/macOS:**
+1. Add the following line to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+   ```bash
+   export PATH="$PATH:/path/to/Tesseract"
+   ```
+2. Reload your shell: `source ~/.bashrc` (or restart terminal)
+3. You can now run `./tesser filename.tesseract` from any directory
+
 ### Fast Compilation
 Tesseract uses precompiled headers to speed up compilation:
 - On Linux/macOS: `make pch` will generate the precompiled header
