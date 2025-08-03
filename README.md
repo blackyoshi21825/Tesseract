@@ -28,10 +28,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 ## Getting Started
 
 ### Prerequisites
-- GCC compiler
-- Make tools
 - libcurl development package
-- Mac/Linux (Windows users should use WSL)
 
 #### Installing libcurl
 - Ubuntu/Debian: `sudo apt-get install libcurl4-openssl-dev`
@@ -40,10 +37,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - Windows with MSYS2: `pacman -S mingw-w64-x86_64-curl`
 
 ### Installation
-```bash
-make        # builds with precompiled headers for faster compilation
-make clear  # to run test.tesseract
-```
+The Tesseract interpreter is pre-compiled and ready to use.
 
 ### Fast Compilation
 Tesseract uses precompiled headers to speed up compilation:
