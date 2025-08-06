@@ -1,0 +1,7 @@
+# IDEs' files
+.vscode
+.idea
+
+# Builds
+obj
+tesser
