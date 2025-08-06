@@ -16,9 +16,7 @@ else
 endif
 LDFLAGS = `curl-config --libs` -flto
 
-# Precompiled header settings
-PCH = include/tesseract_pch.h
-PCH_GCH = $(PCH).gch
+
 # Add debug flags only when needed
 DEBUGFLAGS = -g
 
@@ -31,6 +29,11 @@ DEPS = $(patsubst $(SRC_DIR)/%.c,$(DEP_DIR)/%.d,$(SRCS))
 
 REPL_SRC = $(SRC_DIR)/repl.c
 REPL_OBJ = $(OBJ_DIR)/repl.o
+
+# Precompiled header settings
+PCH = include/tesseract_pch.h
+PCH_GCH = $(OBJ_DIR)/tesseract_pch.gch
+
 
 TARGET = tesser
 REPL_TARGET = tesser-repl
