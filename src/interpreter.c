@@ -1,5 +1,6 @@
 #include "tesseract_pch.h"
 #include "error.h"
+#include "../packages/core/package_loader.h"
 #include <ctype.h>
 
 #define MAX_FUNCTIONS 1000000
@@ -4030,6 +4031,12 @@ static double eval_expression(ASTNode *node)
     }
     case NODE_FUNC_CALL:
     {
+        // Package functions disabled for now
+        // ASTNode *package_result = call_package_function(node->func_call.name, node->func_call.args, node->func_call.arg_count);
+        // if (package_result) {
+        //     return eval_expression(package_result);
+        // }
+        
         Function *fn = find_function(node->func_call.name);
         if (!fn)
         {

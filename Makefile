@@ -37,11 +37,12 @@ PCH_GCH = $(OBJ_DIR)/tesseract_pch.gch
 
 TARGET = tesser
 REPL_TARGET = tesser-repl
+TPM_TARGET = tpm
 
 # Enable parallel compilation with detected number of cores
 MAKEFLAGS += -j$(NUM_CORES)
 
-.PHONY: all clean run run-repl debug release pch
+.PHONY: all clean run run-repl debug release pch tpm
 
 all: release
 
@@ -50,11 +51,14 @@ pch: $(PCH_GCH)
 release: pch $(TARGET)
 
 debug: CFLAGS += $(DEBUGFLAGS)
-debug: $(TARGET)
-	$(CC) $(DEBUGFLAGS) -o $(TARGET) $(SRC_DIR)/*.c -Iinclude -lm -lcurl
+debug: pch
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) $(SRC_DIR)/*.c packages/package_loader.c -Iinclude -lm -lcurl
 
-$(TARGET): $(filter-out $(REPL_OBJ), $(OBJS))
+$(TARGET): $(filter-out $(REPL_OBJ), $(OBJS)) packages/package_loader.o
 	$(CC) $(CFLAGS) -o $@ $^ -lm $(LDFLAGS)
+
+packages/package_loader.o: packages/core/package_loader.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(REPL_TARGET): $(filter-out $(OBJ_DIR)/main.o, $(OBJS)) $(REPL_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
@@ -77,7 +81,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(PCH_GCH) | $(OBJ_DIR) $(DEP_DIR)
 repl: $(REPL_TARGET)
 
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET) $(REPL_TARGET) $(PCH_GCH)
+	rm -rf $(OBJ_DIR) $(TARGET) $(REPL_TARGET) $(TPM_TARGET) $(PCH_GCH) packages/package_loader.o
 
 run: $(TARGET)
 	./tesser test.tesseract
@@ -87,3 +91,8 @@ clear: $(TARGET)
 
 run-repl: $(TARGET)
 	./tesser
+
+tpm: $(TPM_TARGET)
+
+$(TPM_TARGET): packages/core/tpm.c packages/core/package_manager.c
+	$(CC) $(CFLAGS) -o $@ $^ -lm
