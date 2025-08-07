@@ -4,3 +4,4 @@ string_utils|1.0.0|packages/stdlib/string_utils.c
 date_time|1.0.0|packages/stdlib/date_time.c
 file_utils|1.0.0|packages/stdlib/file_utils.c
 crypto_utils|1.0.0|packages/stdlib/crypto_utils.c
+algorithms|1.0.0|packages/stdlib/algorithms.c
