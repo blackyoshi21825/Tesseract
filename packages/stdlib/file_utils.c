@@ -54,3 +54,10 @@ ASTNode *copy_file(ASTNode **args, int arg_count) {
     fclose(dst);
     return ast_new_number(1);
 }
+
+void init_file_utils_package() {
+    register_package_function("file_exists", file_exists);
+    register_package_function("file_size", file_size);
+    register_package_function("delete_file", delete_file);
+    register_package_function("copy_file", copy_file);
+}

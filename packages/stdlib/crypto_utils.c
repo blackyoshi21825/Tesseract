@@ -65,3 +65,9 @@ ASTNode *generate_random_string(ASTNode **args, int arg_count) {
     free(str);
     return result;
 }
+
+void init_crypto_utils_package() {
+    register_package_function("simple_hash", simple_hash);
+    register_package_function("base64_encode", base64_encode_simple);
+    register_package_function("random_string", generate_random_string);
+}

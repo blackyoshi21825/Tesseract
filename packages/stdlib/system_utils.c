@@ -41,3 +41,10 @@ ASTNode *exit_program(ASTNode **args, int arg_count) {
     exit(code);
     return ast_new_number(0);
 }
+
+void init_system_utils_package() {
+    register_package_function("system_command", system_command);
+    register_package_function("get_env", get_env_var);
+    register_package_function("sleep_ms", sleep_ms);
+    register_package_function("exit", exit_program);
+}
