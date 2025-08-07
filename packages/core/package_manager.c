@@ -6,6 +6,13 @@
 #define mkdir(path, mode) _mkdir(path)
 #endif
 
+// Normalize path separators
+void normalize_path(char *path) {
+    for (char *p = path; *p; p++) {
+        if (*p == '\\') *p = '/';
+    }
+}
+
 PackageManager *pm_init(const char *packages_dir) {
     PackageManager *pm = malloc(sizeof(PackageManager));
     if (!pm) return NULL;
@@ -42,15 +49,36 @@ int pm_install(PackageManager *pm, const char *package_name, const char *source_
         return 0;
     }
     
+    // Ensure stdlib directory exists
+    char stdlib_dir[512];
+    snprintf(stdlib_dir, sizeof(stdlib_dir), "%s/stdlib", pm->packages_dir);
+    mkdir(stdlib_dir, 0755);
+    
     char dest_path[512];
-    snprintf(dest_path, sizeof(dest_path), "%s/%s.c", pm->packages_dir, package_name);
+    snprintf(dest_path, sizeof(dest_path), "%s/stdlib/%s.c", pm->packages_dir, package_name);
+    
+    // Check if backup exists first
+    char backup_path[512];
+    snprintf(backup_path, sizeof(backup_path), "%s/.backup/%s.c", pm->packages_dir, package_name);
     
     FILE *src = fopen(source_path, "rb");
+    int using_backup = 0;
+    if (!src) {
+        // Try backup if source not found
+        src = fopen(backup_path, "rb");
+        if (!src) {
+            printf("Error: Cannot find source file '%s' or backup\n", source_path);
+            return -1;
+        }
+        printf("Using backup file for '%s'\n", package_name);
+        using_backup = 1;
+    }
+    
     FILE *dst = fopen(dest_path, "wb");
     
-    if (!src || !dst) {
-        if (src) fclose(src);
-        if (dst) fclose(dst);
+    if (!dst) {
+        printf("Error: Cannot create destination file '%s'\n", dest_path);
+        fclose(src);
         return -1;
     }
     
@@ -63,6 +91,14 @@ int pm_install(PackageManager *pm, const char *package_name, const char *source_
     fclose(src);
     fclose(dst);
     
+    // Verify the file was copied successfully
+    struct stat st;
+    if (stat(dest_path, &st) != 0 || st.st_size == 0) {
+        printf("Error: Package installation failed - file is empty or missing\n");
+        remove(dest_path);
+        return -1;
+    }
+    
     Package *pkg = malloc(sizeof(Package));
     pkg->name = malloc(strlen(package_name) + 1);
     strcpy(pkg->name, package_name);
@@ -73,7 +109,15 @@ int pm_install(PackageManager *pm, const char *package_name, const char *source_
     pkg->next = pm->packages;
     pm->packages = pkg;
     
-    pm_save_registry(pm);
+    if (pm_save_registry(pm) != 0) {
+        printf("Warning: Failed to update registry\n");
+    }
+    
+    // Delete backup file if it was used
+    if (using_backup) {
+        remove(backup_path);
+    }
+    
     printf("Package '%s' installed successfully\n", package_name);
     return 0;
 }
@@ -86,14 +130,29 @@ int pm_uninstall(PackageManager *pm, const char *package_name) {
             Package *to_remove = *current;
             *current = (*current)->next;
             
-            remove(to_remove->path);
+            // Move file to backup instead of deleting
+            char backup_dir[512], backup_path[512];
+            snprintf(backup_dir, sizeof(backup_dir), "%s/.backup", pm->packages_dir);
+            mkdir(backup_dir, 0755);
+            snprintf(backup_path, sizeof(backup_path), "%s/%s.c", backup_dir, package_name);
+            
+            char normalized_path[512];
+            strcpy(normalized_path, to_remove->path);
+            normalize_path(normalized_path);
+            
+            if (rename(normalized_path, backup_path) != 0) {
+                printf("Warning: Could not backup file '%s'\n", normalized_path);
+            }
             
             free(to_remove->name);
             free(to_remove->version);
             free(to_remove->path);
             free(to_remove);
             
-            pm_save_registry(pm);
+            // Update registry
+            if (pm_save_registry(pm) != 0) {
+                printf("Warning: Failed to update registry\n");
+            }
             printf("Package '%s' uninstalled\n", package_name);
             return 0;
         }
@@ -138,9 +197,15 @@ int pm_load_registry(PackageManager *pm) {
     
     char line[512];
     while (fgets(line, sizeof(line), f)) {
+        // Remove Windows line endings
+        char *newline = strchr(line, '\r');
+        if (newline) *newline = '\0';
+        newline = strchr(line, '\n');
+        if (newline) *newline = '\0';
+        
         char *name = strtok(line, "|");
         char *version = strtok(NULL, "|");
-        char *path = strtok(NULL, "|\n");
+        char *path = strtok(NULL, "|");
         
         if (name && version && path) {
             Package *pkg = malloc(sizeof(Package));
@@ -164,14 +229,24 @@ int pm_save_registry(PackageManager *pm) {
     snprintf(registry_path, sizeof(registry_path), "%s/registry.txt", pm->packages_dir);
     
     FILE *f = fopen(registry_path, "w");
-    if (!f) return -1;
+    if (!f) {
+        printf("Error: Cannot open registry file for writing: %s\n", registry_path);
+        return -1;
+    }
     
     Package *current = pm->packages;
     while (current) {
-        fprintf(f, "%s|%s|%s\n", current->name, current->version, current->path);
+        if (fprintf(f, "%s|%s|%s\n", current->name, current->version, current->path) < 0) {
+            printf("Error: Failed to write to registry\n");
+            fclose(f);
+            return -1;
+        }
         current = current->next;
     }
     
-    fclose(f);
+    if (fflush(f) != 0 || fclose(f) != 0) {
+        printf("Error: Failed to save registry file\n");
+        return -1;
+    }
     return 0;
 }
