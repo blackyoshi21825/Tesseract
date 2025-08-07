@@ -23,8 +23,13 @@ DEBUGFLAGS = -g
 SRC_DIR = src
 OBJ_DIR = obj
 DEP_DIR = $(OBJ_DIR)/.deps
+PKG_DIR = packages
+STDLIB_DIR = $(PKG_DIR)/stdlib
+STDLIB_OBJ_DIR = $(STDLIB_DIR)/obj
 SRCS = $(wildcard $(SRC_DIR)/*.c)
+STDLIB_SRCS = $(wildcard $(STDLIB_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+STDLIB_OBJS = $(patsubst $(STDLIB_DIR)/%.c,$(STDLIB_OBJ_DIR)/%.o,$(STDLIB_SRCS))
 DEPS = $(patsubst $(SRC_DIR)/%.c,$(DEP_DIR)/%.d,$(SRCS))
 
 REPL_SRC = $(SRC_DIR)/repl.c
@@ -52,19 +57,22 @@ release: pch $(TARGET)
 
 debug: CFLAGS += $(DEBUGFLAGS)
 debug: pch
-	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) $(SRC_DIR)/*.c packages/package_loader.c -Iinclude -lm -lcurl
+	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) $(SRC_DIR)/*.c packages/core/package_loader.c packages/stdlib/*.c -Iinclude -lm -lcurl
 
-$(TARGET): $(filter-out $(REPL_OBJ), $(OBJS)) packages/package_loader.o
+$(TARGET): $(filter-out $(REPL_OBJ), $(OBJS)) packages/package_loader.o $(STDLIB_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ -lm $(LDFLAGS)
 
 packages/package_loader.o: packages/core/package_loader.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(STDLIB_OBJ_DIR)/%.o: $(STDLIB_DIR)/%.c | $(STDLIB_OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(REPL_TARGET): $(filter-out $(OBJ_DIR)/main.o, $(OBJS)) $(REPL_OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 # Create directories if they don't exist
-$(OBJ_DIR) $(DEP_DIR):
+$(OBJ_DIR) $(DEP_DIR) $(STDLIB_OBJ_DIR):
 	@mkdir -p $@
 
 # Precompiled header rule
@@ -81,7 +89,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(PCH_GCH) | $(OBJ_DIR) $(DEP_DIR)
 repl: $(REPL_TARGET)
 
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET) $(REPL_TARGET) $(TPM_TARGET) $(PCH_GCH) packages/package_loader.o
+	rm -rf $(OBJ_DIR) $(STDLIB_OBJ_DIR) $(TARGET) $(REPL_TARGET) $(TPM_TARGET) $(PCH_GCH) packages/package_loader.o
 
 run: $(TARGET)
 	./tesser test.tesseract

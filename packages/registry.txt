@@ -5,3 +5,6 @@ date_time|1.0.0|packages/stdlib/date_time.c
 file_utils|1.0.0|packages/stdlib/file_utils.c
 crypto_utils|1.0.0|packages/stdlib/crypto_utils.c
 algorithms|1.0.0|packages/stdlib/algorithms.c
+json_utils|1.0.0|packages/stdlib/json_utils.c
+network_utils|1.0.0|packages/stdlib/network_utils.c
+random_utils|1.0.0|packages/stdlib/random_utils.c

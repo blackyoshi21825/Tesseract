@@ -66,7 +66,7 @@ Tesseract uses precompiled headers to speed up compilation:
 
 ### Debug Mode (Linux)
 ```bash
-gcc -g -o tesser src/*.c packages/core/package_loader.c -Iinclude -lm -lcurl
+gcc -g -o tesser src/*.c packages/core/package_loader.c packages/stdlib/*.c -Iinclude -lm -lcurl
 ```
 - It is good practice to run this command before running the main Tesseract file on Linux
 

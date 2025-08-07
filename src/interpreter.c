@@ -3,6 +3,18 @@
 #include "../packages/core/package_loader.h"
 #include <ctype.h>
 
+// Package initialization functions
+void init_date_time_package();
+void init_math_utils_package();
+void init_string_utils_package();
+void init_algorithms_package();
+void init_crypto_utils_package();
+void init_file_utils_package();
+void init_json_utils_package();
+void init_network_utils_package();
+void init_random_utils_package();
+void init_system_utils_package();
+
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
 #define MAX_FILE_HANDLES 1024
@@ -382,9 +394,27 @@ static ObjectInstance *current_self = NULL;
 // Loop control flags
 static int break_flag = 0;
 static int continue_flag = 0;
+static int packages_initialized = 0;
+
+static void initialize_packages() {
+    if (!packages_initialized) {
+        init_date_time_package();
+        init_math_utils_package();
+        init_string_utils_package();
+        init_algorithms_package();
+        init_crypto_utils_package();
+        init_file_utils_package();
+        init_json_utils_package();
+        init_network_utils_package();
+        init_random_utils_package();
+        init_system_utils_package();
+        packages_initialized = 1;
+    }
+}
 
 void interpret(ASTNode *root)
 {
+    initialize_packages();
     if (!root)
         return;
     if (root->type == NODE_BLOCK)
@@ -4031,11 +4061,11 @@ static double eval_expression(ASTNode *node)
     }
     case NODE_FUNC_CALL:
     {
-        // Package functions disabled for now
-        // ASTNode *package_result = call_package_function(node->func_call.name, node->func_call.args, node->func_call.arg_count);
-        // if (package_result) {
-        //     return eval_expression(package_result);
-        // }
+        // Try package functions first
+        ASTNode *package_result = call_package_function(node->func_call.name, node->func_call.args, node->func_call.arg_count);
+        if (package_result) {
+            return eval_expression(package_result);
+        }
         
         Function *fn = find_function(node->func_call.name);
         if (!fn)
