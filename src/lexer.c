@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "lexer.h"
 
+extern int debug_mode;
+
 static const char *input;
 static int pos;
 static int current_line;
@@ -52,6 +54,31 @@ static int safe_peek(int offset)
     if (input[pos + offset] == '\0')
         return 0;
     return input[pos + offset];
+}
+
+const char* token_type_name(TokenType type) {
+    switch(type) {
+        case TOK_ID: return "ID";
+        case TOK_NUMBER: return "NUMBER";
+        case TOK_STRING: return "STRING";
+        case TOK_LET: return "LET";
+        case TOK_FUNC: return "FUNC";
+        case TOK_IF: return "IF";
+        case TOK_PRINT: return "PRINT";
+        case TOK_ASSIGN: return "ASSIGN";
+        case TOK_PLUS: return "PLUS";
+        case TOK_MINUS: return "MINUS";
+        case TOK_EOF: return "EOF";
+        default: return "OTHER";
+    }
+}
+
+Token debug_return_token(Token token) {
+    if (debug_mode) {
+        printf("[DEBUG] Token: %s '%s' at %d:%d\n", 
+               token_type_name(token.type), token.text, token.line, token.column);
+    }
+    return token;
 }
 
 Token lexer_next_token()
@@ -1114,5 +1141,5 @@ Token lexer_next_token()
     token.text[0] = input[pos];
     token.text[1] = '\0';
     pos++;
-    return token;
+    return debug_return_token(token);
 }

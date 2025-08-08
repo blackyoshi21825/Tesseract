@@ -3,6 +3,8 @@
 #include "../packages/core/package_loader.h"
 #include <ctype.h>
 
+extern int debug_mode;
+
 // Package initialization functions
 void init_date_time_package();
 void init_math_utils_package();
@@ -417,6 +419,10 @@ void interpret(ASTNode *root)
     initialize_packages();
     if (!root)
         return;
+    
+    if (debug_mode) {
+        printf("[DEBUG] Interpreting node type: %d\n", root->type);
+    }
     if (root->type == NODE_BLOCK)
     {
         for (int i = 0; i < root->block.count; i++)
@@ -435,6 +441,9 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_ASSIGN)
     {
+        if (debug_mode) {
+            printf("[DEBUG] Assignment: %s\n", root->assign.varname);
+        }
         ASTNode *value_node = root->assign.value;
         
         // Check if this is a temporal variable initialization (let$ x := <temp@5>)
@@ -721,6 +730,9 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_PRINT)
     {
+        if (debug_mode) {
+            printf("[DEBUG] Print statement\n");
+        }
         if (root->binop.left->type == NODE_LIST_ACCESS)
         {
             double result = eval_expression(root->binop.left);
@@ -814,6 +826,9 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_IF)
     {
+        if (debug_mode) {
+            printf("[DEBUG] If statement\n");
+        }
         ASTNode *current = root;
         while (current)
         {
@@ -1079,6 +1094,9 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_FUNC_CALL)
     {
+        if (debug_mode) {
+            printf("[DEBUG] Function call: %s\n", root->func_call.name);
+        }
         Function *fn = find_function(root->func_call.name);
         if (!fn)
         {
