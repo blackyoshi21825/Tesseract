@@ -729,3 +729,191 @@ int is_undef_variable(const char *name)
     }
     return entry->type == 9;
 }
+
+// Generator and iterator implementation
+#define MAX_GENERATORS 1000
+static Generator generators[MAX_GENERATORS];
+static int generator_count = 0;
+
+void register_generator(const char *name, char params[][64], int param_count, ASTNode *body)
+{
+    if (generator_count >= MAX_GENERATORS)
+    {
+        fprintf(stderr, "Maximum number of generators (%d) exceeded\n", MAX_GENERATORS);
+        exit(EXIT_FAILURE);
+    }
+    
+    strncpy(generators[generator_count].name, name, sizeof(generators[generator_count].name));
+    generators[generator_count].name[sizeof(generators[generator_count].name) - 1] = '\0';
+    generators[generator_count].body = body;
+    generators[generator_count].param_count = param_count;
+    
+    for (int i = 0; i < param_count && i < 4; i++)
+    {
+        strncpy(generators[generator_count].params[i], params[i], sizeof(generators[generator_count].params[i]));
+        generators[generator_count].params[i][sizeof(generators[generator_count].params[i]) - 1] = '\0';
+    }
+    
+    generator_count++;
+}
+
+Generator *find_generator(const char *name)
+{
+    for (int i = 0; i < generator_count; i++)
+    {
+        if (strcmp(generators[i].name, name) == 0)
+        {
+            return &generators[i];
+        }
+    }
+    return NULL;
+}
+
+void set_iterator_variable(const char *name, Iterator *iterator)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        // Free existing value
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+        else if (entry->type == 7)
+        {
+            for (int i = 0; i < entry->temporal_val->count; i++)
+            {
+                free(entry->temporal_val->history[i].value);
+            }
+            free(entry->temporal_val);
+        }
+        else if (entry->type == 10) // Iterator type
+        {
+            free_iterator((Iterator*)entry->value.string_val);
+        }
+        
+        entry->type = 10; // Iterator type
+        entry->value.string_val = (char*)iterator; // Store iterator pointer
+        return;
+    }
+
+    // New variable
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.string_val = (char*)iterator;
+    vars[var_count].type = 10; // Iterator type
+    var_count++;
+}
+
+Iterator *get_iterator_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 10)
+    {
+        return NULL;
+    }
+    return (Iterator*)entry->value.string_val;
+}
+
+Iterator *create_iterator(Generator *gen, ASTNode **args, int arg_count)
+{
+    if (!gen)
+        return NULL;
+        
+    Iterator *iter = malloc(sizeof(Iterator));
+    if (!iter)
+    {
+        fprintf(stderr, "Failed to allocate iterator\n");
+        return NULL;
+    }
+    
+    iter->generator = gen;
+    iter->arg_count = arg_count;
+    iter->current_position = 0;
+    iter->is_exhausted = 0;
+    iter->current_yield_value = NULL;
+    
+    // Copy argument values
+    if (arg_count > 0)
+    {
+        iter->arg_values = malloc(sizeof(ASTNode*) * arg_count);
+        for (int i = 0; i < arg_count; i++)
+        {
+            iter->arg_values[i] = args[i];
+        }
+    }
+    else
+    {
+        iter->arg_values = NULL;
+    }
+    
+    return iter;
+}
+
+void free_iterator(Iterator *iter)
+{
+    if (!iter)
+        return;
+        
+    if (iter->arg_values)
+    {
+        free(iter->arg_values);
+    }
+    
+    if (iter->current_yield_value)
+    {
+        ast_free(iter->current_yield_value);
+    }
+    
+    free(iter);
+}
+
+// Simple iterator implementation - executes generator body and captures yield values
+ASTNode *iterator_next(Iterator *iter)
+{
+    if (!iter || iter->is_exhausted)
+        return NULL;
+        
+    // For this simple implementation, we'll create a basic range generator
+    // In a full implementation, this would execute the generator body and handle yield statements
+    
+    // Simple example: if generator is "range", generate numbers
+    if (strcmp(iter->generator->name, "range") == 0)
+    {
+        if (iter->current_position >= 10) // Simple limit
+        {
+            iter->is_exhausted = 1;
+            return NULL;
+        }
+        
+        ASTNode *result = ast_new_number(iter->current_position);
+        iter->current_position++;
+        return result;
+    }
+    
+    // For other generators, mark as exhausted for now
+    iter->is_exhausted = 1;
+    return NULL;
+}

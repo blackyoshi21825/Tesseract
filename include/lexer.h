@@ -141,6 +141,10 @@ typedef enum
     TOK_STRING_UPPER,        // ::upper
     TOK_STRING_LOWER,        // ::lower
     TOK_RANDOM,              // ::random
+    TOK_GENERATOR,           // gen$
+    TOK_YIELD,               // yield$
+    TOK_ITERATOR,            // iter$
+    TOK_NEXT,                // next$
 } TokenType;
 
 typedef struct

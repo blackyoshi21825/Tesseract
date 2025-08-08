@@ -637,6 +637,18 @@ void interpret(ASTNode *root)
             snprintf(buf, sizeof(buf), "%p", (void *)obj);
             set_variable(root->assign.varname, buf);
         }
+        else if (value_node->type == NODE_ITERATOR)
+        {
+            // Handle iterator assignment
+            interpret(value_node); // This will create the iterator and store it in __last_iterator
+            Iterator *iter = get_iterator_variable("__last_iterator");
+            if (iter)
+            {
+                set_iterator_variable(root->assign.varname, iter);
+                // Clear the temporary variable
+                set_iterator_variable("__last_iterator", NULL);
+            }
+        }
         else
         {
             double val = eval_expression(value_node);
@@ -1091,6 +1103,85 @@ void interpret(ASTNode *root)
     else if (root->type == NODE_FUNC_DEF)
     {
         register_function(root->func_def.name, root->func_def.params, root->func_def.param_count, root->func_def.body);
+    }
+    else if (root->type == NODE_GENERATOR)
+    {
+        register_generator(root->generator.name, root->generator.params, root->generator.param_count, root->generator.body);
+    }
+    else if (root->type == NODE_ITERATOR)
+    {
+        // Create iterator from generator call
+        if (root->iterator.generator_call->type == NODE_FUNC_CALL)
+        {
+            ASTNode *gen_call = root->iterator.generator_call;
+            Generator *gen = find_generator(gen_call->func_call.name);
+            if (!gen)
+            {
+                printf("Runtime error: Generator '%s' not found\n", gen_call->func_call.name);
+                exit(1);
+            }
+            
+            Iterator *iter = create_iterator(gen, gen_call->func_call.args, gen_call->func_call.arg_count);
+            if (!iter)
+            {
+                printf("Runtime error: Failed to create iterator\n");
+                exit(1);
+            }
+            
+            // Store iterator in a temporary variable for assignment
+            set_iterator_variable("__last_iterator", iter);
+        }
+        else
+        {
+            printf("Runtime error: Iterator expects a generator call\n");
+            exit(1);
+        }
+    }
+    else if (root->type == NODE_YIELD)
+    {
+        // Yield statements are handled during generator execution
+        // For now, just evaluate the value
+        eval_expression(root->yield_stmt.value);
+    }
+    else if (root->type == NODE_NEXT)
+    {
+        // Get next value from iterator
+        if (root->next_stmt.iterator->type == NODE_VAR)
+        {
+            Iterator *iter = get_iterator_variable(root->next_stmt.iterator->varname);
+            if (!iter)
+            {
+                printf("Runtime error: Variable '%s' is not an iterator\n", root->next_stmt.iterator->varname);
+                exit(1);
+            }
+            
+            ASTNode *next_value = iterator_next(iter);
+            if (next_value)
+            {
+                if (next_value->type == NODE_STRING)
+                {
+                    printf("%s\n", next_value->string);
+                }
+                else if (next_value->type == NODE_NUMBER)
+                {
+                    printf("%g\n", next_value->number);
+                }
+                else
+                {
+                    double val = eval_expression(next_value);
+                    printf("%g\n", val);
+                }
+            }
+            else
+            {
+                printf("Iterator exhausted\n");
+            }
+        }
+        else
+        {
+            printf("Runtime error: next$ expects an iterator variable\n");
+            exit(1);
+        }
     }
     else if (root->type == NODE_FUNC_CALL)
     {

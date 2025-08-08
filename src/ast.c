@@ -1205,6 +1205,47 @@ ASTNode *ast_new_random(ASTNode *start, ASTNode *end, ASTNode *increment)
     return node;
 }
 
+// Generator and iterator AST functions
+ASTNode *ast_new_generator(const char *name, char params[][64], int param_count, ASTNode *body)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GENERATOR;
+    strncpy(node->generator.name, name, sizeof(node->generator.name));
+    node->generator.name[sizeof(node->generator.name) - 1] = '\0';
+    node->generator.param_count = param_count;
+    for (int i = 0; i < param_count && i < 4; i++)
+    {
+        strncpy(node->generator.params[i], params[i], sizeof(node->generator.params[i]));
+        node->generator.params[i][sizeof(node->generator.params[i]) - 1] = '\0';
+    }
+    node->generator.body = body;
+    return node;
+}
+
+ASTNode *ast_new_yield(ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_YIELD;
+    node->yield_stmt.value = value;
+    return node;
+}
+
+ASTNode *ast_new_iterator(ASTNode *generator_call)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_ITERATOR;
+    node->iterator.generator_call = generator_call;
+    return node;
+}
+
+ASTNode *ast_new_next(ASTNode *iterator)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_NEXT;
+    node->next_stmt.iterator = iterator;
+    return node;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)
@@ -1502,6 +1543,18 @@ void ast_free(ASTNode *node)
         ast_free(node->random_op.end);
         if (node->random_op.increment)
             ast_free(node->random_op.increment);
+        break;
+    case NODE_GENERATOR:
+        ast_free(node->generator.body);
+        break;
+    case NODE_YIELD:
+        ast_free(node->yield_stmt.value);
+        break;
+    case NODE_ITERATOR:
+        ast_free(node->iterator.generator_call);
+        break;
+    case NODE_NEXT:
+        ast_free(node->next_stmt.iterator);
         break;
 
     default:

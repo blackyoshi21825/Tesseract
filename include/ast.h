@@ -118,6 +118,10 @@ typedef enum
     NODE_STRING_UPPER,         // String uppercase operation
     NODE_STRING_LOWER,         // String lowercase operation
     NODE_RANDOM,               // Random number generation
+    NODE_GENERATOR,            // Generator function
+    NODE_YIELD,                // Yield statement
+    NODE_ITERATOR,             // Iterator creation
+    NODE_NEXT,                 // Iterator next operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -549,6 +553,25 @@ struct ASTNode
             char varname[64];
             int is_prefix;
         } inc_dec;
+        struct
+        {
+            char name[64];
+            char params[4][64];
+            int param_count;
+            ASTNode *body;
+        } generator;
+        struct
+        {
+            ASTNode *value;
+        } yield_stmt;
+        struct
+        {
+            ASTNode *generator_call;
+        } iterator;
+        struct
+        {
+            ASTNode *iterator;
+        } next_stmt;
     };
 };
 
@@ -697,6 +720,12 @@ ASTNode *ast_new_string_length(ASTNode *string);
 ASTNode *ast_new_string_upper(ASTNode *string);
 ASTNode *ast_new_string_lower(ASTNode *string);
 ASTNode *ast_new_random(ASTNode *start, ASTNode *end, ASTNode *increment);
+
+// Generator and iterator functions
+ASTNode *ast_new_generator(const char *name, char params[][64], int param_count, ASTNode *body);
+ASTNode *ast_new_yield(ASTNode *value);
+ASTNode *ast_new_iterator(ASTNode *generator_call);
+ASTNode *ast_new_next(ASTNode *iterator);
 
 void ast_set_node_location(ASTNode *node, int line, int column);
 

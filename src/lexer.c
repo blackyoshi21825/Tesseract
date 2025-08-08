@@ -797,6 +797,34 @@ Token lexer_next_token()
         pos += 8;
         return token;
     }
+    if (starts_with("gen$"))
+    {
+        token.type = TOK_GENERATOR;
+        strcpy(token.text, "gen$");
+        pos += 4;
+        return token;
+    }
+    if (starts_with("yield$"))
+    {
+        token.type = TOK_YIELD;
+        strcpy(token.text, "yield$");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("iter$"))
+    {
+        token.type = TOK_ITERATOR;
+        strcpy(token.text, "iter$");
+        pos += 5;
+        return token;
+    }
+    if (starts_with("next$"))
+    {
+        token.type = TOK_NEXT;
+        strcpy(token.text, "next$");
+        pos += 5;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

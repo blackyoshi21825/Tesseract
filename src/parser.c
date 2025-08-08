@@ -450,11 +450,11 @@ static ASTNode *parse_primary()
         next_token();
         expect(TOK_LBRACE);
         ASTNode *dict = ast_new_dict();
-        while (current_token.type != TOK_RBRACE)
+        while (current_token.type != TOK_RBRACE && current_token.type != TOK_EOF)
         {
-            ASTNode *key = parse_expression();
+            ASTNode *key = parse_primary();
             expect(TOK_ASSIGN);
-            ASTNode *value = parse_expression();
+            ASTNode *value = parse_primary();
             ast_dict_add_pair(dict, key, value);
             if (current_token.type == TOK_COMMA)
             {
@@ -1713,6 +1713,72 @@ static ASTNode *parse_statement()
         ASTNode *body = parse_statement();
 
         return ast_new_func_def(fname, params, param_count, body);
+    }
+
+    if (current_token.type == TOK_GENERATOR)
+    {
+        next_token();
+        if (current_token.type != TOK_ID)
+        {
+            error_throw_at_line(ERROR_SYNTAX, "Expected generator name after gen$", current_token.line);
+        }
+
+        char gname[64];
+        strcpy(gname, current_token.text);
+        next_token();
+
+        expect(TOK_LPAREN);
+
+        char params[4][64];
+        int param_count = 0;
+
+        if (current_token.type != TOK_RPAREN)
+        {
+            while (1)
+            {
+                if (param_count >= 4)
+                {
+                    error_throw_at_line(ERROR_SYNTAX, "Too many generator parameters (max 4)", current_token.line);
+                }
+                if (current_token.type != TOK_ID)
+                {
+                    error_throw_at_line(ERROR_SYNTAX, "Expected parameter name", current_token.line);
+                }
+                strcpy(params[param_count++], current_token.text);
+                next_token();
+                if (current_token.type == TOK_COMMA)
+                    next_token();
+                else
+                    break;
+            }
+        }
+
+        expect(TOK_RPAREN);
+        expect(TOK_ARROW);
+        ASTNode *body = parse_statement();
+
+        return ast_new_generator(gname, params, param_count, body);
+    }
+
+    if (current_token.type == TOK_YIELD)
+    {
+        next_token();
+        ASTNode *value = parse_expression();
+        return ast_new_yield(value);
+    }
+
+    if (current_token.type == TOK_ITERATOR)
+    {
+        next_token();
+        ASTNode *generator_call = parse_expression();
+        return ast_new_iterator(generator_call);
+    }
+
+    if (current_token.type == TOK_NEXT)
+    {
+        next_token();
+        ASTNode *iterator = parse_expression();
+        return ast_new_next(iterator);
     }
 
     if (current_token.type == TOK_RBRACE || current_token.type == TOK_EOF)

@@ -24,6 +24,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - Destructuring Assignment
 - Enhanced Error Handling with Line Numbers
 - Improved REPL with Error Recovery
+- Generators and Iterators
 
 ## Getting Started
 
@@ -758,6 +759,37 @@ let$response := ::http_delete("http://example.com/api/resource")
 ### Current Limitations
 - Maximum 4 function parameters
 - No error recovery
+
+## Generators and Iterators
+
+Tesseract supports generators and iterators for creating sequences of values on-demand.
+
+**Generator Definition:**
+```tesseract
+gen$ range(start, end) => {
+    let$ i := start;
+    while$ i < end {
+        yield$ i;
+        i := i + 1;
+    }
+}
+```
+
+**Iterator Creation and Usage:**
+```tesseract
+let$ my_iter := iter$ range(0, 5);
+::print next$ my_iter;  # prints 0
+::print next$ my_iter;  # prints 1
+::print next$ my_iter;  # prints 2
+```
+
+**Key Features:**
+- Lazy evaluation - values generated only when requested
+- Memory efficient - only current state maintained
+- Support for infinite sequences
+- State preservation between calls
+
+See [GENERATORS.md](GENERATORS.md) for detailed documentation.
 
 ## Roadmap
 
