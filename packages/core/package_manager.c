@@ -250,3 +250,42 @@ int pm_save_registry(PackageManager *pm) {
     }
     return 0;
 }
+
+void pm_functions(PackageManager *pm, const char *package_name) {
+    Package *pkg = pm_find(pm, package_name);
+    if (!pkg) {
+        printf("Package '%s' not found\n", package_name);
+        return;
+    }
+    
+    FILE *f = fopen(pkg->path, "r");
+    if (!f) {
+        printf("Error: Cannot open package file '%s'\n", pkg->path);
+        return;
+    }
+    
+    printf("Functions in package '%s':\n", package_name);
+    
+    char line[512];
+    int found_functions = 0;
+    
+    while (fgets(line, sizeof(line), f)) {
+        // Look for function definitions starting with "ASTNode *tesseract_"
+        if (strstr(line, "ASTNode *tesseract_") == line) {
+            // Extract function name
+            char *start = line + strlen("ASTNode *tesseract_");
+            char *end = strchr(start, '(');
+            if (end) {
+                *end = '\0';
+                printf("  %s\n", start);
+                found_functions = 1;
+            }
+        }
+    }
+    
+    if (!found_functions) {
+        printf("  No functions found in this package\n");
+    }
+    
+    fclose(f);
+}

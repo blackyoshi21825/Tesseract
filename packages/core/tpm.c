@@ -7,6 +7,7 @@ void print_usage(const char *prog_name) {
     printf("  install <package_name> <source_file>  Install a package\n");
     printf("  uninstall <package_name>              Uninstall a package\n");
     printf("  list                                  List installed packages\n");
+    printf("  functions <package_name>              Show functions in a package\n");
     printf("  help                                  Show this help\n");
 }
 
@@ -42,6 +43,14 @@ int main(int argc, char **argv) {
     }
     else if (strcmp(command, "list") == 0) {
         pm_list(pm);
+    }
+    else if (strcmp(command, "functions") == 0) {
+        if (argc != 3) {
+            printf("Usage: %s functions <package_name>\n", argv[0]);
+            pm_free(pm);
+            return 1;
+        }
+        pm_functions(pm, argv[2]);
     }
     else if (strcmp(command, "help") == 0) {
         print_usage(argv[0]);

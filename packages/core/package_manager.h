@@ -24,6 +24,7 @@ int pm_install(PackageManager *pm, const char *package_name, const char *source_
 int pm_uninstall(PackageManager *pm, const char *package_name);
 Package *pm_find(PackageManager *pm, const char *package_name);
 void pm_list(PackageManager *pm);
+void pm_functions(PackageManager *pm, const char *package_name);
 int pm_load_registry(PackageManager *pm);
 int pm_save_registry(PackageManager *pm);
 
