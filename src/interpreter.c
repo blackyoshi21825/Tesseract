@@ -16,6 +16,7 @@ void init_json_utils_package();
 void init_network_utils_package();
 void init_random_utils_package();
 void init_system_utils_package();
+void init_database_package();
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
@@ -410,6 +411,7 @@ static void initialize_packages() {
         init_network_utils_package();
         init_random_utils_package();
         init_system_utils_package();
+        init_database_package();
         packages_initialized = 1;
     }
 }
@@ -1188,6 +1190,14 @@ void interpret(ASTNode *root)
         if (debug_mode) {
             printf("[DEBUG] Function call: %s\n", root->func_call.name);
         }
+        
+        // Try package functions first
+        ASTNode *package_result = call_package_function(root->func_call.name, root->func_call.args, root->func_call.arg_count);
+        if (package_result) {
+            // Package function found and executed
+            return;
+        }
+        
         Function *fn = find_function(root->func_call.name);
         if (!fn)
         {
@@ -4173,7 +4183,11 @@ static double eval_expression(ASTNode *node)
         // Try package functions first
         ASTNode *package_result = call_package_function(node->func_call.name, node->func_call.args, node->func_call.arg_count);
         if (package_result) {
-            return eval_expression(package_result);
+            if (package_result->type == NODE_NUMBER) {
+                return package_result->number;
+            } else {
+                return eval_expression(package_result);
+            }
         }
         
         Function *fn = find_function(node->func_call.name);

@@ -31,13 +31,14 @@ endif()
 
 # Find source files
 file(GLOB SOURCES "src/*.c")
+file(GLOB PACKAGE_SOURCES "packages/core/*.c" "packages/stdlib/*.c")
 
 # Find curl package
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIRS})
 
 # Create executable
-add_executable(tesser ${SOURCES})
+add_executable(tesser ${SOURCES} ${PACKAGE_SOURCES})
 
 # Add precompiled header if supported
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)

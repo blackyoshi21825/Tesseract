@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static PackageFunction package_functions[32];
+static PackageFunction package_functions[128];
 static int function_count = 0;
 
 void register_package_function(const char *name, ASTNode *(*func)(ASTNode **args, int arg_count)) {
-    if (function_count < 32) {
+    if (function_count < 128) {
         package_functions[function_count].name = malloc(strlen(name) + 1);
         strcpy(package_functions[function_count].name, name);
         package_functions[function_count].func = func;
