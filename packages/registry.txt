@@ -9,3 +9,4 @@ json_utils|1.0.0|packages/stdlib/json_utils.c
 network_utils|1.0.0|packages/stdlib/network_utils.c
 random_utils|1.0.0|packages/stdlib/random_utils.c
 database|1.0.0|packages/stdlib/database.c
+console_utils|1.0.0|packages/stdlib/console_utils.c

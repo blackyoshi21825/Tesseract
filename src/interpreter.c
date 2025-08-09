@@ -17,6 +17,7 @@ void init_network_utils_package();
 void init_random_utils_package();
 void init_system_utils_package();
 void init_database_package();
+void init_console_utils_package();
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
@@ -412,6 +413,7 @@ static void initialize_packages() {
         init_random_utils_package();
         init_system_utils_package();
         init_database_package();
+        init_console_utils_package();
         packages_initialized = 1;
     }
 }
