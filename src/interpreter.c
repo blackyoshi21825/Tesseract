@@ -18,6 +18,7 @@ void init_random_utils_package();
 void init_system_utils_package();
 void init_database_package();
 void init_console_utils_package();
+void init_time_package();
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
@@ -563,6 +564,7 @@ static void initialize_packages() {
         init_system_utils_package();
         init_database_package();
         init_console_utils_package();
+        init_time_package();
         initialize_builtin_functions();
         packages_initialized = 1;
     }

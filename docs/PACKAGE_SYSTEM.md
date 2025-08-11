@@ -65,6 +65,8 @@ let$result := factorial(5)
 ::print result  # prints 120
 ```
 
+Please note that built in Tesseract package functions do not require `::`. You may add it to your own custom packages.
+
 ## Creating Custom Packages
 
 1. Create a new `.c` file in the appropriate directory
