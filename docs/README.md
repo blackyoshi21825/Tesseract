@@ -13,7 +13,7 @@ Tesseract is a simple interpreted programming language featuring dynamic typing,
 - File imports
 - Boolean and bitwise operations
 - File Handling
-- Advanced Data Structures(Stacks, Queues, and Linked Lists)
+- Advanced Data Structures (Stacks, Queues, Linked Lists, Trees, and Graphs)
 - While Loops
 - HTTP Web Requests
 - Regular Expressions
@@ -402,6 +402,71 @@ let$ list := <linked>
 ::print ::lget(list, 1)   # prints 20
 ::lremove(list, 20)
 ::print ::lsize(list)     # prints 2
+```
+
+### Trees
+
+**Creation:**
+```tesseract
+let$ myTree := <tree>
+```
+
+**Operations:**
+- `::tinsert(tree, value)` - Insert value into tree
+- `::tsearch(tree, value)` - Search for value (returns 1 if found, 0 if not)
+- `::tdelete(tree, value)` - Delete value from tree (returns 1 if deleted, 0 if not found)
+- `::tinorder(tree)` - Inorder traversal (sorted order)
+- `::tpreorder(tree)` - Preorder traversal (root first)
+- `::tpostorder(tree)` - Postorder traversal (root last)
+
+**Example:**
+```tesseract
+let$ tree := <tree>
+::tinsert(tree, 5)
+::tinsert(tree, 3)
+::tinsert(tree, 7)
+::tinsert(tree, 1)
+::tinsert(tree, 9)
+::print tree              # prints <tree: 5, 3, 7, 1, 9>
+::tinorder(tree)          # prints [1, 3, 5, 7, 9] (sorted)
+::tpreorder(tree)         # prints [5, 3, 1, 7, 9] (root first)
+::tpostorder(tree)        # prints [1, 3, 9, 7, 5] (root last)
+::print ::tsearch(tree, 7) # prints 1 (found)
+::tdelete(tree, 3)
+```
+
+### Graphs
+
+**Creation:**
+```tesseract
+let$ myGraph := <graph>
+```
+
+**Operations:**
+- `::gadd_vertex(graph, vertex)` - Add vertex to graph
+- `::gadd_edge(graph, from, to)` - Add edge between vertices
+- `::ghas_edge(graph, from, to)` - Check if edge exists (returns 1 if exists, 0 if not)
+- `::gneighbors(graph, vertex)` - Get neighbors of vertex (bidirectional)
+- `::gdfs(graph, start)` - Depth-first search from start vertex
+- `::gbfs(graph, start)` - Breadth-first search from start vertex
+
+**Example:**
+```tesseract
+let$ graph := <graph>
+::gadd_vertex(graph, 1)
+::gadd_vertex(graph, 2)
+::gadd_vertex(graph, 3)
+::gadd_vertex(graph, 4)
+::gadd_edge(graph, 1, 2)
+::gadd_edge(graph, 2, 3)
+::gadd_edge(graph, 3, 4)
+::gadd_edge(graph, 1, 4)
+::print graph                    # prints graph structure
+::gneighbors(graph, 1)          # prints [2, 4]
+::gneighbors(graph, 2)          # prints [1, 3] (bidirectional)
+::gdfs(graph, 1)                # prints [1, 2, 3, 4] (depth-first)
+::gbfs(graph, 1)                # prints [1, 2, 4, 3] (breadth-first)
+::print ::ghas_edge(graph, 1, 2) # prints 1 (edge exists)
 ```
 
 ### Regular Expressions
