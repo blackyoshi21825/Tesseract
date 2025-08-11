@@ -546,6 +546,41 @@ let$mySet := {1, 2, 3, 2, 1};  # Automatically removes duplicates
 ::print mySet;  # prints {1, 2, 3}
 ```
 
+**Set Functions:**
+- `::sadd(set, value)` - Add element to set
+- `::sremove(set, value)` - Remove element from set
+- `::scontains(set, value)` - Check if set contains element (returns true/false)
+- `::ssize(set)` - Get number of elements in set
+- `::sempty(set)` - Check if set is empty (returns true/false)
+- `::sunion(set1, set2)` - Return union of two sets
+- `::sintersection(set1, set2)` - Return intersection of two sets
+- `::sdifference(set1, set2)` - Return difference of two sets (elements in set1 but not in set2)
+- `::ssubset(set1, set2)` - Check if set1 is subset of set2 (returns true/false)
+- `::sclear(set)` - Remove all elements from set
+
+**Examples:**
+```tesseract
+# Basic set operations
+let$set1 := {1, 2, 3}
+let$set2 := {3, 4, 5}
+
+::sadd(set1, 4)           # set1 becomes {1, 2, 3, 4}
+::sremove(set1, 2)        # set1 becomes {1, 3, 4}
+::print ::scontains(set1, 3)  # prints true
+::print ::ssize(set1)     # prints 3
+
+# Set operations
+let$union := ::sunion(set1, set2)           # {1, 3, 4, 5}
+let$intersection := ::sintersection(set1, set2)  # {3}
+let$difference := ::sdifference(set1, set2)      # {1, 4}
+
+::print ::ssubset({1, 2}, {1, 2, 3})  # prints true
+::print ::sempty(set1)                # prints false
+
+::sclear(set1)            # set1 becomes {}
+::print ::sempty(set1)    # prints true
+```
+
 
 
 ### Booleans
