@@ -889,8 +889,6 @@ let$ my_iter := iter$ range(0, 5);
 - Support for infinite sequences
 - State preservation between calls
 
-See [GENERATORS.md](GENERATORS.md) for detailed documentation.
-
 ## Roadmap
 
 ### Planned Features
