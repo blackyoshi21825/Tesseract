@@ -138,6 +138,17 @@ typedef enum
     NODE_GRAPH_NEIGHBORS,      // Graph get neighbors
     NODE_GRAPH_DFS,            // Graph depth-first search
     NODE_GRAPH_BFS,            // Graph breadth-first search
+    NODE_SET_UNION,            // Set union operation
+    NODE_SET_INTERSECTION,     // Set intersection operation
+    NODE_SET_DIFFERENCE,       // Set difference operation
+    NODE_SET_SYMMETRIC_DIFF,   // Set symmetric difference operation
+    NODE_SET_ADD,              // Set add element operation
+    NODE_SET_REMOVE,           // Set remove element operation
+    NODE_SET_CONTAINS,         // Set contains element operation
+    NODE_SET_SIZE,             // Set size operation
+    NODE_SET_EMPTY,            // Set empty check operation
+    NODE_SET_CLEAR,            // Set clear operation
+    NODE_SET_COPY,             // Set copy operation
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -640,6 +651,20 @@ struct ASTNode
             ASTNode *graph;
             ASTNode *start;
         } graph_traversal;
+        struct
+        {
+            ASTNode *set1;
+            ASTNode *set2;
+        } set_binop;
+        struct
+        {
+            ASTNode *set;
+            ASTNode *element;
+        } set_element_op;
+        struct
+        {
+            ASTNode *set;
+        } set_op;
     };
 };
 
@@ -776,6 +801,17 @@ ASTNode *ast_new_lambda(char params[][64], int param_count, ASTNode *body);
 ASTNode *ast_new_string_interpolation(const char *template, ASTNode **expressions, int expr_count);
 ASTNode *ast_new_set();
 void ast_set_add_element(ASTNode *set, ASTNode *element);
+ASTNode *ast_new_set_union(ASTNode *set1, ASTNode *set2);
+ASTNode *ast_new_set_intersection(ASTNode *set1, ASTNode *set2);
+ASTNode *ast_new_set_difference(ASTNode *set1, ASTNode *set2);
+ASTNode *ast_new_set_symmetric_diff(ASTNode *set1, ASTNode *set2);
+ASTNode *ast_new_set_add(ASTNode *set, ASTNode *element);
+ASTNode *ast_new_set_remove(ASTNode *set, ASTNode *element);
+ASTNode *ast_new_set_contains(ASTNode *set, ASTNode *element);
+ASTNode *ast_new_set_size(ASTNode *set);
+ASTNode *ast_new_set_empty(ASTNode *set);
+ASTNode *ast_new_set_clear(ASTNode *set);
+ASTNode *ast_new_set_copy(ASTNode *set);
 ASTNode *ast_new_type(ASTNode *value);
 ASTNode *ast_new_undef();
 

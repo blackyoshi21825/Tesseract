@@ -161,6 +161,17 @@ typedef enum
     TOK_GRAPH_NEIGHBORS,     // ::gneighbors
     TOK_GRAPH_DFS,           // ::gdfs
     TOK_GRAPH_BFS,           // ::gbfs
+    TOK_SET_UNION,           // ::union
+    TOK_SET_INTERSECTION,    // ::intersection
+    TOK_SET_DIFFERENCE,      // ::difference
+    TOK_SET_SYMMETRIC_DIFF,  // ::symmetric_diff
+    TOK_SET_ADD,             // ::sadd
+    TOK_SET_REMOVE,          // ::sremove
+    TOK_SET_CONTAINS,        // ::scontains
+    TOK_SET_SIZE,            // ::ssize
+    TOK_SET_EMPTY,           // ::sempty
+    TOK_SET_CLEAR,           // ::sclear
+    TOK_SET_COPY,            // ::scopy
 } TokenType;
 
 typedef struct

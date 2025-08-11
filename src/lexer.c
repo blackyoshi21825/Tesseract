@@ -937,6 +937,83 @@ Token lexer_next_token()
         pos += 6;
         return token;
     }
+    if (starts_with("::union"))
+    {
+        token.type = TOK_SET_UNION;
+        strcpy(token.text, "::union");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::intersection"))
+    {
+        token.type = TOK_SET_INTERSECTION;
+        strcpy(token.text, "::intersection");
+        pos += 14;
+        return token;
+    }
+    if (starts_with("::difference"))
+    {
+        token.type = TOK_SET_DIFFERENCE;
+        strcpy(token.text, "::difference");
+        pos += 12;
+        return token;
+    }
+    if (starts_with("::symmetric_diff"))
+    {
+        token.type = TOK_SET_SYMMETRIC_DIFF;
+        strcpy(token.text, "::symmetric_diff");
+        pos += 16;
+        return token;
+    }
+    if (starts_with("::sadd"))
+    {
+        token.type = TOK_SET_ADD;
+        strcpy(token.text, "::sadd");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::sremove"))
+    {
+        token.type = TOK_SET_REMOVE;
+        strcpy(token.text, "::sremove");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::scontains"))
+    {
+        token.type = TOK_SET_CONTAINS;
+        strcpy(token.text, "::scontains");
+        pos += 11;
+        return token;
+    }
+    if (starts_with("::ssize"))
+    {
+        token.type = TOK_SET_SIZE;
+        strcpy(token.text, "::ssize");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::sempty"))
+    {
+        token.type = TOK_SET_EMPTY;
+        strcpy(token.text, "::sempty");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::sclear"))
+    {
+        token.type = TOK_SET_CLEAR;
+        strcpy(token.text, "::sclear");
+        pos += 8;
+        return token;
+    }
+    if (starts_with("::scopy"))
+    {
+        token.type = TOK_SET_COPY;
+        strcpy(token.text, "::scopy");
+        pos += 7;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

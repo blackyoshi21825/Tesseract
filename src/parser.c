@@ -671,7 +671,18 @@ static ASTNode *parse_primary()
         current_token.type == TOK_GRAPH_HAS_EDGE ||
         current_token.type == TOK_GRAPH_NEIGHBORS ||
         current_token.type == TOK_GRAPH_DFS ||
-        current_token.type == TOK_GRAPH_BFS)
+        current_token.type == TOK_GRAPH_BFS ||
+        current_token.type == TOK_SET_UNION ||
+        current_token.type == TOK_SET_INTERSECTION ||
+        current_token.type == TOK_SET_DIFFERENCE ||
+        current_token.type == TOK_SET_SYMMETRIC_DIFF ||
+        current_token.type == TOK_SET_ADD ||
+        current_token.type == TOK_SET_REMOVE ||
+        current_token.type == TOK_SET_CONTAINS ||
+        current_token.type == TOK_SET_SIZE ||
+        current_token.type == TOK_SET_EMPTY ||
+        current_token.type == TOK_SET_CLEAR ||
+        current_token.type == TOK_SET_COPY)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -768,6 +779,33 @@ static ASTNode *parse_primary()
             else
                 return ast_new_graph_has_edge(queue, from, to);
         }
+        else if (func_type == TOK_SET_UNION || func_type == TOK_SET_INTERSECTION ||
+                 func_type == TOK_SET_DIFFERENCE || func_type == TOK_SET_SYMMETRIC_DIFF)
+        {
+            expect(TOK_COMMA);
+            ASTNode *set2 = parse_expression();
+            expect(TOK_RPAREN);
+            if (func_type == TOK_SET_UNION)
+                return ast_new_set_union(queue, set2);
+            else if (func_type == TOK_SET_INTERSECTION)
+                return ast_new_set_intersection(queue, set2);
+            else if (func_type == TOK_SET_DIFFERENCE)
+                return ast_new_set_difference(queue, set2);
+            else
+                return ast_new_set_symmetric_diff(queue, set2);
+        }
+        else if (func_type == TOK_SET_ADD || func_type == TOK_SET_REMOVE || func_type == TOK_SET_CONTAINS)
+        {
+            expect(TOK_COMMA);
+            ASTNode *element = parse_expression();
+            expect(TOK_RPAREN);
+            if (func_type == TOK_SET_ADD)
+                return ast_new_set_add(queue, element);
+            else if (func_type == TOK_SET_REMOVE)
+                return ast_new_set_remove(queue, element);
+            else
+                return ast_new_set_contains(queue, element);
+        }
         else
         {
             expect(TOK_RPAREN);
@@ -793,8 +831,16 @@ static ASTNode *parse_primary()
                 return ast_new_tree_preorder(queue);
             case TOK_TREE_POSTORDER:
                 return ast_new_tree_postorder(queue);
+            case TOK_SET_SIZE:
+                return ast_new_set_size(queue);
+            case TOK_SET_EMPTY:
+                return ast_new_set_empty(queue);
+            case TOK_SET_CLEAR:
+                return ast_new_set_clear(queue);
+            case TOK_SET_COPY:
+                return ast_new_set_copy(queue);
             default:
-                printf("Parse error: Unknown queue, linked list, tree, or graph function\n");
+                printf("Parse error: Unknown queue, linked list, tree, graph, or set function\n");
                 exit(1);
             }
         }

@@ -224,7 +224,7 @@ const char *get_variable(const char *name)
     }
     if (entry->type != 0)
     {
-        fprintf(stderr, "Variable %s is not a string\n", name);
+        // Don't print error for non-string variables, just return NULL
         return NULL;
     }
     return entry->value.string_val;

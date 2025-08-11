@@ -1127,6 +1127,102 @@ ASTNode *ast_new_undef()
     return node;
 }
 
+// Set operation functions
+ASTNode *ast_new_set_union(ASTNode *set1, ASTNode *set2)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_UNION;
+    node->set_binop.set1 = set1;
+    node->set_binop.set2 = set2;
+    return node;
+}
+
+ASTNode *ast_new_set_intersection(ASTNode *set1, ASTNode *set2)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_INTERSECTION;
+    node->set_binop.set1 = set1;
+    node->set_binop.set2 = set2;
+    return node;
+}
+
+ASTNode *ast_new_set_difference(ASTNode *set1, ASTNode *set2)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_DIFFERENCE;
+    node->set_binop.set1 = set1;
+    node->set_binop.set2 = set2;
+    return node;
+}
+
+ASTNode *ast_new_set_symmetric_diff(ASTNode *set1, ASTNode *set2)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_SYMMETRIC_DIFF;
+    node->set_binop.set1 = set1;
+    node->set_binop.set2 = set2;
+    return node;
+}
+
+ASTNode *ast_new_set_add(ASTNode *set, ASTNode *element)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_ADD;
+    node->set_element_op.set = set;
+    node->set_element_op.element = element;
+    return node;
+}
+
+ASTNode *ast_new_set_remove(ASTNode *set, ASTNode *element)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_REMOVE;
+    node->set_element_op.set = set;
+    node->set_element_op.element = element;
+    return node;
+}
+
+ASTNode *ast_new_set_contains(ASTNode *set, ASTNode *element)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_CONTAINS;
+    node->set_element_op.set = set;
+    node->set_element_op.element = element;
+    return node;
+}
+
+ASTNode *ast_new_set_size(ASTNode *set)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_SIZE;
+    node->set_op.set = set;
+    return node;
+}
+
+ASTNode *ast_new_set_empty(ASTNode *set)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_EMPTY;
+    node->set_op.set = set;
+    return node;
+}
+
+ASTNode *ast_new_set_clear(ASTNode *set)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_CLEAR;
+    node->set_op.set = set;
+    return node;
+}
+
+ASTNode *ast_new_set_copy(ASTNode *set)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_SET_COPY;
+    node->set_op.set = set;
+    return node;
+}
+
 void ast_set_node_location(ASTNode *node, int line, int column)
 {
     ast_set_location(node, line, column);
@@ -1678,11 +1774,10 @@ void ast_free(ASTNode *node)
         // No dynamic memory to free
         break;
     case NODE_SET:
-        for (int i = 0; i < node->set.count; i++)
+        if (node->set.elements)
         {
-            ast_free(node->set.elements[i]);
+            free(node->set.elements);
         }
-        free(node->set.elements);
         break;
     case NODE_STRING_SPLIT:
         ast_free(node->string_split.string);
@@ -1724,6 +1819,25 @@ void ast_free(ASTNode *node)
         break;
     case NODE_NEXT:
         ast_free(node->next_stmt.iterator);
+        break;
+    case NODE_SET_UNION:
+    case NODE_SET_INTERSECTION:
+    case NODE_SET_DIFFERENCE:
+    case NODE_SET_SYMMETRIC_DIFF:
+        ast_free(node->set_binop.set1);
+        ast_free(node->set_binop.set2);
+        break;
+    case NODE_SET_ADD:
+    case NODE_SET_REMOVE:
+    case NODE_SET_CONTAINS:
+        ast_free(node->set_element_op.set);
+        ast_free(node->set_element_op.element);
+        break;
+    case NODE_SET_SIZE:
+    case NODE_SET_EMPTY:
+    case NODE_SET_CLEAR:
+    case NODE_SET_COPY:
+        ast_free(node->set_op.set);
         break;
 
     default:

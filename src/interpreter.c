@@ -400,6 +400,155 @@ static int break_flag = 0;
 static int continue_flag = 0;
 static int packages_initialized = 0;
 
+static void initialize_builtin_functions() {
+    // Register built-in functions
+    
+    // abs(x) - absolute value
+    char abs_params[4][64] = {"x"};
+    ASTNode *abs_body = ast_new_block();
+    ASTNode *abs_condition = ast_new_binop(ast_new_var("x"), ast_new_number(0), TOK_LT);
+    ASTNode *abs_neg = ast_new_binop(ast_new_number(0), ast_new_var("x"), TOK_MINUS);
+    ASTNode *abs_ternary = ast_new_ternary(abs_condition, abs_neg, ast_new_var("x"));
+    ast_block_add_statement(abs_body, abs_ternary);
+    register_function("abs", abs_params, 1, abs_body);
+    
+    // max(a, b) - maximum of two values
+    char max_params[4][64] = {"a", "b"};
+    ASTNode *max_body = ast_new_block();
+    ASTNode *max_condition = ast_new_binop(ast_new_var("a"), ast_new_var("b"), TOK_GT);
+    ASTNode *max_ternary = ast_new_ternary(max_condition, ast_new_var("a"), ast_new_var("b"));
+    ast_block_add_statement(max_body, max_ternary);
+    register_function("max", max_params, 2, max_body);
+    
+    // min(a, b) - minimum of two values
+    char min_params[4][64] = {"a", "b"};
+    ASTNode *min_body = ast_new_block();
+    ASTNode *min_condition = ast_new_binop(ast_new_var("a"), ast_new_var("b"), TOK_LT);
+    ASTNode *min_ternary = ast_new_ternary(min_condition, ast_new_var("a"), ast_new_var("b"));
+    ast_block_add_statement(min_body, min_ternary);
+    register_function("min", min_params, 2, min_body);
+    
+    // pow(base, exp) - power function
+    char pow_params[4][64] = {"base", "exp"};
+    ASTNode *pow_body = ast_new_block();
+    // Simple implementation: result = 1, loop exp times multiplying by base
+    ast_block_add_statement(pow_body, ast_new_assign("result", ast_new_number(1)));
+    ast_block_add_statement(pow_body, ast_new_assign("i", ast_new_number(0)));
+    ASTNode *pow_loop_cond = ast_new_binop(ast_new_var("i"), ast_new_var("exp"), TOK_LT);
+    ASTNode *pow_loop_body = ast_new_block();
+    ASTNode *pow_mult = ast_new_binop(ast_new_var("result"), ast_new_var("base"), TOK_MUL);
+    ast_block_add_statement(pow_loop_body, ast_new_assign("result", pow_mult));
+    ast_block_add_statement(pow_loop_body, ast_new_increment("i", 0));
+    ast_block_add_statement(pow_body, ast_new_while(pow_loop_cond, pow_loop_body));
+    ast_block_add_statement(pow_body, ast_new_var("result"));
+    register_function("pow", pow_params, 2, pow_body);
+    
+    // sqrt(x) - square root (Newton's method approximation)
+    char sqrt_params[4][64] = {"x"};
+    ASTNode *sqrt_body = ast_new_block();
+    // Check for negative input
+    ASTNode *sqrt_neg_check = ast_new_binop(ast_new_var("x"), ast_new_number(0), TOK_LT);
+    ASTNode *sqrt_neg_return = ast_new_number(0); // Return 0 for negative input
+    ASTNode *sqrt_pos_calc = ast_new_block();
+    // Newton's method: guess = x/2, iterate guess = (guess + x/guess) / 2
+    ast_block_add_statement(sqrt_pos_calc, ast_new_assign("guess", ast_new_binop(ast_new_var("x"), ast_new_number(2), TOK_DIV)));
+    ast_block_add_statement(sqrt_pos_calc, ast_new_assign("i", ast_new_number(0)));
+    ASTNode *sqrt_iter_cond = ast_new_binop(ast_new_var("i"), ast_new_number(10), TOK_LT); // 10 iterations
+    ASTNode *sqrt_iter_body = ast_new_block();
+    ASTNode *sqrt_div = ast_new_binop(ast_new_var("x"), ast_new_var("guess"), TOK_DIV);
+    ASTNode *sqrt_add = ast_new_binop(ast_new_var("guess"), sqrt_div, TOK_PLUS);
+    ASTNode *sqrt_new_guess = ast_new_binop(sqrt_add, ast_new_number(2), TOK_DIV);
+    ast_block_add_statement(sqrt_iter_body, ast_new_assign("guess", sqrt_new_guess));
+    ast_block_add_statement(sqrt_iter_body, ast_new_increment("i", 0));
+    ast_block_add_statement(sqrt_pos_calc, ast_new_while(sqrt_iter_cond, sqrt_iter_body));
+    ast_block_add_statement(sqrt_pos_calc, ast_new_var("guess"));
+    ASTNode *sqrt_ternary = ast_new_ternary(sqrt_neg_check, sqrt_neg_return, sqrt_pos_calc);
+    ast_block_add_statement(sqrt_body, sqrt_ternary);
+    register_function("sqrt", sqrt_params, 1, sqrt_body);
+    
+    // factorial(n) - factorial function
+    char fact_params[4][64] = {"n"};
+    ASTNode *fact_body = ast_new_block();
+    // Check for n <= 1
+    ASTNode *fact_base_check = ast_new_binop(ast_new_var("n"), ast_new_number(1), TOK_LTE);
+    ASTNode *fact_base_return = ast_new_number(1);
+    ASTNode *fact_calc = ast_new_block();
+    ast_block_add_statement(fact_calc, ast_new_assign("result", ast_new_number(1)));
+    ast_block_add_statement(fact_calc, ast_new_assign("i", ast_new_number(2)));
+    ASTNode *fact_loop_cond = ast_new_binop(ast_new_var("i"), ast_new_var("n"), TOK_LTE);
+    ASTNode *fact_loop_body = ast_new_block();
+    ASTNode *fact_mult = ast_new_binop(ast_new_var("result"), ast_new_var("i"), TOK_MUL);
+    ast_block_add_statement(fact_loop_body, ast_new_assign("result", fact_mult));
+    ast_block_add_statement(fact_loop_body, ast_new_increment("i", 0));
+    ast_block_add_statement(fact_calc, ast_new_while(fact_loop_cond, fact_loop_body));
+    ast_block_add_statement(fact_calc, ast_new_var("result"));
+    ASTNode *fact_ternary = ast_new_ternary(fact_base_check, fact_base_return, fact_calc);
+    ast_block_add_statement(fact_body, fact_ternary);
+
+    
+    // floor(x) - floor function
+    char floor_params[4][64] = {"x"};
+    ASTNode *floor_body = ast_new_block();
+    // Simple floor: if x >= 0, truncate; if x < 0 and has decimal, subtract 1
+    ASTNode *floor_int_part = ast_new_to_int(ast_new_var("x"));
+    ASTNode *floor_is_negative = ast_new_binop(ast_new_var("x"), ast_new_number(0), TOK_LT);
+    ASTNode *floor_has_decimal = ast_new_binop(ast_new_var("x"), floor_int_part, TOK_NEQ);
+    ASTNode *floor_both_cond = ast_new_and(floor_is_negative, floor_has_decimal);
+    ASTNode *floor_subtract = ast_new_binop(floor_int_part, ast_new_number(1), TOK_MINUS);
+    ASTNode *floor_result = ast_new_ternary(floor_both_cond, floor_subtract, floor_int_part);
+    ast_block_add_statement(floor_body, floor_result);
+    register_function("floor", floor_params, 1, floor_body);
+    
+    // ceil(x) - ceiling function
+    char ceil_params[4][64] = {"x"};
+    ASTNode *ceil_body = ast_new_block();
+    ASTNode *ceil_int_part = ast_new_to_int(ast_new_var("x"));
+    ASTNode *ceil_is_positive = ast_new_binop(ast_new_var("x"), ast_new_number(0), TOK_GT);
+    ASTNode *ceil_has_decimal = ast_new_binop(ast_new_var("x"), ceil_int_part, TOK_NEQ);
+    ASTNode *ceil_both_cond = ast_new_and(ceil_is_positive, ceil_has_decimal);
+    ASTNode *ceil_add = ast_new_binop(ceil_int_part, ast_new_number(1), TOK_PLUS);
+    ASTNode *ceil_result = ast_new_ternary(ceil_both_cond, ceil_add, ceil_int_part);
+    ast_block_add_statement(ceil_body, ceil_result);
+    register_function("ceil", ceil_params, 1, ceil_result);
+    
+    // round(x) - rounding function
+    char round_params[4][64] = {"x"};
+    ASTNode *round_body = ast_new_block();
+    ASTNode *round_plus_half = ast_new_binop(ast_new_var("x"), ast_new_number(0.5), TOK_PLUS);
+    ASTNode *round_result = ast_new_to_int(round_plus_half);
+    ast_block_add_statement(round_body, round_result);
+    register_function("round", round_params, 1, round_body);
+    
+    // sign(x) - sign function (-1, 0, or 1)
+    char sign_params[4][64] = {"x"};
+    ASTNode *sign_body = ast_new_block();
+    ASTNode *sign_is_zero = ast_new_binop(ast_new_var("x"), ast_new_number(0), TOK_EQ);
+    ASTNode *sign_is_positive = ast_new_binop(ast_new_var("x"), ast_new_number(0), TOK_GT);
+    ASTNode *sign_zero_or_pos = ast_new_ternary(sign_is_positive, ast_new_number(1), ast_new_number(-1));
+    ASTNode *sign_result = ast_new_ternary(sign_is_zero, ast_new_number(0), sign_zero_or_pos);
+    ast_block_add_statement(sign_body, sign_result);
+    register_function("sign", sign_params, 1, sign_body);
+    
+    // clamp(x, min, max) - clamp value between min and max
+    char clamp_params[4][64] = {"x", "min", "max"};
+    ASTNode *clamp_body = ast_new_block();
+    ASTNode *clamp_too_low = ast_new_binop(ast_new_var("x"), ast_new_var("min"), TOK_LT);
+    ASTNode *clamp_too_high = ast_new_binop(ast_new_var("x"), ast_new_var("max"), TOK_GT);
+    ASTNode *clamp_low_result = ast_new_ternary(clamp_too_low, ast_new_var("min"), ast_new_var("x"));
+    ASTNode *clamp_result = ast_new_ternary(clamp_too_high, ast_new_var("max"), clamp_low_result);
+    ast_block_add_statement(clamp_body, clamp_result);
+    register_function("clamp", clamp_params, 3, clamp_body);
+    
+    // lerp(a, b, t) - linear interpolation
+    char lerp_params[4][64] = {"a", "b", "t"};
+    ASTNode *lerp_body = ast_new_block();
+    ASTNode *lerp_diff = ast_new_binop(ast_new_var("b"), ast_new_var("a"), TOK_MINUS);
+    ASTNode *lerp_mult = ast_new_binop(lerp_diff, ast_new_var("t"), TOK_MUL);
+    ASTNode *lerp_result = ast_new_binop(ast_new_var("a"), lerp_mult, TOK_PLUS);
+    ast_block_add_statement(lerp_body, lerp_result);
+    register_function("lerp", lerp_params, 3, lerp_body);
+}
+
 static void initialize_packages() {
     if (!packages_initialized) {
         init_date_time_package();
@@ -414,6 +563,7 @@ static void initialize_packages() {
         init_system_utils_package();
         init_database_package();
         init_console_utils_package();
+        initialize_builtin_functions();
         packages_initialized = 1;
     }
 }
@@ -1457,7 +1607,12 @@ void interpret(ASTNode *root)
              root->type == NODE_GRAPH_ADD_EDGE || root->type == NODE_GRAPH_REMOVE_VERTEX ||
              root->type == NODE_GRAPH_REMOVE_EDGE || root->type == NODE_GRAPH_HAS_EDGE ||
              root->type == NODE_GRAPH_NEIGHBORS || root->type == NODE_GRAPH_DFS ||
-             root->type == NODE_GRAPH_BFS)
+             root->type == NODE_GRAPH_BFS || root->type == NODE_SET_UNION ||
+             root->type == NODE_SET_INTERSECTION || root->type == NODE_SET_DIFFERENCE ||
+             root->type == NODE_SET_SYMMETRIC_DIFF || root->type == NODE_SET_ADD ||
+             root->type == NODE_SET_REMOVE || root->type == NODE_SET_CONTAINS ||
+             root->type == NODE_SET_SIZE || root->type == NODE_SET_EMPTY ||
+             root->type == NODE_SET_CLEAR || root->type == NODE_SET_COPY)
     {
         // For linked list remove operations, don't print the result
         if (root->type == NODE_LINKED_LIST_REMOVE)
@@ -2720,6 +2875,396 @@ static double eval_expression(ASTNode *node)
     case NODE_SET:
         print_node(node);
         return 0;
+    case NODE_SET_UNION:
+    {
+        ASTNode *set1_node = node->set_binop.set1;
+        ASTNode *set2_node = node->set_binop.set2;
+        
+        if (set1_node->type == NODE_VAR)
+        {
+            set1_node = get_set_variable(set1_node->varname);
+        }
+        if (set2_node->type == NODE_VAR)
+        {
+            set2_node = get_set_variable(set2_node->varname);
+        }
+        
+        if (!set1_node || !set2_node || set1_node->type != NODE_SET || set2_node->type != NODE_SET)
+        {
+            printf("Runtime error: Union operation expects two sets\n");
+            exit(1);
+        }
+        
+        ASTNode *result = ast_new_set();
+        
+        // Add all elements from set1
+        for (int i = 0; i < set1_node->set.count; i++)
+        {
+            ast_set_add_element(result, set1_node->set.elements[i]);
+        }
+        
+        // Add all elements from set2 (duplicates will be filtered by ast_set_add_element)
+        for (int i = 0; i < set2_node->set.count; i++)
+        {
+            ast_set_add_element(result, set2_node->set.elements[i]);
+        }
+        
+        print_node(result);
+        ast_free(result);
+        return 0;
+    }
+    case NODE_SET_INTERSECTION:
+    {
+        ASTNode *set1_node = node->set_binop.set1;
+        ASTNode *set2_node = node->set_binop.set2;
+        
+        if (set1_node->type == NODE_VAR)
+        {
+            set1_node = get_set_variable(set1_node->varname);
+        }
+        if (set2_node->type == NODE_VAR)
+        {
+            set2_node = get_set_variable(set2_node->varname);
+        }
+        
+        if (!set1_node || !set2_node || set1_node->type != NODE_SET || set2_node->type != NODE_SET)
+        {
+            printf("Runtime error: Intersection operation expects two sets\n");
+            exit(1);
+        }
+        
+        ASTNode *result = ast_new_set();
+        
+        // Add elements that exist in both sets
+        for (int i = 0; i < set1_node->set.count; i++)
+        {
+            ASTNode *elem1 = set1_node->set.elements[i];
+            for (int j = 0; j < set2_node->set.count; j++)
+            {
+                ASTNode *elem2 = set2_node->set.elements[j];
+                if (elem1->type == elem2->type)
+                {
+                    if ((elem1->type == NODE_NUMBER && elem1->number == elem2->number) ||
+                        (elem1->type == NODE_STRING && strcmp(elem1->string, elem2->string) == 0))
+                    {
+                        ast_set_add_element(result, elem1);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        print_node(result);
+        ast_free(result);
+        return 0;
+    }
+    case NODE_SET_DIFFERENCE:
+    {
+        ASTNode *set1_node = node->set_binop.set1;
+        ASTNode *set2_node = node->set_binop.set2;
+        
+        if (set1_node->type == NODE_VAR)
+        {
+            set1_node = get_set_variable(set1_node->varname);
+        }
+        if (set2_node->type == NODE_VAR)
+        {
+            set2_node = get_set_variable(set2_node->varname);
+        }
+        
+        if (!set1_node || !set2_node || set1_node->type != NODE_SET || set2_node->type != NODE_SET)
+        {
+            printf("Runtime error: Difference operation expects two sets\n");
+            exit(1);
+        }
+        
+        ASTNode *result = ast_new_set();
+        
+        // Add elements from set1 that are not in set2
+        for (int i = 0; i < set1_node->set.count; i++)
+        {
+            ASTNode *elem1 = set1_node->set.elements[i];
+            int found = 0;
+            for (int j = 0; j < set2_node->set.count; j++)
+            {
+                ASTNode *elem2 = set2_node->set.elements[j];
+                if (elem1->type == elem2->type)
+                {
+                    if ((elem1->type == NODE_NUMBER && elem1->number == elem2->number) ||
+                        (elem1->type == NODE_STRING && strcmp(elem1->string, elem2->string) == 0))
+                    {
+                        found = 1;
+                        break;
+                    }
+                }
+            }
+            if (!found)
+            {
+                ASTNode *elem_copy = (elem1->type == NODE_NUMBER) ? ast_new_number(elem1->number) : ast_new_string(elem1->string);
+                ast_set_add_element(result, elem_copy);
+            }
+        }
+        
+        print_node(result);
+        ast_free(result);
+        return 0;
+    }
+    case NODE_SET_SYMMETRIC_DIFF:
+    {
+        ASTNode *set1_node = node->set_binop.set1;
+        ASTNode *set2_node = node->set_binop.set2;
+        
+        if (set1_node->type == NODE_VAR)
+        {
+            set1_node = get_set_variable(set1_node->varname);
+        }
+        if (set2_node->type == NODE_VAR)
+        {
+            set2_node = get_set_variable(set2_node->varname);
+        }
+        
+        if (!set1_node || !set2_node || set1_node->type != NODE_SET || set2_node->type != NODE_SET)
+        {
+            printf("Runtime error: Symmetric difference operation expects two sets\n");
+            exit(1);
+        }
+        
+        ASTNode *result = ast_new_set();
+        
+        // Add elements from set1 that are not in set2
+        for (int i = 0; i < set1_node->set.count; i++)
+        {
+            ASTNode *elem1 = set1_node->set.elements[i];
+            int found = 0;
+            for (int j = 0; j < set2_node->set.count; j++)
+            {
+                ASTNode *elem2 = set2_node->set.elements[j];
+                if (elem1->type == elem2->type)
+                {
+                    if ((elem1->type == NODE_NUMBER && elem1->number == elem2->number) ||
+                        (elem1->type == NODE_STRING && strcmp(elem1->string, elem2->string) == 0))
+                    {
+                        found = 1;
+                        break;
+                    }
+                }
+            }
+            if (!found)
+            {
+                ast_set_add_element(result, elem1);
+            }
+        }
+        
+        // Add elements from set2 that are not in set1
+        for (int i = 0; i < set2_node->set.count; i++)
+        {
+            ASTNode *elem2 = set2_node->set.elements[i];
+            int found = 0;
+            for (int j = 0; j < set1_node->set.count; j++)
+            {
+                ASTNode *elem1 = set1_node->set.elements[j];
+                if (elem1->type == elem2->type)
+                {
+                    if ((elem1->type == NODE_NUMBER && elem1->number == elem2->number) ||
+                        (elem1->type == NODE_STRING && strcmp(elem1->string, elem2->string) == 0))
+                    {
+                        found = 1;
+                        break;
+                    }
+                }
+            }
+            if (!found)
+            {
+                ast_set_add_element(result, elem2);
+            }
+        }
+        
+        print_node(result);
+        ast_free(result);
+        return 0;
+    }
+    case NODE_SET_ADD:
+    {
+        ASTNode *set_node = node->set_element_op.set;
+        ASTNode *element = node->set_element_op.element;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set add operation expects a set\n");
+            exit(1);
+        }
+        
+        ast_set_add_element(set_node, element);
+        return 0;
+    }
+    case NODE_SET_REMOVE:
+    {
+        ASTNode *set_node = node->set_element_op.set;
+        ASTNode *element = node->set_element_op.element;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set remove operation expects a set\n");
+            exit(1);
+        }
+        
+        // Find and remove the element
+        for (int i = 0; i < set_node->set.count; i++)
+        {
+            ASTNode *elem = set_node->set.elements[i];
+            if (elem->type == element->type)
+            {
+                if ((elem->type == NODE_NUMBER && elem->number == element->number) ||
+                    (elem->type == NODE_STRING && strcmp(elem->string, element->string) == 0))
+                {
+                    // Shift elements to fill the gap
+                    for (int j = i; j < set_node->set.count - 1; j++)
+                    {
+                        set_node->set.elements[j] = set_node->set.elements[j + 1];
+                    }
+                    set_node->set.count--;
+                    return 1; // Element removed
+                }
+            }
+        }
+        return 0; // Element not found
+    }
+    case NODE_SET_CONTAINS:
+    {
+        ASTNode *set_node = node->set_element_op.set;
+        ASTNode *element = node->set_element_op.element;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set contains operation expects a set\n");
+            exit(1);
+        }
+        
+        // Check if element exists in set
+        for (int i = 0; i < set_node->set.count; i++)
+        {
+            ASTNode *elem = set_node->set.elements[i];
+            if (elem->type == element->type)
+            {
+                if ((elem->type == NODE_NUMBER && elem->number == element->number) ||
+                    (elem->type == NODE_STRING && strcmp(elem->string, element->string) == 0))
+                {
+                    return 1; // Element found
+                }
+            }
+        }
+        return 0; // Element not found
+    }
+    case NODE_SET_SIZE:
+    {
+        ASTNode *set_node = node->set_op.set;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set size operation expects a set\n");
+            exit(1);
+        }
+        
+        return set_node->set.count;
+    }
+    case NODE_SET_EMPTY:
+    {
+        ASTNode *set_node = node->set_op.set;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set empty operation expects a set\n");
+            exit(1);
+        }
+        
+        return set_node->set.count == 0 ? 1 : 0;
+    }
+    case NODE_SET_CLEAR:
+    {
+        ASTNode *set_node = node->set_op.set;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set clear operation expects a set\n");
+            exit(1);
+        }
+        
+        // Clear elements array only
+        set_node->set.count = 0;
+        
+        return 0;
+    }
+    case NODE_SET_COPY:
+    {
+        ASTNode *set_node = node->set_op.set;
+        
+        if (set_node->type == NODE_VAR)
+        {
+            set_node = get_set_variable(set_node->varname);
+        }
+        
+        if (!set_node || set_node->type != NODE_SET)
+        {
+            printf("Runtime error: Set copy operation expects a set\n");
+            exit(1);
+        }
+        
+        // Create a new set and copy all elements
+        ASTNode *new_set = ast_new_set();
+        for (int i = 0; i < set_node->set.count; i++)
+        {
+            // Create copies of the elements
+            ASTNode *elem_copy;
+            if (set_node->set.elements[i]->type == NODE_NUMBER)
+            {
+                elem_copy = ast_new_number(set_node->set.elements[i]->number);
+            }
+            else if (set_node->set.elements[i]->type == NODE_STRING)
+            {
+                elem_copy = ast_new_string(set_node->set.elements[i]->string);
+            }
+            else
+            {
+                // For other types, just reference the same node (shallow copy)
+                elem_copy = set_node->set.elements[i];
+            }
+            ast_set_add_element(new_set, elem_copy);
+        }
+        
+        print_node(new_set);
+        ast_free(new_set);
+        return 0;
+    }
     case NODE_LINKED_LIST_ADD:
     {
         ASTNode *list_node = node->linked_list_op.list;
@@ -5052,6 +5597,12 @@ static void print_node(ASTNode *node)
             {
                 printf("Runtime Error: Cannot access temporal variable '%s'\n", node->varname);
             }
+        }
+        // Check if it's a set variable
+        else if (get_set_variable(node->varname))
+        {
+            ASTNode *set = get_set_variable(node->varname);
+            print_node(set);
         }
         // Check if it's a dict variable
         else if ((temp_var = NULL, get_dict_variable(node->varname)))
