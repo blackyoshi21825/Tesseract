@@ -40,6 +40,8 @@ void set_queue_variable(const char *name, ASTNode *queue);
 void set_linked_list_variable(const char *name, ASTNode *list);
 void set_regex_variable(const char *name, ASTNode *regex);
 void set_set_variable(const char *name, ASTNode *set);
+void set_tree_variable(const char *name, ASTNode *tree);
+void set_graph_variable(const char *name, ASTNode *graph);
 void set_undef_variable(const char *name);
 const char *get_variable(const char *name);
 ASTNode *get_list_variable(const char *name);
@@ -49,6 +51,8 @@ ASTNode *get_queue_variable(const char *name);
 ASTNode *get_linked_list_variable(const char *name);
 ASTNode *get_regex_variable(const char *name);
 ASTNode *get_set_variable(const char *name);
+ASTNode *get_tree_variable(const char *name);
+ASTNode *get_graph_variable(const char *name);
 int is_undef_variable(const char *name);
 
 // Temporal variable functions

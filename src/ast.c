@@ -1246,6 +1246,175 @@ ASTNode *ast_new_next(ASTNode *iterator)
     return node;
 }
 
+// Tree functions
+ASTNode *ast_new_tree()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE;
+    node->tree.elements = NULL;
+    node->tree.count = 0;
+    return node;
+}
+
+ASTNode *ast_new_tree_insert(ASTNode *tree, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE_INSERT;
+    node->tree_insert.tree = tree;
+    node->tree_insert.value = value;
+    return node;
+}
+
+ASTNode *ast_new_tree_search(ASTNode *tree, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE_SEARCH;
+    node->tree_search.tree = tree;
+    node->tree_search.value = value;
+    return node;
+}
+
+ASTNode *ast_new_tree_delete(ASTNode *tree, ASTNode *value)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE_DELETE;
+    node->tree_delete.tree = tree;
+    node->tree_delete.value = value;
+    return node;
+}
+
+ASTNode *ast_new_tree_inorder(ASTNode *tree)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE_INORDER;
+    node->tree_traversal.tree = tree;
+    return node;
+}
+
+ASTNode *ast_new_tree_preorder(ASTNode *tree)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE_PREORDER;
+    node->tree_traversal.tree = tree;
+    return node;
+}
+
+ASTNode *ast_new_tree_postorder(ASTNode *tree)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_TREE_POSTORDER;
+    node->tree_traversal.tree = tree;
+    return node;
+}
+
+void ast_tree_add_element(ASTNode *tree, ASTNode *element)
+{
+    tree->tree.elements = realloc(tree->tree.elements, sizeof(ASTNode *) * (tree->tree.count + 1));
+    tree->tree.elements[tree->tree.count++] = element;
+}
+
+// Graph functions
+ASTNode *ast_new_graph()
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH;
+    node->graph.vertices = NULL;
+    node->graph.edges = NULL;
+    node->graph.vertex_count = 0;
+    node->graph.edge_count = 0;
+    return node;
+}
+
+ASTNode *ast_new_graph_add_vertex(ASTNode *graph, ASTNode *vertex)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_ADD_VERTEX;
+    node->graph_vertex_op.graph = graph;
+    node->graph_vertex_op.vertex = vertex;
+    return node;
+}
+
+ASTNode *ast_new_graph_add_edge(ASTNode *graph, ASTNode *from, ASTNode *to)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_ADD_EDGE;
+    node->graph_edge_op.graph = graph;
+    node->graph_edge_op.from = from;
+    node->graph_edge_op.to = to;
+    return node;
+}
+
+ASTNode *ast_new_graph_remove_vertex(ASTNode *graph, ASTNode *vertex)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_REMOVE_VERTEX;
+    node->graph_vertex_op.graph = graph;
+    node->graph_vertex_op.vertex = vertex;
+    return node;
+}
+
+ASTNode *ast_new_graph_remove_edge(ASTNode *graph, ASTNode *from, ASTNode *to)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_REMOVE_EDGE;
+    node->graph_edge_op.graph = graph;
+    node->graph_edge_op.from = from;
+    node->graph_edge_op.to = to;
+    return node;
+}
+
+ASTNode *ast_new_graph_has_edge(ASTNode *graph, ASTNode *from, ASTNode *to)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_HAS_EDGE;
+    node->graph_edge_op.graph = graph;
+    node->graph_edge_op.from = from;
+    node->graph_edge_op.to = to;
+    return node;
+}
+
+ASTNode *ast_new_graph_neighbors(ASTNode *graph, ASTNode *vertex)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_NEIGHBORS;
+    node->graph_neighbors.graph = graph;
+    node->graph_neighbors.vertex = vertex;
+    return node;
+}
+
+ASTNode *ast_new_graph_dfs(ASTNode *graph, ASTNode *start)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_DFS;
+    node->graph_traversal.graph = graph;
+    node->graph_traversal.start = start;
+    return node;
+}
+
+ASTNode *ast_new_graph_bfs(ASTNode *graph, ASTNode *start)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_GRAPH_BFS;
+    node->graph_traversal.graph = graph;
+    node->graph_traversal.start = start;
+    return node;
+}
+
+void ast_graph_add_vertex(ASTNode *graph, ASTNode *vertex)
+{
+    graph->graph.vertices = realloc(graph->graph.vertices, sizeof(ASTNode *) * (graph->graph.vertex_count + 1));
+    graph->graph.vertices[graph->graph.vertex_count++] = vertex;
+}
+
+void ast_graph_add_edge(ASTNode *graph, ASTNode *from, ASTNode *to)
+{
+    ASTNode *edge = ast_new_list();
+    ast_list_add_element(edge, from);
+    ast_list_add_element(edge, to);
+    graph->graph.edges = realloc(graph->graph.edges, sizeof(ASTNode *) * (graph->graph.edge_count + 1));
+    graph->graph.edges[graph->graph.edge_count++] = edge;
+}
+
 // --- AST Free ---
 
 void ast_free(ASTNode *node)

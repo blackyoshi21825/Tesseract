@@ -20,8 +20,10 @@ typedef struct
         ASTNode *queue_val; // For queue values
         ASTNode *linked_list_val; // For linked list values
         ASTNode *regex_val; // For regex values
+        ASTNode *tree_val; // For tree values
+        ASTNode *graph_val; // For graph values
     } value;
-    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex, 7=temporal, 8=set, 9=undef
+    int type; // 0=string, 1=list, 2=dict, 3=stack, 4=queue, 5=linked_list, 6=regex, 7=temporal, 8=set, 9=undef, 10=iterator, 11=tree, 12=graph
     TemporalVariable *temporal_val; // For temporal variables
 } VarEntry;
 
@@ -916,4 +918,130 @@ ASTNode *iterator_next(Iterator *iter)
     // For other generators, mark as exhausted for now
     iter->is_exhausted = 1;
     return NULL;
+}
+
+void set_tree_variable(const char *name, ASTNode *tree)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (tree->type != NODE_TREE)
+    {
+        fprintf(stderr, "Attempt to set non-tree value as tree variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+        else if (entry->type == 11)
+            ast_free(entry->value.tree_val);
+        else if (entry->type == 12)
+            ast_free(entry->value.graph_val);
+        entry->value.tree_val = tree;
+        entry->type = 11;
+        return;
+    }
+
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.tree_val = tree;
+    vars[var_count].type = 11;
+    var_count++;
+}
+
+ASTNode *get_tree_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 11)
+    {
+        return NULL;
+    }
+    return entry->value.tree_val;
+}
+
+void set_graph_variable(const char *name, ASTNode *graph)
+{
+    if (strlen(name) > MAX_VAR_NAME_LEN)
+    {
+        fprintf(stderr, "Variable name too long: %s\n", name);
+        return;
+    }
+
+    if (graph->type != NODE_GRAPH)
+    {
+        fprintf(stderr, "Attempt to set non-graph value as graph variable\n");
+        return;
+    }
+
+    VarEntry *entry = find_variable(name);
+    if (entry)
+    {
+        if (entry->type == 0)
+            free(entry->value.string_val);
+        else if (entry->type == 1)
+            ast_free(entry->value.list_val);
+        else if (entry->type == 2)
+            ast_free(entry->value.dict_val);
+        else if (entry->type == 3)
+            ast_free(entry->value.stack_val);
+        else if (entry->type == 4)
+            ast_free(entry->value.queue_val);
+        else if (entry->type == 5)
+            ast_free(entry->value.linked_list_val);
+        else if (entry->type == 6)
+            ast_free(entry->value.regex_val);
+        else if (entry->type == 11)
+            ast_free(entry->value.tree_val);
+        else if (entry->type == 12)
+            ast_free(entry->value.graph_val);
+        entry->value.graph_val = graph;
+        entry->type = 12;
+        return;
+    }
+
+    if (var_count >= MAX_VARS)
+    {
+        fprintf(stderr, "Maximum number of variables (%d) exceeded\n", MAX_VARS);
+        exit(EXIT_FAILURE);
+    }
+
+    strncpy(vars[var_count].name, name, MAX_VAR_NAME_LEN);
+    vars[var_count].name[MAX_VAR_NAME_LEN] = '\0';
+    vars[var_count].value.graph_val = graph;
+    vars[var_count].type = 12;
+    var_count++;
+}
+
+ASTNode *get_graph_variable(const char *name)
+{
+    VarEntry *entry = find_variable(name);
+    if (!entry || entry->type != 12)
+    {
+        return NULL;
+    }
+    return entry->value.graph_val;
 }

@@ -825,6 +825,118 @@ Token lexer_next_token()
         pos += 5;
         return token;
     }
+    if (starts_with("<tree>"))
+    {
+        token.type = TOK_TREE_NEW;
+        strcpy(token.text, "<tree>");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("<graph>"))
+    {
+        token.type = TOK_GRAPH_NEW;
+        strcpy(token.text, "<graph>");
+        pos += 7;
+        return token;
+    }
+    if (starts_with("::tinsert"))
+    {
+        token.type = TOK_TREE_INSERT;
+        strcpy(token.text, "::tinsert");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::tsearch"))
+    {
+        token.type = TOK_TREE_SEARCH;
+        strcpy(token.text, "::tsearch");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::tdelete"))
+    {
+        token.type = TOK_TREE_DELETE;
+        strcpy(token.text, "::tdelete");
+        pos += 9;
+        return token;
+    }
+    if (starts_with("::tinorder"))
+    {
+        token.type = TOK_TREE_INORDER;
+        strcpy(token.text, "::tinorder");
+        pos += 10;
+        return token;
+    }
+    if (starts_with("::tpreorder"))
+    {
+        token.type = TOK_TREE_PREORDER;
+        strcpy(token.text, "::tpreorder");
+        pos += 11;
+        return token;
+    }
+    if (starts_with("::tpostorder"))
+    {
+        token.type = TOK_TREE_POSTORDER;
+        strcpy(token.text, "::tpostorder");
+        pos += 12;
+        return token;
+    }
+    if (starts_with("::gadd_vertex"))
+    {
+        token.type = TOK_GRAPH_ADD_VERTEX;
+        strcpy(token.text, "::gadd_vertex");
+        pos += 13;
+        return token;
+    }
+    if (starts_with("::gadd_edge"))
+    {
+        token.type = TOK_GRAPH_ADD_EDGE;
+        strcpy(token.text, "::gadd_edge");
+        pos += 11;
+        return token;
+    }
+    if (starts_with("::gremove_vertex"))
+    {
+        token.type = TOK_GRAPH_REMOVE_VERTEX;
+        strcpy(token.text, "::gremove_vertex");
+        pos += 16;
+        return token;
+    }
+    if (starts_with("::gremove_edge"))
+    {
+        token.type = TOK_GRAPH_REMOVE_EDGE;
+        strcpy(token.text, "::gremove_edge");
+        pos += 14;
+        return token;
+    }
+    if (starts_with("::ghas_edge"))
+    {
+        token.type = TOK_GRAPH_HAS_EDGE;
+        strcpy(token.text, "::ghas_edge");
+        pos += 11;
+        return token;
+    }
+    if (starts_with("::gneighbors"))
+    {
+        token.type = TOK_GRAPH_NEIGHBORS;
+        strcpy(token.text, "::gneighbors");
+        pos += 12;
+        return token;
+    }
+    if (starts_with("::gdfs"))
+    {
+        token.type = TOK_GRAPH_DFS;
+        strcpy(token.text, "::gdfs");
+        pos += 6;
+        return token;
+    }
+    if (starts_with("::gbfs"))
+    {
+        token.type = TOK_GRAPH_BFS;
+        strcpy(token.text, "::gbfs");
+        pos += 6;
+        return token;
+    }
 
     // Single char tokens and operators
     switch (input[pos])

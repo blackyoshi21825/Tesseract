@@ -500,6 +500,14 @@ void interpret(ASTNode *root)
         {
             set_set_variable(root->assign.varname, value_node);
         }
+        else if (value_node->type == NODE_TREE)
+        {
+            set_tree_variable(root->assign.varname, value_node);
+        }
+        else if (value_node->type == NODE_GRAPH)
+        {
+            set_graph_variable(root->assign.varname, value_node);
+        }
         else if (value_node->type == NODE_UNDEF)
         {
             set_undef_variable(root->assign.varname);
@@ -1441,7 +1449,15 @@ void interpret(ASTNode *root)
              root->type == NODE_LINKED_LIST_GET || root->type == NODE_LINKED_LIST_SIZE ||
              root->type == NODE_LINKED_LIST_ISEMPTY || root->type == NODE_REGEX ||
              root->type == NODE_REGEX_MATCH || root->type == NODE_REGEX_REPLACE ||
-             root->type == NODE_REGEX_FIND_ALL)
+             root->type == NODE_REGEX_FIND_ALL || root->type == NODE_TREE ||
+             root->type == NODE_TREE_INSERT || root->type == NODE_TREE_SEARCH ||
+             root->type == NODE_TREE_DELETE || root->type == NODE_TREE_INORDER ||
+             root->type == NODE_TREE_PREORDER || root->type == NODE_TREE_POSTORDER ||
+             root->type == NODE_GRAPH || root->type == NODE_GRAPH_ADD_VERTEX ||
+             root->type == NODE_GRAPH_ADD_EDGE || root->type == NODE_GRAPH_REMOVE_VERTEX ||
+             root->type == NODE_GRAPH_REMOVE_EDGE || root->type == NODE_GRAPH_HAS_EDGE ||
+             root->type == NODE_GRAPH_NEIGHBORS || root->type == NODE_GRAPH_DFS ||
+             root->type == NODE_GRAPH_BFS)
     {
         // For linked list remove operations, don't print the result
         if (root->type == NODE_LINKED_LIST_REMOVE)
@@ -3840,6 +3856,14 @@ static double eval_expression(ASTNode *node)
             {
                 type_name = "set";
             }
+            else if (get_tree_variable(value->varname))
+            {
+                type_name = "tree";
+            }
+            else if (get_graph_variable(value->varname))
+            {
+                type_name = "graph";
+            }
             else if (get_temporal_var_struct(value->varname))
             {
                 type_name = "temporal";
@@ -3902,6 +3926,14 @@ static double eval_expression(ASTNode *node)
         else if (value->type == NODE_SET)
         {
             type_name = "set";
+        }
+        else if (value->type == NODE_TREE)
+        {
+            type_name = "tree";
+        }
+        else if (value->type == NODE_GRAPH)
+        {
+            type_name = "graph";
         }
         else if (value->type == NODE_UNDEF)
         {
@@ -4292,6 +4324,463 @@ static double eval_expression(ASTNode *node)
         
         return 0; // Default return value
     }
+    case NODE_TREE:
+        print_node(node);
+        return 0;
+    case NODE_TREE_INSERT:
+    {
+        ASTNode *tree_node = node->tree_insert.tree;
+        if (tree_node->type == NODE_VAR)
+        {
+            tree_node = get_tree_variable(tree_node->varname);
+        }
+        if (tree_node && tree_node->type == NODE_TREE)
+        {
+            ast_tree_add_element(tree_node, node->tree_insert.value);
+        }
+        return 0;
+    }
+    case NODE_TREE_SEARCH:
+    {
+        ASTNode *tree_node = node->tree_search.tree;
+        if (tree_node->type == NODE_VAR)
+        {
+            tree_node = get_tree_variable(tree_node->varname);
+        }
+        if (tree_node && tree_node->type == NODE_TREE)
+        {
+            double search_val = eval_expression(node->tree_search.value);
+            for (int i = 0; i < tree_node->tree.count; i++)
+            {
+                if (tree_node->tree.elements[i]->type == NODE_NUMBER &&
+                    tree_node->tree.elements[i]->number == search_val)
+                {
+                    return 1; // Found
+                }
+            }
+        }
+        return 0; // Not found
+    }
+    case NODE_TREE_DELETE:
+    {
+        ASTNode *tree_node = node->tree_delete.tree;
+        if (tree_node->type == NODE_VAR)
+        {
+            tree_node = get_tree_variable(tree_node->varname);
+        }
+        if (tree_node && tree_node->type == NODE_TREE)
+        {
+            double delete_val = eval_expression(node->tree_delete.value);
+            for (int i = 0; i < tree_node->tree.count; i++)
+            {
+                if (tree_node->tree.elements[i]->type == NODE_NUMBER &&
+                    tree_node->tree.elements[i]->number == delete_val)
+                {
+                    for (int j = i; j < tree_node->tree.count - 1; j++)
+                    {
+                        tree_node->tree.elements[j] = tree_node->tree.elements[j + 1];
+                    }
+                    tree_node->tree.count--;
+                    return 1; // Deleted
+                }
+            }
+        }
+        return 0; // Not found
+    }
+    case NODE_TREE_INORDER:
+    {
+        ASTNode *tree_node = node->tree_traversal.tree;
+        if (tree_node->type == NODE_VAR)
+        {
+            tree_node = get_tree_variable(tree_node->varname);
+        }
+        if (tree_node && tree_node->type == NODE_TREE)
+        {
+            // Sort elements for inorder traversal (BST property)
+            double values[tree_node->tree.count];
+            int count = 0;
+            for (int i = 0; i < tree_node->tree.count; i++)
+            {
+                if (tree_node->tree.elements[i]->type == NODE_NUMBER)
+                {
+                    values[count++] = tree_node->tree.elements[i]->number;
+                }
+            }
+            // Simple bubble sort
+            for (int i = 0; i < count - 1; i++)
+            {
+                for (int j = 0; j < count - i - 1; j++)
+                {
+                    if (values[j] > values[j + 1])
+                    {
+                        double temp = values[j];
+                        values[j] = values[j + 1];
+                        values[j + 1] = temp;
+                    }
+                }
+            }
+            printf("[");
+            for (int i = 0; i < count; i++)
+            {
+                printf("%g", values[i]);
+                if (i < count - 1)
+                    printf(", ");
+            }
+            printf("]\n");
+        }
+        return 0;
+    }
+    case NODE_TREE_PREORDER:
+    {
+        ASTNode *tree_node = node->tree_traversal.tree;
+        if (tree_node->type == NODE_VAR)
+        {
+            tree_node = get_tree_variable(tree_node->varname);
+        }
+        if (tree_node && tree_node->type == NODE_TREE)
+        {
+            // Preorder: root, left subtree, right subtree
+            // For simplicity, assume first element is root, then left subtree, then right subtree
+            printf("[");
+            if (tree_node->tree.count > 0)
+            {
+                // Print root first (element at index 0 - the first inserted)
+                if (tree_node->tree.elements[0]->type == NODE_NUMBER)
+                    printf("%g", tree_node->tree.elements[0]->number);
+                
+                // Print remaining elements
+                for (int i = 1; i < tree_node->tree.count; i++)
+                {
+                    printf(", ");
+                    if (tree_node->tree.elements[i]->type == NODE_NUMBER)
+                        printf("%g", tree_node->tree.elements[i]->number);
+                }
+            }
+            printf("]\n");
+        }
+        return 0;
+    }
+    case NODE_TREE_POSTORDER:
+    {
+        ASTNode *tree_node = node->tree_traversal.tree;
+        if (tree_node->type == NODE_VAR)
+        {
+            tree_node = get_tree_variable(tree_node->varname);
+        }
+        if (tree_node && tree_node->type == NODE_TREE)
+        {
+            // Postorder: left subtree, right subtree, root
+            // Print all elements except root, then root last
+            printf("[");
+            if (tree_node->tree.count > 1)
+            {
+                // Print all elements except the first (root)
+                for (int i = 1; i < tree_node->tree.count; i++)
+                {
+                    if (tree_node->tree.elements[i]->type == NODE_NUMBER)
+                        printf("%g", tree_node->tree.elements[i]->number);
+                    if (i < tree_node->tree.count - 1)
+                        printf(", ");
+                }
+                if (tree_node->tree.count > 1) printf(", ");
+            }
+            // Print root last
+            if (tree_node->tree.count > 0 && tree_node->tree.elements[0]->type == NODE_NUMBER)
+                printf("%g", tree_node->tree.elements[0]->number);
+            printf("]\n");
+        }
+        return 0;
+    }
+    case NODE_GRAPH:
+        print_node(node);
+        return 0;
+    case NODE_GRAPH_ADD_VERTEX:
+    {
+        ASTNode *graph_node = node->graph_vertex_op.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            ast_graph_add_vertex(graph_node, node->graph_vertex_op.vertex);
+        }
+        return 0;
+    }
+    case NODE_GRAPH_ADD_EDGE:
+    {
+        ASTNode *graph_node = node->graph_edge_op.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            ast_graph_add_edge(graph_node, node->graph_edge_op.from, node->graph_edge_op.to);
+        }
+        return 0;
+    }
+    case NODE_GRAPH_REMOVE_VERTEX:
+    {
+        ASTNode *graph_node = node->graph_vertex_op.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            double vertex_val = eval_expression(node->graph_vertex_op.vertex);
+            for (int i = 0; i < graph_node->graph.vertex_count; i++)
+            {
+                if (graph_node->graph.vertices[i]->type == NODE_NUMBER &&
+                    graph_node->graph.vertices[i]->number == vertex_val)
+                {
+                    for (int j = i; j < graph_node->graph.vertex_count - 1; j++)
+                    {
+                        graph_node->graph.vertices[j] = graph_node->graph.vertices[j + 1];
+                    }
+                    graph_node->graph.vertex_count--;
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+    case NODE_GRAPH_HAS_EDGE:
+    {
+        ASTNode *graph_node = node->graph_edge_op.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            double from_val = eval_expression(node->graph_edge_op.from);
+            double to_val = eval_expression(node->graph_edge_op.to);
+            for (int i = 0; i < graph_node->graph.edge_count; i++)
+            {
+                ASTNode *edge = graph_node->graph.edges[i];
+                if (edge->type == NODE_LIST && edge->list.count >= 2)
+                {
+                    double edge_from = eval_expression(edge->list.elements[0]);
+                    double edge_to = eval_expression(edge->list.elements[1]);
+                    if (edge_from == from_val && edge_to == to_val)
+                    {
+                        return 1;
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+    case NODE_GRAPH_NEIGHBORS:
+    {
+        ASTNode *graph_node = node->graph_neighbors.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            double vertex_val = eval_expression(node->graph_neighbors.vertex);
+            printf("[");
+            int first = 1;
+            for (int i = 0; i < graph_node->graph.edge_count; i++)
+            {
+                ASTNode *edge = graph_node->graph.edges[i];
+                if (edge->type == NODE_LIST && edge->list.count >= 2)
+                {
+                    double edge_from = eval_expression(edge->list.elements[0]);
+                    double edge_to = eval_expression(edge->list.elements[1]);
+                    
+                    // Check both directions for undirected graph
+                    if (edge_from == vertex_val)
+                    {
+                        if (!first) printf(", ");
+                        printf("%g", edge_to);
+                        first = 0;
+                    }
+                    else if (edge_to == vertex_val)
+                    {
+                        if (!first) printf(", ");
+                        printf("%g", edge_from);
+                        first = 0;
+                    }
+                }
+            }
+            printf("]\n");
+        }
+        return 0;
+    }
+    case NODE_GRAPH_DFS:
+    {
+        ASTNode *graph_node = node->graph_traversal.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            double start_vertex = eval_expression(node->graph_traversal.start);
+            int visited[graph_node->graph.vertex_count];
+            double result[graph_node->graph.vertex_count];
+            int result_count = 0;
+            
+            // Initialize visited array
+            for (int i = 0; i < graph_node->graph.vertex_count; i++)
+                visited[i] = 0;
+            
+            // Simple DFS implementation using recursion simulation with stack
+            double stack[graph_node->graph.vertex_count];
+            int stack_top = 0;
+            stack[stack_top++] = start_vertex;
+            
+            while (stack_top > 0)
+            {
+                double current = stack[--stack_top];
+                
+                // Find vertex index
+                int vertex_idx = -1;
+                for (int i = 0; i < graph_node->graph.vertex_count; i++)
+                {
+                    if (graph_node->graph.vertices[i]->type == NODE_NUMBER &&
+                        graph_node->graph.vertices[i]->number == current)
+                    {
+                        vertex_idx = i;
+                        break;
+                    }
+                }
+                
+                if (vertex_idx != -1 && !visited[vertex_idx])
+                {
+                    visited[vertex_idx] = 1;
+                    result[result_count++] = current;
+                    
+                    // Add neighbors to stack (in reverse order for correct DFS order)
+                    for (int i = graph_node->graph.edge_count - 1; i >= 0; i--)
+                    {
+                        ASTNode *edge = graph_node->graph.edges[i];
+                        if (edge->type == NODE_LIST && edge->list.count >= 2)
+                        {
+                            double edge_from = eval_expression(edge->list.elements[0]);
+                            double edge_to = eval_expression(edge->list.elements[1]);
+                            
+                            if (edge_from == current)
+                            {
+                                // Check if neighbor is not visited
+                                int neighbor_idx = -1;
+                                for (int j = 0; j < graph_node->graph.vertex_count; j++)
+                                {
+                                    if (graph_node->graph.vertices[j]->type == NODE_NUMBER &&
+                                        graph_node->graph.vertices[j]->number == edge_to)
+                                    {
+                                        neighbor_idx = j;
+                                        break;
+                                    }
+                                }
+                                if (neighbor_idx != -1 && !visited[neighbor_idx])
+                                {
+                                    stack[stack_top++] = edge_to;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            printf("[");
+            for (int i = 0; i < result_count; i++)
+            {
+                printf("%g", result[i]);
+                if (i < result_count - 1)
+                    printf(", ");
+            }
+            printf("]\n");
+        }
+        return 0;
+    }
+    case NODE_GRAPH_BFS:
+    {
+        ASTNode *graph_node = node->graph_traversal.graph;
+        if (graph_node->type == NODE_VAR)
+        {
+            graph_node = get_graph_variable(graph_node->varname);
+        }
+        if (graph_node && graph_node->type == NODE_GRAPH)
+        {
+            double start_vertex = eval_expression(node->graph_traversal.start);
+            int visited[graph_node->graph.vertex_count];
+            double result[graph_node->graph.vertex_count];
+            int result_count = 0;
+            
+            // Initialize visited array
+            for (int i = 0; i < graph_node->graph.vertex_count; i++)
+                visited[i] = 0;
+            
+            // BFS implementation using queue
+            double queue[graph_node->graph.vertex_count];
+            int queue_front = 0, queue_rear = 0;
+            queue[queue_rear++] = start_vertex;
+            
+            // Mark start vertex as visited
+            for (int i = 0; i < graph_node->graph.vertex_count; i++)
+            {
+                if (graph_node->graph.vertices[i]->type == NODE_NUMBER &&
+                    graph_node->graph.vertices[i]->number == start_vertex)
+                {
+                    visited[i] = 1;
+                    break;
+                }
+            }
+            
+            while (queue_front < queue_rear)
+            {
+                double current = queue[queue_front++];
+                result[result_count++] = current;
+                
+                // Add neighbors to queue
+                for (int i = 0; i < graph_node->graph.edge_count; i++)
+                {
+                    ASTNode *edge = graph_node->graph.edges[i];
+                    if (edge->type == NODE_LIST && edge->list.count >= 2)
+                    {
+                        double edge_from = eval_expression(edge->list.elements[0]);
+                        double edge_to = eval_expression(edge->list.elements[1]);
+                        
+                        if (edge_from == current)
+                        {
+                            // Check if neighbor is not visited
+                            int neighbor_idx = -1;
+                            for (int j = 0; j < graph_node->graph.vertex_count; j++)
+                            {
+                                if (graph_node->graph.vertices[j]->type == NODE_NUMBER &&
+                                    graph_node->graph.vertices[j]->number == edge_to)
+                                {
+                                    neighbor_idx = j;
+                                    break;
+                                }
+                            }
+                            if (neighbor_idx != -1 && !visited[neighbor_idx])
+                            {
+                                visited[neighbor_idx] = 1;
+                                queue[queue_rear++] = edge_to;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            printf("[");
+            for (int i = 0; i < result_count; i++)
+            {
+                printf("%g", result[i]);
+                if (i < result_count - 1)
+                    printf(", ");
+            }
+            printf("]\n");
+        }
+        return 0;
+    }
     default:
         {
             char error_msg[256];
@@ -4496,6 +4985,57 @@ static void print_node(ASTNode *node)
         printf("}\n");
         break;
     }
+    case NODE_TREE:
+    {
+        printf("<tree: ");
+        for (int i = 0; i < node->tree.count; i++)
+        {
+            if (node->tree.elements[i]->type == NODE_STRING)
+                printf("%s", node->tree.elements[i]->string);
+            else if (node->tree.elements[i]->type == NODE_NUMBER)
+                printf("%g", node->tree.elements[i]->number);
+            if (i < node->tree.count - 1)
+                printf(", ");
+        }
+        printf(">\n");
+        break;
+    }
+    case NODE_GRAPH:
+    {
+        printf("<graph: vertices[");
+        for (int i = 0; i < node->graph.vertex_count; i++)
+        {
+            if (node->graph.vertices[i]->type == NODE_STRING)
+                printf("%s", node->graph.vertices[i]->string);
+            else if (node->graph.vertices[i]->type == NODE_NUMBER)
+                printf("%g", node->graph.vertices[i]->number);
+            if (i < node->graph.vertex_count - 1)
+                printf(", ");
+        }
+        printf("] edges[");
+        for (int i = 0; i < node->graph.edge_count; i++)
+        {
+            ASTNode *edge = node->graph.edges[i];
+            if (edge->type == NODE_LIST && edge->list.count >= 2)
+            {
+                printf("(");
+                if (edge->list.elements[0]->type == NODE_NUMBER)
+                    printf("%g", edge->list.elements[0]->number);
+                else if (edge->list.elements[0]->type == NODE_STRING)
+                    printf("%s", edge->list.elements[0]->string);
+                printf(",");
+                if (edge->list.elements[1]->type == NODE_NUMBER)
+                    printf("%g", edge->list.elements[1]->number);
+                else if (edge->list.elements[1]->type == NODE_STRING)
+                    printf("%s", edge->list.elements[1]->string);
+                printf(")");
+            }
+            if (i < node->graph.edge_count - 1)
+                printf(", ");
+        }
+        printf("]>\n");
+        break;
+    }
 
     case NODE_VAR:
     {
@@ -4556,6 +5096,18 @@ static void print_node(ASTNode *node)
         {
             ASTNode *set = get_set_variable(node->varname);
             print_node(set);
+        }
+        // Check if it's a tree variable
+        else if (get_tree_variable(node->varname))
+        {
+            ASTNode *tree = get_tree_variable(node->varname);
+            print_node(tree);
+        }
+        // Check if it's a graph variable
+        else if (get_graph_variable(node->varname))
+        {
+            ASTNode *graph = get_graph_variable(node->varname);
+            print_node(graph);
         }
         // Check if it's an UNDEF variable
         else if (is_undef_variable(node->varname))

@@ -145,6 +145,22 @@ typedef enum
     TOK_YIELD,               // yield$
     TOK_ITERATOR,            // iter$
     TOK_NEXT,                // next$
+    TOK_TREE_NEW,            // <tree>
+    TOK_TREE_INSERT,         // ::tinsert
+    TOK_TREE_SEARCH,         // ::tsearch
+    TOK_TREE_DELETE,         // ::tdelete
+    TOK_TREE_INORDER,        // ::tinorder
+    TOK_TREE_PREORDER,       // ::tpreorder
+    TOK_TREE_POSTORDER,      // ::tpostorder
+    TOK_GRAPH_NEW,           // <graph>
+    TOK_GRAPH_ADD_VERTEX,    // ::gadd_vertex
+    TOK_GRAPH_ADD_EDGE,      // ::gadd_edge
+    TOK_GRAPH_REMOVE_VERTEX, // ::gremove_vertex
+    TOK_GRAPH_REMOVE_EDGE,   // ::gremove_edge
+    TOK_GRAPH_HAS_EDGE,      // ::ghas_edge
+    TOK_GRAPH_NEIGHBORS,     // ::gneighbors
+    TOK_GRAPH_DFS,           // ::gdfs
+    TOK_GRAPH_BFS,           // ::gbfs
 } TokenType;
 
 typedef struct

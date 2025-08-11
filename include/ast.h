@@ -122,6 +122,22 @@ typedef enum
     NODE_YIELD,                // Yield statement
     NODE_ITERATOR,             // Iterator creation
     NODE_NEXT,                 // Iterator next operation
+    NODE_TREE,                 // Tree data structure
+    NODE_TREE_INSERT,          // Tree insert operation
+    NODE_TREE_SEARCH,          // Tree search operation
+    NODE_TREE_DELETE,          // Tree delete operation
+    NODE_TREE_INORDER,         // Tree inorder traversal
+    NODE_TREE_PREORDER,        // Tree preorder traversal
+    NODE_TREE_POSTORDER,       // Tree postorder traversal
+    NODE_GRAPH,                // Graph data structure
+    NODE_GRAPH_ADD_VERTEX,     // Graph add vertex operation
+    NODE_GRAPH_ADD_EDGE,       // Graph add edge operation
+    NODE_GRAPH_REMOVE_VERTEX,  // Graph remove vertex operation
+    NODE_GRAPH_REMOVE_EDGE,    // Graph remove edge operation
+    NODE_GRAPH_HAS_EDGE,       // Graph has edge check
+    NODE_GRAPH_NEIGHBORS,      // Graph get neighbors
+    NODE_GRAPH_DFS,            // Graph depth-first search
+    NODE_GRAPH_BFS,            // Graph breadth-first search
 } NodeType;
 
 typedef struct ASTNode ASTNode;
@@ -572,6 +588,58 @@ struct ASTNode
         {
             ASTNode *iterator;
         } next_stmt;
+        struct
+        {
+            ASTNode **elements;
+            int count;
+        } tree;
+        struct
+        {
+            ASTNode *tree;
+            ASTNode *value;
+        } tree_insert;
+        struct
+        {
+            ASTNode *tree;
+            ASTNode *value;
+        } tree_search;
+        struct
+        {
+            ASTNode *tree;
+            ASTNode *value;
+        } tree_delete;
+        struct
+        {
+            ASTNode *tree;
+        } tree_traversal;
+        struct
+        {
+            ASTNode **vertices;
+            ASTNode **edges;
+            int vertex_count;
+            int edge_count;
+        } graph;
+        struct
+        {
+            ASTNode *graph;
+            ASTNode *vertex;
+        } graph_vertex_op;
+        struct
+        {
+            ASTNode *graph;
+            ASTNode *from;
+            ASTNode *to;
+        } graph_edge_op;
+        struct
+        {
+            ASTNode *graph;
+            ASTNode *vertex;
+        } graph_neighbors;
+        struct
+        {
+            ASTNode *graph;
+            ASTNode *start;
+        } graph_traversal;
     };
 };
 
@@ -726,6 +794,29 @@ ASTNode *ast_new_generator(const char *name, char params[][64], int param_count,
 ASTNode *ast_new_yield(ASTNode *value);
 ASTNode *ast_new_iterator(ASTNode *generator_call);
 ASTNode *ast_new_next(ASTNode *iterator);
+
+// Tree functions
+ASTNode *ast_new_tree();
+ASTNode *ast_new_tree_insert(ASTNode *tree, ASTNode *value);
+ASTNode *ast_new_tree_search(ASTNode *tree, ASTNode *value);
+ASTNode *ast_new_tree_delete(ASTNode *tree, ASTNode *value);
+ASTNode *ast_new_tree_inorder(ASTNode *tree);
+ASTNode *ast_new_tree_preorder(ASTNode *tree);
+ASTNode *ast_new_tree_postorder(ASTNode *tree);
+void ast_tree_add_element(ASTNode *tree, ASTNode *element);
+
+// Graph functions
+ASTNode *ast_new_graph();
+ASTNode *ast_new_graph_add_vertex(ASTNode *graph, ASTNode *vertex);
+ASTNode *ast_new_graph_add_edge(ASTNode *graph, ASTNode *from, ASTNode *to);
+ASTNode *ast_new_graph_remove_vertex(ASTNode *graph, ASTNode *vertex);
+ASTNode *ast_new_graph_remove_edge(ASTNode *graph, ASTNode *from, ASTNode *to);
+ASTNode *ast_new_graph_has_edge(ASTNode *graph, ASTNode *from, ASTNode *to);
+ASTNode *ast_new_graph_neighbors(ASTNode *graph, ASTNode *vertex);
+ASTNode *ast_new_graph_dfs(ASTNode *graph, ASTNode *start);
+ASTNode *ast_new_graph_bfs(ASTNode *graph, ASTNode *start);
+void ast_graph_add_vertex(ASTNode *graph, ASTNode *vertex);
+void ast_graph_add_edge(ASTNode *graph, ASTNode *from, ASTNode *to);
 
 void ast_set_node_location(ASTNode *node, int line, int column);
 

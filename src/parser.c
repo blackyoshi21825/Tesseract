@@ -487,6 +487,18 @@ static ASTNode *parse_primary()
         return ast_new_linked_list();
     }
 
+    if (current_token.type == TOK_TREE_NEW)
+    {
+        next_token();
+        return ast_new_tree();
+    }
+
+    if (current_token.type == TOK_GRAPH_NEW)
+    {
+        next_token();
+        return ast_new_graph();
+    }
+
     if (current_token.type == TOK_REGEX_NEW)
     {
         next_token();
@@ -645,7 +657,21 @@ static ASTNode *parse_primary()
         current_token.type == TOK_LINKED_LIST_ISEMPTY ||
         current_token.type == TOK_REGEX_MATCH ||
         current_token.type == TOK_REGEX_REPLACE ||
-        current_token.type == TOK_REGEX_FIND_ALL)
+        current_token.type == TOK_REGEX_FIND_ALL ||
+        current_token.type == TOK_TREE_INSERT ||
+        current_token.type == TOK_TREE_SEARCH ||
+        current_token.type == TOK_TREE_DELETE ||
+        current_token.type == TOK_TREE_INORDER ||
+        current_token.type == TOK_TREE_PREORDER ||
+        current_token.type == TOK_TREE_POSTORDER ||
+        current_token.type == TOK_GRAPH_ADD_VERTEX ||
+        current_token.type == TOK_GRAPH_ADD_EDGE ||
+        current_token.type == TOK_GRAPH_REMOVE_VERTEX ||
+        current_token.type == TOK_GRAPH_REMOVE_EDGE ||
+        current_token.type == TOK_GRAPH_HAS_EDGE ||
+        current_token.type == TOK_GRAPH_NEIGHBORS ||
+        current_token.type == TOK_GRAPH_DFS ||
+        current_token.type == TOK_GRAPH_BFS)
     {
         TokenType func_type = current_token.type;
         next_token();
@@ -699,6 +725,49 @@ static ASTNode *parse_primary()
             expect(TOK_RPAREN);
             return ast_new_regex_replace(queue, text, replacement);
         }
+        else if (func_type == TOK_TREE_INSERT || func_type == TOK_TREE_SEARCH || func_type == TOK_TREE_DELETE)
+        {
+            expect(TOK_COMMA);
+            ASTNode *value = parse_expression();
+            expect(TOK_RPAREN);
+            if (func_type == TOK_TREE_INSERT)
+                return ast_new_tree_insert(queue, value);
+            else if (func_type == TOK_TREE_SEARCH)
+                return ast_new_tree_search(queue, value);
+            else
+                return ast_new_tree_delete(queue, value);
+        }
+        else if (func_type == TOK_GRAPH_ADD_VERTEX || func_type == TOK_GRAPH_REMOVE_VERTEX || func_type == TOK_GRAPH_NEIGHBORS ||
+                 func_type == TOK_GRAPH_DFS || func_type == TOK_GRAPH_BFS)
+        {
+            expect(TOK_COMMA);
+            ASTNode *vertex = parse_expression();
+            expect(TOK_RPAREN);
+            if (func_type == TOK_GRAPH_ADD_VERTEX)
+                return ast_new_graph_add_vertex(queue, vertex);
+            else if (func_type == TOK_GRAPH_REMOVE_VERTEX)
+                return ast_new_graph_remove_vertex(queue, vertex);
+            else if (func_type == TOK_GRAPH_NEIGHBORS)
+                return ast_new_graph_neighbors(queue, vertex);
+            else if (func_type == TOK_GRAPH_DFS)
+                return ast_new_graph_dfs(queue, vertex);
+            else
+                return ast_new_graph_bfs(queue, vertex);
+        }
+        else if (func_type == TOK_GRAPH_ADD_EDGE || func_type == TOK_GRAPH_REMOVE_EDGE || func_type == TOK_GRAPH_HAS_EDGE)
+        {
+            expect(TOK_COMMA);
+            ASTNode *from = parse_expression();
+            expect(TOK_COMMA);
+            ASTNode *to = parse_expression();
+            expect(TOK_RPAREN);
+            if (func_type == TOK_GRAPH_ADD_EDGE)
+                return ast_new_graph_add_edge(queue, from, to);
+            else if (func_type == TOK_GRAPH_REMOVE_EDGE)
+                return ast_new_graph_remove_edge(queue, from, to);
+            else
+                return ast_new_graph_has_edge(queue, from, to);
+        }
         else
         {
             expect(TOK_RPAREN);
@@ -718,8 +787,14 @@ static ASTNode *parse_primary()
                 return ast_new_linked_list_size(queue);
             case TOK_LINKED_LIST_ISEMPTY:
                 return ast_new_linked_list_isempty(queue);
+            case TOK_TREE_INORDER:
+                return ast_new_tree_inorder(queue);
+            case TOK_TREE_PREORDER:
+                return ast_new_tree_preorder(queue);
+            case TOK_TREE_POSTORDER:
+                return ast_new_tree_postorder(queue);
             default:
-                printf("Parse error: Unknown queue or linked list function\n");
+                printf("Parse error: Unknown queue, linked list, tree, or graph function\n");
                 exit(1);
             }
         }
