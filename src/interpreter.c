@@ -6001,7 +6001,15 @@ void interpret_print(ASTNode *node)
                        node->binop.left->binop.op == TOK_LTE ||
                        node->binop.left->binop.op == TOK_GTE);
 
-    if ((is_bool_op || is_comp_op) && (value == 0 || value == 1))
+    // Also treat tree and linked list operations as boolean operations
+    bool is_tree_or_list_op = node->binop.left->type == NODE_TREE_SEARCH ||
+                              node->binop.left->type == NODE_TREE_DELETE ||
+                              node->binop.left->type == NODE_LINKED_LIST_ISEMPTY ||
+                              node->binop.left->type == NODE_STACK_EMPTY ||
+                              node->binop.left->type == NODE_QUEUE_ISEMPTY ||
+                              node->binop.left->type == NODE_GRAPH_HAS_EDGE;
+
+    if ((is_bool_op || is_comp_op || is_tree_or_list_op) && (value == 0 || value == 1))
     {
         printf("%s\n", bool_to_str((bool)value));
     }

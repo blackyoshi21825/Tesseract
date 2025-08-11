@@ -342,7 +342,7 @@ let$ myStack := <stack>
 - `::pop(stack)` - Remove and return top value
 - `::peek(stack)` - Return top value without removing
 - `::size(stack)` - Get number of elements
-- `::empty(stack)` - Check if stack is empty (returns 1 for empty, 0 for non-empty)
+- `::empty(stack)` - Check if stack is empty (returns true for empty, false for non-empty)
 
 **Example:**
 ```tesseract
@@ -366,7 +366,7 @@ let$ myQueue := <queue>
 - `::dequeue(queue)` - Remove and return front value
 - `::front(queue)` - Return front value without removing
 - `::back(queue)` - Return back value
-- `::isEmpty(queue)` - Check if queue is empty (returns 1 for empty, 0 for non-empty)
+- `::isEmpty(queue)` - Check if queue is empty (returns true for empty, false for non-empty)
 - `::qsize(queue)` - Get number of elements
 
 **Example:**
@@ -391,7 +391,7 @@ let$ myList := <linked>
 - `::lremove(list, value)` - Remove first occurrence of value
 - `::lget(list, index)` - Get element at index
 - `::lsize(list)` - Get number of elements
-- `::lisEmpty(list)` - Check if list is empty (returns 1 for empty, 0 for non-empty)
+- `::lisEmpty(list)` - Check if list is empty (returns true for empty, false for non-empty)
 
 **Example:**
 ```tesseract
@@ -413,8 +413,8 @@ let$ myTree := <tree>
 
 **Operations:**
 - `::tinsert(tree, value)` - Insert value into tree
-- `::tsearch(tree, value)` - Search for value (returns 1 if found, 0 if not)
-- `::tdelete(tree, value)` - Delete value from tree (returns 1 if deleted, 0 if not found)
+- `::tsearch(tree, value)` - Search for value (returns true if found, false if not)
+- `::tdelete(tree, value)` - Delete value from tree (returns true if deleted, false if not found)
 - `::tinorder(tree)` - Inorder traversal (sorted order)
 - `::tpreorder(tree)` - Preorder traversal (root first)
 - `::tpostorder(tree)` - Postorder traversal (root last)
@@ -431,7 +431,7 @@ let$ tree := <tree>
 ::tinorder(tree)          # prints [1, 3, 5, 7, 9] (sorted)
 ::tpreorder(tree)         # prints [5, 3, 1, 7, 9] (root first)
 ::tpostorder(tree)        # prints [1, 3, 9, 7, 5] (root last)
-::print ::tsearch(tree, 7) # prints 1 (found)
+::print ::tsearch(tree, 7) # prints true (found)
 ::tdelete(tree, 3)
 ```
 
@@ -445,7 +445,7 @@ let$ myGraph := <graph>
 **Operations:**
 - `::gadd_vertex(graph, vertex)` - Add vertex to graph
 - `::gadd_edge(graph, from, to)` - Add edge between vertices
-- `::ghas_edge(graph, from, to)` - Check if edge exists (returns 1 if exists, 0 if not)
+- `::ghas_edge(graph, from, to)` - Check if edge exists (returns true if exists, false if not)
 - `::gneighbors(graph, vertex)` - Get neighbors of vertex (bidirectional)
 - `::gdfs(graph, start)` - Depth-first search from start vertex
 - `::gbfs(graph, start)` - Breadth-first search from start vertex
@@ -466,7 +466,7 @@ let$ graph := <graph>
 ::gneighbors(graph, 2)          # prints [1, 3] (bidirectional)
 ::gdfs(graph, 1)                # prints [1, 2, 3, 4] (depth-first)
 ::gbfs(graph, 1)                # prints [1, 2, 4, 3] (breadth-first)
-::print ::ghas_edge(graph, 1, 2) # prints 1 (edge exists)
+::print ::ghas_edge(graph, 1, 2) # prints true (edge exists)
 ```
 
 ### Regular Expressions
