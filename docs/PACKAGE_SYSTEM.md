@@ -57,8 +57,7 @@ String manipulation functions:
 To use a package in your Tesseract code:
 
 ```tesseract
-# Import the package (this loads the functions)
-import$ "packages/stdlib/math_utils.c"
+# Installed packaged are automatically imported, there is no need to add an import line at the top
 
 # Use the functions
 let$result := factorial(5)
