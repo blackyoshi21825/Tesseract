@@ -11,49 +11,221 @@ static int pos;
 static int current_line;
 static int current_column;
 
-void lexer_init(const char *source)
-{
+// Token mapping table - the key to making it compact!
+typedef struct {
+    const char *text;
+    TokenType type;
+    int length;
+} TokenMapping;
+
+// Sorted by length (longest first) to avoid partial matches
+static TokenMapping token_map[] = {
+    // Longest tokens first
+    {"::sliding_window_stats", TOK_SLIDING_WINDOW_STATS, 22},
+    {"::sensitivity_threshold", TOK_SENSITIVITY_THRESHOLD, 23},
+    {"::temporal_interpolate", TOK_TEMPORAL_INTERPOLATE, 22},
+    {"::temporal_aggregate", TOK_TEMPORAL_AGGREGATE, 20},
+    {"::temporal_condition", TOK_TEMPORAL_CONDITION, 20},
+    {"::temporal_correlate", TOK_TEMPORAL_CORRELATE, 20},
+    {"::pattern_match", TOK_PATTERN_MATCH, 15},
+    {"::gremove_vertex", TOK_GRAPH_REMOVE_VERTEX, 16},
+    {"::symmetric_diff", TOK_SET_SYMMETRIC_DIFF, 16},
+    {"::temporal_query", TOK_TEMPORAL_QUERY, 16},
+    {"::gremove_edge", TOK_GRAPH_REMOVE_EDGE, 14},
+    {"::intersection", TOK_SET_INTERSECTION, 14},
+    {"::gadd_vertex", TOK_GRAPH_ADD_VERTEX, 13},
+    {"::http_delete", TOK_HTTP_DELETE, 13},
+    {"::difference", TOK_SET_DIFFERENCE, 12},
+    {"::tpostorder", TOK_TREE_POSTORDER, 12},
+    {"::gneighbors", TOK_GRAPH_NEIGHBORS, 12},
+    {"::rfind_all", TOK_REGEX_FIND_ALL, 11},
+    {"::tpreorder", TOK_TREE_PREORDER, 11},
+    {"::substring", TOK_STRING_SUBSTRING, 11},
+    {"::scontains", TOK_SET_CONTAINS, 11},
+    {"::http_post", TOK_HTTP_POST, 11},
+    {"::gadd_edge", TOK_GRAPH_ADD_EDGE, 11},
+    {"::lisEmpty", TOK_LINKED_LIST_ISEMPTY, 10},
+    {"::rreplace", TOK_REGEX_REPLACE, 10},
+    {"::lremove", TOK_LINKED_LIST_REMOVE, 9},
+    {"::tinorder", TOK_TREE_INORDER, 10},
+    {"::tdelete", TOK_TREE_DELETE, 9},
+    {"::tsearch", TOK_TREE_SEARCH, 9},
+    {"::tinsert", TOK_TREE_INSERT, 9},
+    {"::sremove", TOK_SET_REMOVE, 9},
+    {"::prepend", TOK_LIST_PREPEND, 9},
+    {"::enqueue", TOK_QUEUE_ENQUEUE, 9},
+    {"::dequeue", TOK_QUEUE_DEQUEUE, 9},
+    {"::replace", TOK_STRING_REPLACE, 9},
+    {"::http_put", TOK_HTTP_PUT, 10},
+    {"::http_get", TOK_HTTP_GET, 10},
+    {"temporal$", TOK_TEMPORAL, 9},
+    {"continue", TOK_CONTINUE, 8},
+    {"default$", TOK_DEFAULT, 8},
+    {"foreach$", TOK_FOREACH, 8},
+    {"finally$", TOK_FINALLY, 8},
+    {"::append", TOK_LIST_APPEND, 8},
+    {"::insert", TOK_LIST_INSERT, 8},
+    {"::remove", TOK_LIST_REMOVE, 8},
+    {"::length", TOK_STRING_LENGTH, 8},
+    {"::values", TOK_DICT_VALUES, 8},
+    {"::fwrite", TOK_FILE_WRITE, 8},
+    {"::fclose", TOK_FILE_CLOSE, 8},
+    {"::to_str", TOK_TO_STR, 8},
+    {"::to_int", TOK_TO_INT, 8},
+    {"::rmatch", TOK_REGEX_MATCH, 8},
+    {"::random", TOK_RANDOM, 8},
+    {"::sclear", TOK_SET_CLEAR, 8},
+    {"::sempty", TOK_SET_EMPTY, 8},
+    {"elseif$", TOK_ELSEIF, 7},
+    {"import$", TOK_IMPORT, 7},
+    {"switch$", TOK_SWITCH, 7},
+    {"::print", TOK_PRINT, 7},
+    {"::input", TOK_INPUT, 7},
+    {"::front", TOK_QUEUE_FRONT, 7},
+    {"::qsize", TOK_QUEUE_SIZE, 7},
+    {"::empty", TOK_STACK_EMPTY, 7},
+    {"::split", TOK_STRING_SPLIT, 7},
+    {"::upper", TOK_STRING_UPPER, 7},
+    {"::lower", TOK_STRING_LOWER, 7},
+    {"::union", TOK_SET_UNION, 7},
+    {"<queue>", TOK_QUEUE_NEW, 7},
+    {"<regex>", TOK_REGEX_NEW, 7},
+    {"::lsize", TOK_LINKED_LIST_SIZE, 7},
+    {"::ssize", TOK_SET_SIZE, 7},
+    {"::scopy", TOK_SET_COPY, 7},
+    {"while$", TOK_WHILE, 6},
+    {"class$", TOK_CLASS, 6},
+    {"catch$", TOK_CATCH, 6},
+    {"throw$", TOK_THROW, 6},
+    {"yield$", TOK_YIELD, 6},
+    {"::push", TOK_STACK_PUSH, 6},
+    {"::peek", TOK_STACK_PEEK, 6},
+    {"::back", TOK_QUEUE_BACK, 6},
+    {"::keys", TOK_DICT_KEYS, 6},
+    {"::fopen", TOK_FILE_OPEN, 7},
+    {"::fread", TOK_FILE_READ, 7},
+    {"::type", TOK_TYPE, 6},
+    {"::join", TOK_STRING_JOIN, 6},
+    {"::ladd", TOK_LINKED_LIST_ADD, 6},
+    {"::lget", TOK_LINKED_LIST_GET, 6},
+    {"::sadd", TOK_SET_ADD, 6},
+    {"::gdfs", TOK_GRAPH_DFS, 6},
+    {"::gbfs", TOK_GRAPH_BFS, 6},
+    {"<tree>", TOK_TREE_NEW, 6},
+    {"<stack>", TOK_STACK_NEW, 7},
+    {"<linked>", TOK_LINKED_LIST_NEW, 8},
+    {"<graph>", TOK_GRAPH_NEW, 7},
+    {"loop$", TOK_LOOP, 5},
+    {"func$", TOK_FUNC, 5},
+    {"case$", TOK_CASE, 5},
+    {"iter$", TOK_ITERATOR, 5},
+    {"next$", TOK_NEXT, 5},
+    {"break", TOK_BREAK, 5},
+    {"false", TOK_FALSE, 5},
+    {"UNDEF", TOK_UNDEF, 5},
+    {"::pop", TOK_STACK_POP, 5},
+    {"::len", TOK_LIST_LEN, 5},
+    {"::get", TOK_DICT_GET, 5},
+    {"::set", TOK_DICT_SET, 5},
+    {"let$", TOK_LET, 4},
+    {"if$", TOK_IF, 3},
+    {"else", TOK_ELSE, 4},
+    {"try$", TOK_TRY, 4},
+    {"gen$", TOK_GENERATOR, 4},
+    {"true", TOK_TRUE, 4},
+    {"self", TOK_SELF, 4},
+    {"dict", TOK_DICT_NEW, 4},
+    {"::size", TOK_STACK_SIZE, 6},
+    {"and", TOK_AND, 3},
+    {"not", TOK_NOT, 3},
+    {"or", TOK_OR, 2},
+    {"in", TOK_IN, 2},
+    {":=", TOK_ASSIGN, 2},
+    {"=>", TOK_ARROW, 2},
+    {"++", TOK_INCREMENT, 2},
+    {"--", TOK_DECREMENT, 2},
+    {"+=", TOK_PLUS_ASSIGN, 2},
+    {"-=", TOK_MINUS_ASSIGN, 2},
+    {"*=", TOK_MUL_ASSIGN, 2},
+    {"/=", TOK_DIV_ASSIGN, 2},
+    {"%=", TOK_MOD_ASSIGN, 2},
+    {">=", TOK_GTE, 2},
+    {"<=", TOK_LTE, 2},
+    {"==", TOK_EQ, 2},
+    {"!=", TOK_NEQ, 2},
+    {NULL, TOK_UNKNOWN, 0} // Sentinel
+};
+
+void lexer_init(const char *source) {
     input = source;
     pos = 0;
     current_line = 1;
     current_column = 1;
 }
 
-static void advance_pos(int count)
-{
-    for (int i = 0; i < count; i++)
-    {
-        if (input[pos] == '\n')
-        {
+static void advance_pos(int count) {
+    for (int i = 0; i < count; i++) {
+        if (input[pos] == '\n') {
             current_line++;
             current_column = 1;
-        }
-        else
-        {
+        } else {
             current_column++;
         }
         pos++;
     }
 }
 
-static void skip_whitespace()
-{
-    while (isspace(input[pos]))
-    {
+static void skip_whitespace() {
+    while (isspace(input[pos])) {
         advance_pos(1);
     }
 }
 
-static int starts_with(const char *str)
-{
-    return strncmp(&input[pos], str, strlen(str)) == 0;
+static int safe_peek(int offset) {
+    if (input[pos + offset] == '\0') return 0;
+    return input[pos + offset];
 }
 
-static int safe_peek(int offset)
-{
-    if (input[pos + offset] == '\0')
-        return 0;
-    return input[pos + offset];
+// Compact token lookup function
+static TokenMapping* find_token_mapping() {
+    for (int i = 0; token_map[i].text != NULL; i++) {
+        if (strncmp(&input[pos], token_map[i].text, token_map[i].length) == 0) {
+            // For keywords that end with letters, check word boundary
+            if (isalpha(token_map[i].text[token_map[i].length - 1])) {
+                char next_char = input[pos + token_map[i].length];
+                if (isalnum(next_char) || next_char == '_' || next_char == '$') {
+                    continue; // Not a word boundary
+                }
+            }
+            return &token_map[i];
+        }
+    }
+    return NULL;
+}
+
+// Handle <temp@N> pattern
+static bool try_parse_temp_token(Token *token) {
+    if (strncmp(&input[pos], "<temp@", 6) != 0) return false;
+
+    int start_pos = pos;
+    pos += 6;
+    while (isdigit(input[pos])) pos++;
+    if (input[pos] != '>') {
+        pos = start_pos;
+        return false;
+    }
+    pos++; // Skip '>'
+
+    int len = pos - start_pos;
+    if (len < sizeof(token->text)) {
+        strncpy(token->text, &input[start_pos], len);
+        token->text[len] = '\0';
+        token->type = TOK_TEMP_NEW;
+        return true;
+    }
+
+    pos = start_pos;
+    return false;
 }
 
 const char* token_type_name(TokenType type) {
@@ -75,14 +247,13 @@ const char* token_type_name(TokenType type) {
 
 Token debug_return_token(Token token) {
     if (debug_mode) {
-        printf("[DEBUG] Token: %s '%s' at %d:%d\n", 
+        printf("[DEBUG] Token: %s '%s' at %d:%d\n",
                token_type_name(token.type), token.text, token.line, token.column);
     }
     return token;
 }
 
-Token lexer_next_token()
-{
+Token lexer_next_token() {
     Token token;
     token.type = TOK_UNKNOWN;
     token.text[0] = '\0';
@@ -90,1270 +261,168 @@ Token lexer_next_token()
     token.column = current_column;
 
     skip_whitespace();
-    
-    // Update token position after skipping whitespace
     token.line = current_line;
     token.column = current_column;
 
-    if (input[pos] == '\0')
-    {
+    if (input[pos] == '\0') {
         token.type = TOK_EOF;
         return token;
     }
 
-    // Handle comments starting with '#'
-    if (input[pos] == '#')
-    {
-        while (input[pos] != '\n' && input[pos] != '\0')
-            advance_pos(1);
-        return lexer_next_token(); // Skip the comment and get the next token
+    // Handle comments
+    if (input[pos] == '#') {
+        while (input[pos] != '\n' && input[pos] != '\0') advance_pos(1);
+        return lexer_next_token();
     }
 
-    // Keywords and multi-char tokens (order matters)
-    if (starts_with("let$"))
-    {
-        token.type = TOK_LET;
-        strcpy(token.text, "let$");
-        advance_pos(4);
-        return token;
-    }
-    if (starts_with("::print"))
-    {
-        token.type = TOK_PRINT;
-        strcpy(token.text, "::print");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::input"))
-    {
-        token.type = TOK_INPUT;
-        strcpy(token.text, "::input");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("if$"))
-    {
-        token.type = TOK_IF;
-        strcpy(token.text, "if$");
-        pos += 3;
-        return token;
-    }
-    if (starts_with("elseif$"))
-    {
-        token.type = TOK_ELSEIF;
-        strcpy(token.text, "elseif$");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("else"))
-    {
-        token.type = TOK_ELSE;
-        strcpy(token.text, "else");
-        pos += 4;
-        return token;
-    }
-    if (starts_with("loop$"))
-    {
-        token.type = TOK_LOOP;
-        strcpy(token.text, "loop$");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("foreach$"))
-    {
-        token.type = TOK_FOREACH;
-        strcpy(token.text, "foreach$");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("break") && !isalnum(input[pos + 5]))
-    {
-        token.type = TOK_BREAK;
-        strcpy(token.text, "break");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("continue") && !isalnum(input[pos + 8]))
-    {
-        token.type = TOK_CONTINUE;
-        strcpy(token.text, "continue");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("while$"))
-    {
-        token.type = TOK_WHILE;
-        strcpy(token.text, "while$");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("switch$"))
-    {
-        token.type = TOK_SWITCH;
-        strcpy(token.text, "switch$");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("case$"))
-    {
-        token.type = TOK_CASE;
-        strcpy(token.text, "case$");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("default$"))
-    {
-        token.type = TOK_DEFAULT;
-        strcpy(token.text, "default$");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("import$"))
-    {
-        token.type = TOK_IMPORT;
-        strcpy(token.text, "import$");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("func$"))
-    {
-        token.type = TOK_FUNC;
-        strcpy(token.text, "func$");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("class$"))
-    {
-        pos += 6;
-        token.type = TOK_CLASS;
-        strcpy(token.text, "class$");
-        return token;
-    }
-    if (starts_with("self"))
-    {
-        pos += 4;
-        token.type = TOK_SELF;
-        strcpy(token.text, "self");
-        return token;
+    // Try <temp@N> pattern first
+    if (try_parse_temp_token(&token)) {
+        return debug_return_token(token);
     }
 
-    if (starts_with("and"))
-    {
-        token.type = TOK_AND;
-        strcpy(token.text, "and");
-        pos += 3;
-        return token;
-    }
-    if (starts_with("or"))
-    {
-        token.type = TOK_OR;
-        strcpy(token.text, "or");
-        pos += 2;
-        return token;
-    }
-    if (starts_with("true") && !isalnum(input[pos + 4]))
-    {
-        token.type = TOK_TRUE;
-        strcpy(token.text, "true");
-        pos += 4;
-        return token;
-    }
-    if (starts_with("false") && !isalnum(input[pos + 5]))
-    {
-        token.type = TOK_FALSE;
-        strcpy(token.text, "false");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("UNDEF") && !isalnum(input[pos + 5]))
-    {
-        token.type = TOK_UNDEF;
-        strcpy(token.text, "UNDEF");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("not"))
-    {
-        token.type = TOK_NOT;
-        strcpy(token.text, "not");
-        pos += 3;
-        return token;
-    }
-
-    // Assignment operator :=
-    if (input[pos] == ':' && safe_peek(1) == '=')
-    {
-        token.type = TOK_ASSIGN;
-        strcpy(token.text, ":=");
-        pos += 2;
-        return token;
-    }
-
-    // Arrow operator =>
-    if (input[pos] == '=' && safe_peek(1) == '>')
-    {
+    // Try UTF-8 arrow âŸ¶
+    if ((unsigned char)input[pos] == 0xE2 &&
+        (unsigned char)safe_peek(1) == 0x87 &&
+        (unsigned char)safe_peek(2) == 0x92) {
         token.type = TOK_ARROW;
-        strcpy(token.text, "=>");
-        pos += 2;
-        return token;
-    }
-
-    // Arrow operator ⟶ (UTF-8: E2 87 92)
-    if ((unsigned char)input[pos] == 0xE2 && (unsigned char)safe_peek(1) == 0x87 && (unsigned char)safe_peek(2) == 0x92)
-    {
-        token.type = TOK_ARROW;
-        strcpy(token.text, "⟶");
+        strcpy(token.text, "âŸ¶");
         pos += 3;
-        return token;
+        return debug_return_token(token);
     }
 
-    if (starts_with("::push"))
-    {
-        token.type = TOK_STACK_PUSH;
-        strcpy(token.text, "::push");
-        pos += 6;
-        return token;
+    // **THE KEY CHANGE**: Use table lookup instead of massive if/else chain
+    TokenMapping* mapping = find_token_mapping();
+    if (mapping) {
+        token.type = mapping->type;
+        strncpy(token.text, mapping->text, mapping->length);
+        token.text[mapping->length] = '\0';
+        pos += mapping->length;
+        return debug_return_token(token);
     }
-    if (starts_with("::pop"))
-    {
-        token.type = TOK_STACK_POP;
-        strcpy(token.text, "::pop");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("::peek"))
-    {
-        token.type = TOK_STACK_PEEK;
-        strcpy(token.text, "::peek");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::enqueue"))
-    {
-        token.type = TOK_QUEUE_ENQUEUE;
-        strcpy(token.text, "::enqueue");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::dequeue"))
-    {
-        token.type = TOK_QUEUE_DEQUEUE;
-        strcpy(token.text, "::dequeue");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::front"))
-    {
-        token.type = TOK_QUEUE_FRONT;
-        strcpy(token.text, "::front");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::back"))
-    {
-        token.type = TOK_QUEUE_BACK;
-        strcpy(token.text, "::back");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::isEmpty"))
-    {
-        token.type = TOK_QUEUE_ISEMPTY;
-        strcpy(token.text, "::isEmpty");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::qsize"))
-    {
-        token.type = TOK_QUEUE_SIZE;
-        strcpy(token.text, "::qsize");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::size"))
-    {
-        token.type = TOK_STACK_SIZE;
-        strcpy(token.text, "::size");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::empty"))
-    {
-        token.type = TOK_STACK_EMPTY;
-        strcpy(token.text, "::empty");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::length"))
-    {
-        token.type = TOK_STRING_LENGTH;
-        strcpy(token.text, "::length");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::len"))
-    {
-        token.type = TOK_LIST_LEN;
-        strcpy(token.text, "::len");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("::append"))
-    {
-        token.type = TOK_LIST_APPEND;
-        strcpy(token.text, "::append");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::prepend"))
-    {
-        token.type = TOK_LIST_PREPEND;
-        strcpy(token.text, "::prepend");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::insert"))
-    {
-        token.type = TOK_LIST_INSERT;
-        strcpy(token.text, "::insert");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::remove"))
-    {
-        token.type = TOK_LIST_REMOVE;
-        strcpy(token.text, "::remove");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::pattern_match"))
-    {
-        token.type = TOK_PATTERN_MATCH;
-        strcpy(token.text, "::pattern_match");
-        pos += 15;
-        return token;
-    }
-    if (starts_with("::get"))
-    {
-        token.type = TOK_DICT_GET;
-        strcpy(token.text, "::get");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("::set"))
-    {
-        token.type = TOK_DICT_SET;
-        strcpy(token.text, "::set");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("::keys"))
-    {
-        token.type = TOK_DICT_KEYS;
-        strcpy(token.text, "::keys");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::values"))
-    {
-        token.type = TOK_DICT_VALUES;
-        strcpy(token.text, "::values");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("dict"))
-    {
-        token.type = TOK_DICT_NEW;
-        strcpy(token.text, "dict");
-        pos += 4;
-        return token;
-    }
-    if (starts_with("<stack>"))
-    {
-        token.type = TOK_STACK_NEW;
-        strcpy(token.text, "<stack>");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("<queue>"))
-    {
-        token.type = TOK_QUEUE_NEW;
-        strcpy(token.text, "<queue>");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("<linked>"))
-    {
-        token.type = TOK_LINKED_LIST_NEW;
-        strcpy(token.text, "<linked>");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("<temp@"))
-    {
-        // Parse <temp@N>
-        int start_pos = pos;
-        pos += 6; // Skip "<temp@"
-        while (isdigit(input[pos])) pos++; // Skip digits
-        if (input[pos] == '>')
+
+    // Single character operators (compact switch)
+    char ch = input[pos];
+    switch (ch) {
+    case '+': case '-': case '*': case '/': case '%':
+    case '(': case ')': case ';': case '>': case '<':
+    case '=': case '!': case ',': case '{': case '}':
+    case '[': case ']': case '&': case '|': case '^':
+    case '~': case '@': case '.': case '?': case ':':
         {
-            pos++; // Skip '>'
-            int len = pos - start_pos;
-            if (len < sizeof(token.text))
-            {
-                strncpy(token.text, &input[start_pos], len);
-                token.text[len] = '\0';
-                token.type = TOK_TEMP_NEW;
-                return token;
+            // Check for compound operators first
+            char next = safe_peek(1);
+            TokenType compound_type = TOK_UNKNOWN;
+
+            if ((ch == '>' && next == '=') || (ch == '<' && next == '=') ||
+                (ch == '=' && next == '=') || (ch == '!' && next == '=')) {
+                pos += 2;
+                token.text[0] = ch;
+                token.text[1] = next;
+                token.text[2] = '\0';
+                token.type = (ch == '>' && next == '=') ? TOK_GTE :
+                            (ch == '<' && next == '=') ? TOK_LTE :
+                            (ch == '=' && next == '=') ? TOK_EQ : TOK_NEQ;
+                return debug_return_token(token);
             }
+
+            // Single character
+            pos++;
+            token.text[0] = ch;
+            token.text[1] = '\0';
+            token.type = (ch == '+') ? TOK_PLUS : (ch == '-') ? TOK_MINUS :
+                        (ch == '*') ? TOK_MUL : (ch == '/') ? TOK_DIV :
+                        (ch == '%') ? TOK_MOD : (ch == '(') ? TOK_LPAREN :
+                        (ch == ')') ? TOK_RPAREN : (ch == ';') ? TOK_SEMICOLON :
+                        (ch == '>') ? TOK_GT : (ch == '<') ? TOK_LT :
+                        (ch == ',') ? TOK_COMMA : (ch == '{') ? TOK_LBRACE :
+                        (ch == '}') ? TOK_RBRACE : (ch == '[') ? TOK_LBRACKET :
+                        (ch == ']') ? TOK_RBRACKET : (ch == '&') ? TOK_BITWISE_AND :
+                        (ch == '|') ? TOK_BITWISE_OR : (ch == '^') ? TOK_BITWISE_XOR :
+                        (ch == '~') ? TOK_BITWISE_NOT : (ch == '@') ? TOK_AT :
+                        (ch == '.') ? TOK_DOT : (ch == '?') ? TOK_QUESTION :
+                        (ch == ':') ? TOK_COLON : TOK_UNKNOWN;
+            return debug_return_token(token);
         }
-        // If parsing failed, reset position and continue
-        pos = start_pos;
-    }
-    if (starts_with("::ladd"))
-    {
-        token.type = TOK_LINKED_LIST_ADD;
-        strcpy(token.text, "::ladd");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::lremove"))
-    {
-        token.type = TOK_LINKED_LIST_REMOVE;
-        strcpy(token.text, "::lremove");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::lget"))
-    {
-        token.type = TOK_LINKED_LIST_GET;
-        strcpy(token.text, "::lget");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::lsize"))
-    {
-        token.type = TOK_LINKED_LIST_SIZE;
-        strcpy(token.text, "::lsize");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::lisEmpty"))
-    {
-        token.type = TOK_LINKED_LIST_ISEMPTY;
-        strcpy(token.text, "::lisEmpty");
-        pos += 10;
-        return token;
-    }
-    if (starts_with("::fopen"))
-    {
-        token.type = TOK_FILE_OPEN;
-        strcpy(token.text, "::fopen");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::fread"))
-    {
-        token.type = TOK_FILE_READ;
-        strcpy(token.text, "::fread");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::fwrite"))
-    {
-        token.type = TOK_FILE_WRITE;
-        strcpy(token.text, "::fwrite");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::fclose"))
-    {
-        token.type = TOK_FILE_CLOSE;
-        strcpy(token.text, "::fclose");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::to_str"))
-    {
-        token.type = TOK_TO_STR;
-        strcpy(token.text, "::to_str");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::to_int"))
-    {
-        token.type = TOK_TO_INT;
-        strcpy(token.text, "::to_int");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::type"))
-    {
-        token.type = TOK_TYPE;
-        strcpy(token.text, "::type");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::split"))
-    {
-        token.type = TOK_STRING_SPLIT;
-        strcpy(token.text, "::split");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::join"))
-    {
-        token.type = TOK_STRING_JOIN;
-        strcpy(token.text, "::join");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::replace"))
-    {
-        token.type = TOK_STRING_REPLACE;
-        strcpy(token.text, "::replace");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::substring"))
-    {
-        token.type = TOK_STRING_SUBSTRING;
-        strcpy(token.text, "::substring");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::upper"))
-    {
-        token.type = TOK_STRING_UPPER;
-        strcpy(token.text, "::upper");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::lower"))
-    {
-        token.type = TOK_STRING_LOWER;
-        strcpy(token.text, "::lower");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::random"))
-    {
-        token.type = TOK_RANDOM;
-        strcpy(token.text, "::random");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::http_get"))
-    {
-        token.type = TOK_HTTP_GET;
-        strcpy(token.text, "::http_get");
-        pos += 10;
-        return token;
-    }
-    if (starts_with("::http_post"))
-    {
-        token.type = TOK_HTTP_POST;
-        strcpy(token.text, "::http_post");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::http_put"))
-    {
-        token.type = TOK_HTTP_PUT;
-        strcpy(token.text, "::http_put");
-        pos += 10;
-        return token;
-    }
-    if (starts_with("::http_delete"))
-    {
-        token.type = TOK_HTTP_DELETE;
-        strcpy(token.text, "::http_delete");
-        pos += 13;
-        return token;
-    }
-    if (starts_with("<regex>"))
-    {
-        token.type = TOK_REGEX_NEW;
-        strcpy(token.text, "<regex>");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::rmatch"))
-    {
-        token.type = TOK_REGEX_MATCH;
-        strcpy(token.text, "::rmatch");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::rreplace"))
-    {
-        token.type = TOK_REGEX_REPLACE;
-        strcpy(token.text, "::rreplace");
-        pos += 10;
-        return token;
-    }
-    if (starts_with("::rfind_all"))
-    {
-        token.type = TOK_REGEX_FIND_ALL;
-        strcpy(token.text, "::rfind_all");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::temporal_aggregate"))
-    {
-        token.type = TOK_TEMPORAL_AGGREGATE;
-        strcpy(token.text, "::temporal_aggregate");
-        pos += 20;
-        return token;
-    }
-    if (starts_with("::temporal_condition"))
-    {
-        token.type = TOK_TEMPORAL_CONDITION;
-        strcpy(token.text, "::temporal_condition");
-        pos += 20;
-        return token;
-    }
-    if (starts_with("::temporal_pattern"))
-    {
-        token.type = TOK_TEMPORAL_PATTERN;
-        strcpy(token.text, "::temporal_pattern");
-        pos += 18;
-        return token;
-    }
-    if (starts_with("::sliding_window_stats"))
-    {
-        token.type = TOK_SLIDING_WINDOW_STATS;
-        strcpy(token.text, "::sliding_window_stats");
-        pos += 22;
-        return token;
-    }
-    if (starts_with("::sensitivity_threshold"))
-    {
-        token.type = TOK_SENSITIVITY_THRESHOLD;
-        strcpy(token.text, "::sensitivity_threshold");
-        pos += 23;
-        return token;
-    }
-    if (starts_with("::temporal_query"))
-    {
-        token.type = TOK_TEMPORAL_QUERY;
-        strcpy(token.text, "::temporal_query");
-        pos += 16;
-        return token;
-    }
-    if (starts_with("::temporal_correlate"))
-    {
-        token.type = TOK_TEMPORAL_CORRELATE;
-        strcpy(token.text, "::temporal_correlate");
-        pos += 20;
-        return token;
-    }
-    if (starts_with("::temporal_interpolate"))
-    {
-        token.type = TOK_TEMPORAL_INTERPOLATE;
-        strcpy(token.text, "::temporal_interpolate");
-        pos += 22;
-        return token;
-    }
-    if (starts_with("temporal$"))
-    {
-        token.type = TOK_TEMPORAL;
-        strcpy(token.text, "temporal$");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("in") && !isalnum(input[pos + 2]))
-    {
-        token.type = TOK_IN;
-        strcpy(token.text, "in");
-        pos += 2;
-        return token;
-    }
-    if (starts_with("try$"))
-    {
-        token.type = TOK_TRY;
-        strcpy(token.text, "try$");
-        pos += 4;
-        return token;
-    }
-    if (starts_with("catch$"))
-    {
-        token.type = TOK_CATCH;
-        strcpy(token.text, "catch$");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("throw$"))
-    {
-        token.type = TOK_THROW;
-        strcpy(token.text, "throw$");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("finally$"))
-    {
-        token.type = TOK_FINALLY;
-        strcpy(token.text, "finally$");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("gen$"))
-    {
-        token.type = TOK_GENERATOR;
-        strcpy(token.text, "gen$");
-        pos += 4;
-        return token;
-    }
-    if (starts_with("yield$"))
-    {
-        token.type = TOK_YIELD;
-        strcpy(token.text, "yield$");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("iter$"))
-    {
-        token.type = TOK_ITERATOR;
-        strcpy(token.text, "iter$");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("next$"))
-    {
-        token.type = TOK_NEXT;
-        strcpy(token.text, "next$");
-        pos += 5;
-        return token;
-    }
-    if (starts_with("<tree>"))
-    {
-        token.type = TOK_TREE_NEW;
-        strcpy(token.text, "<tree>");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("<graph>"))
-    {
-        token.type = TOK_GRAPH_NEW;
-        strcpy(token.text, "<graph>");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::tinsert"))
-    {
-        token.type = TOK_TREE_INSERT;
-        strcpy(token.text, "::tinsert");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::tsearch"))
-    {
-        token.type = TOK_TREE_SEARCH;
-        strcpy(token.text, "::tsearch");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::tdelete"))
-    {
-        token.type = TOK_TREE_DELETE;
-        strcpy(token.text, "::tdelete");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::tinorder"))
-    {
-        token.type = TOK_TREE_INORDER;
-        strcpy(token.text, "::tinorder");
-        pos += 10;
-        return token;
-    }
-    if (starts_with("::tpreorder"))
-    {
-        token.type = TOK_TREE_PREORDER;
-        strcpy(token.text, "::tpreorder");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::tpostorder"))
-    {
-        token.type = TOK_TREE_POSTORDER;
-        strcpy(token.text, "::tpostorder");
-        pos += 12;
-        return token;
-    }
-    if (starts_with("::gadd_vertex"))
-    {
-        token.type = TOK_GRAPH_ADD_VERTEX;
-        strcpy(token.text, "::gadd_vertex");
-        pos += 13;
-        return token;
-    }
-    if (starts_with("::gadd_edge"))
-    {
-        token.type = TOK_GRAPH_ADD_EDGE;
-        strcpy(token.text, "::gadd_edge");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::gremove_vertex"))
-    {
-        token.type = TOK_GRAPH_REMOVE_VERTEX;
-        strcpy(token.text, "::gremove_vertex");
-        pos += 16;
-        return token;
-    }
-    if (starts_with("::gremove_edge"))
-    {
-        token.type = TOK_GRAPH_REMOVE_EDGE;
-        strcpy(token.text, "::gremove_edge");
-        pos += 14;
-        return token;
-    }
-    if (starts_with("::ghas_edge"))
-    {
-        token.type = TOK_GRAPH_HAS_EDGE;
-        strcpy(token.text, "::ghas_edge");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::gneighbors"))
-    {
-        token.type = TOK_GRAPH_NEIGHBORS;
-        strcpy(token.text, "::gneighbors");
-        pos += 12;
-        return token;
-    }
-    if (starts_with("::gdfs"))
-    {
-        token.type = TOK_GRAPH_DFS;
-        strcpy(token.text, "::gdfs");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::gbfs"))
-    {
-        token.type = TOK_GRAPH_BFS;
-        strcpy(token.text, "::gbfs");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::union"))
-    {
-        token.type = TOK_SET_UNION;
-        strcpy(token.text, "::union");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::intersection"))
-    {
-        token.type = TOK_SET_INTERSECTION;
-        strcpy(token.text, "::intersection");
-        pos += 14;
-        return token;
-    }
-    if (starts_with("::difference"))
-    {
-        token.type = TOK_SET_DIFFERENCE;
-        strcpy(token.text, "::difference");
-        pos += 12;
-        return token;
-    }
-    if (starts_with("::symmetric_diff"))
-    {
-        token.type = TOK_SET_SYMMETRIC_DIFF;
-        strcpy(token.text, "::symmetric_diff");
-        pos += 16;
-        return token;
-    }
-    if (starts_with("::sadd"))
-    {
-        token.type = TOK_SET_ADD;
-        strcpy(token.text, "::sadd");
-        pos += 6;
-        return token;
-    }
-    if (starts_with("::sremove"))
-    {
-        token.type = TOK_SET_REMOVE;
-        strcpy(token.text, "::sremove");
-        pos += 9;
-        return token;
-    }
-    if (starts_with("::scontains"))
-    {
-        token.type = TOK_SET_CONTAINS;
-        strcpy(token.text, "::scontains");
-        pos += 11;
-        return token;
-    }
-    if (starts_with("::ssize"))
-    {
-        token.type = TOK_SET_SIZE;
-        strcpy(token.text, "::ssize");
-        pos += 7;
-        return token;
-    }
-    if (starts_with("::sempty"))
-    {
-        token.type = TOK_SET_EMPTY;
-        strcpy(token.text, "::sempty");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::sclear"))
-    {
-        token.type = TOK_SET_CLEAR;
-        strcpy(token.text, "::sclear");
-        pos += 8;
-        return token;
-    }
-    if (starts_with("::scopy"))
-    {
-        token.type = TOK_SET_COPY;
-        strcpy(token.text, "::scopy");
-        pos += 7;
-        return token;
     }
 
-    // Single char tokens and operators
-    switch (input[pos])
-    {
-    case '+':
-        if (safe_peek(1) == '+')
-        {
-            token.type = TOK_INCREMENT;
-            strcpy(token.text, "++");
-            pos += 2;
-        }
-        else if (safe_peek(1) == '=')
-        {
-            token.type = TOK_PLUS_ASSIGN;
-            strcpy(token.text, "+=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_PLUS;
-            token.text[0] = '+';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '-':
-        if (safe_peek(1) == '-')
-        {
-            token.type = TOK_DECREMENT;
-            strcpy(token.text, "--");
-            pos += 2;
-        }
-        else if (safe_peek(1) == '=')
-        {
-            token.type = TOK_MINUS_ASSIGN;
-            strcpy(token.text, "-=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_MINUS;
-            token.text[0] = '-';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '*':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_MUL_ASSIGN;
-            strcpy(token.text, "*=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_MUL;
-            token.text[0] = '*';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '/':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_DIV_ASSIGN;
-            strcpy(token.text, "/=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_DIV;
-            token.text[0] = '/';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '%':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_MOD_ASSIGN;
-            strcpy(token.text, "%=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_MOD;
-            token.text[0] = '%';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '(':
-        token.type = TOK_LPAREN;
-        token.text[0] = '(';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case ')':
-        token.type = TOK_RPAREN;
-        token.text[0] = ')';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case ';':
-        token.type = TOK_SEMICOLON;
-        token.text[0] = ';';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '>':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_GTE;
-            strcpy(token.text, ">=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_GT;
-            token.text[0] = '>';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '<':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_LTE;
-            strcpy(token.text, "<=");
-            pos += 2;
-        }
-        else
-        {
-            token.type = TOK_LT;
-            token.text[0] = '<';
-            token.text[1] = '\0';
-            pos++;
-        }
-        return token;
-    case '=':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_EQ;
-            strcpy(token.text, "==");
-            pos += 2;
-            return token;
-        }
-        break;
-    case '!':
-        if (safe_peek(1) == '=')
-        {
-            token.type = TOK_NEQ;
-            strcpy(token.text, "!=");
-            pos += 2;
-            return token;
-        }
-        break;
-    case ',':
-        token.type = TOK_COMMA;
-        token.text[0] = ',';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '{':
-        token.type = TOK_LBRACE;
-        token.text[0] = '{';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '}':
-        token.type = TOK_RBRACE;
-        token.text[0] = '}';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '[':
-        token.type = TOK_LBRACKET;
-        token.text[0] = '[';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case ']':
-        token.type = TOK_RBRACKET;
-        token.text[0] = ']';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '&':
-        token.type = TOK_BITWISE_AND;
-        token.text[0] = '&';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '|':
-        token.type = TOK_BITWISE_OR;
-        token.text[0] = '|';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '^':
-        token.type = TOK_BITWISE_XOR;
-        token.text[0] = '^';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '~':
-        token.type = TOK_BITWISE_NOT;
-        token.text[0] = '~';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '@':
-        token.type = TOK_AT;
-        token.text[0] = '@';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '.':
-        token.type = TOK_DOT;
-        token.text[0] = '.';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case '?':
-        token.type = TOK_QUESTION;
-        token.text[0] = '?';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    case ':':
-        // Check if it's part of := assignment operator
-        if (safe_peek(1) == '=')
-        {
-            // This will be handled by the := case above
-            break;
-        }
-        token.type = TOK_COLON;
-        token.text[0] = ':';
-        token.text[1] = '\0';
-        pos++;
-        return token;
-    }
-    // String literal or interpolated string
-    if (input[pos] == '"')
-    {
+    // String literals
+    if (input[pos] == '"') {
         pos++;
         int start = pos;
         bool has_interpolation = false;
-        
-        // Check for ${} patterns
+
+        // Check for interpolation
         int temp_pos = pos;
-        while (input[temp_pos] != '"' && input[temp_pos] != '\0')
-        {
-            if (input[temp_pos] == '$' && input[temp_pos + 1] == '{')
-            {
+        while (input[temp_pos] != '"' && input[temp_pos] != '\0') {
+            if (input[temp_pos] == '$' && input[temp_pos + 1] == '{') {
                 has_interpolation = true;
                 break;
             }
-            if (input[temp_pos] == '\\' && input[temp_pos + 1] == '"')
-            {
+            if (input[temp_pos] == '\\' && input[temp_pos + 1] == '"') {
                 temp_pos += 2;
-            }
-            else
-            {
+            } else {
                 temp_pos++;
             }
         }
-        
-        // Parse the string content
-        while (input[pos] != '"' && input[pos] != '\0')
-        {
-            if (input[pos] == '\\' && input[pos + 1] == '"')
-            {
+
+        // Parse content
+        while (input[pos] != '"' && input[pos] != '\0') {
+            if (input[pos] == '\\' && input[pos + 1] == '"') {
                 pos += 2;
-            }
-            else
-            {
+            } else {
                 pos++;
             }
         }
-        
+
         int len = pos - start;
-        if (len >= sizeof(token.text))
-            len = sizeof(token.text) - 1;
+        if (len >= sizeof(token.text)) len = sizeof(token.text) - 1;
         strncpy(token.text, &input[start], len);
         token.text[len] = '\0';
-        
+
         token.type = has_interpolation ? TOK_INTERPOLATED_STRING : TOK_STRING;
-        if (input[pos] == '"')
-            pos++;
-        
-        // Check if this is followed by //flags (regex pattern)
-        if (input[pos] == '/' && input[pos + 1] == '/')
-        {
-            pos += 2; // Skip //
+        if (input[pos] == '"') pos++;
+
+        // Handle regex flags
+        if (input[pos] == '/' && input[pos + 1] == '/') {
+            pos += 2;
             int flag_start = pos;
-            while (isalpha(input[pos]))
-                pos++;
+            while (isalpha(input[pos])) pos++;
             int flag_len = pos - flag_start;
-            
-            // Store pattern and flags in string_value for later parsing
+
             char combined[512];
             snprintf(combined, sizeof(combined), "%s//%.*s", token.text, flag_len, &input[flag_start]);
             strncpy(token.string_value, combined, sizeof(token.string_value));
             token.string_value[sizeof(token.string_value) - 1] = '\0';
         }
-        
-        return token;
+
+        return debug_return_token(token);
     }
 
-    // Number literal (integer or float)
-    if (isdigit(input[pos]))
-    {
+    // Numbers
+    if (isdigit(input[pos])) {
         int start = pos;
-        while (isdigit(input[pos]) || input[pos] == '.')
-            pos++;
+        while (isdigit(input[pos]) || input[pos] == '.') pos++;
         int len = pos - start;
-        if (len >= sizeof(token.text))
-            len = sizeof(token.text) - 1;
+        if (len >= sizeof(token.text)) len = sizeof(token.text) - 1;
         strncpy(token.text, &input[start], len);
         token.text[len] = '\0';
         token.type = TOK_NUMBER;
-        return token;
+        return debug_return_token(token);
     }
 
-    // Identifier
-    if (isalpha(input[pos]) || input[pos] == '$' || input[pos] == '_')
-    {
+    // Identifiers
+    if (isalpha(input[pos]) || input[pos] == '$' || input[pos] == '_') {
         int start = pos;
-        while (isalnum(input[pos]) || input[pos] == '$' || input[pos] == '_')
-            pos++;
+        while (isalnum(input[pos]) || input[pos] == '$' || input[pos] == '_') pos++;
         int len = pos - start;
-        if (len >= sizeof(token.text))
-            len = sizeof(token.text) - 1;
+        if (len >= sizeof(token.text)) len = sizeof(token.text) - 1;
         strncpy(token.text, &input[start], len);
         token.text[len] = '\0';
         token.type = TOK_ID;
-        return token;
+        return debug_return_token(token);
     }
 
+    // Unknown character
     token.type = TOK_UNKNOWN;
     token.text[0] = input[pos];
     token.text[1] = '\0';
