@@ -2,6 +2,8 @@
 #include "../../include/ast.h"
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 // JSON utility functions for Tesseract
 ASTNode *tesseract_json_escape(ASTNode **args, int arg_count)

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  tesseract-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: tesseract-dev
+    volumes:
+      - ..:/workspace
+      - ccache-volume:/home/developer/.ccache
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    environment:
+      - CC=ccache gcc
+      - CCACHE_DIR=/home/developer/.ccache
+    ports:
+      - "8080:8080"
+    command: /bin/bash
+
+volumes:
+  ccache-volume:

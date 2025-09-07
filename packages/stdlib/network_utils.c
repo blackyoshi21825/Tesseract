@@ -1,6 +1,9 @@
 #include "../core/package_loader.h"
 #include "../../include/ast.h"
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
 
 // Network utility functions for Tesseract
 ASTNode *tesseract_is_valid_ip(ASTNode **args, int arg_count)

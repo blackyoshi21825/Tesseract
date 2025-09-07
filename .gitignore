@@ -6,3 +6,27 @@
 obj
 tesser
 tpm
+
+# Development files
+*.o
+*.gch
+*.d
+gmon.out
+profile_report.txt
+profile_test.tesseract
+
+# Test outputs
+tests/output/
+
+# Cache
+.ccache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~

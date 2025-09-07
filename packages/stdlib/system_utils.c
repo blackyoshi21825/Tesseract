@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 ASTNode *system_command(ASTNode **args, int arg_count) {
     if (arg_count != 1 || args[0]->type != NODE_STRING) return ast_new_number(-1);

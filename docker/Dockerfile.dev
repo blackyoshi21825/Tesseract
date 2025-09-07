@@ -1,0 +1,59 @@
+# Tesseract Development Environment Docker Image
+FROM ubuntu:22.04
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    clang \
+    make \
+    cmake \
+    ninja-build \
+    libcurl4-openssl-dev \
+    gdb \
+    valgrind \
+    ccache \
+    git \
+    curl \
+    wget \
+    vim \
+    nano \
+    htop \
+    tree \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configure ccache
+RUN ccache --set-config=max_size=2G && \
+    ccache --set-config=compression=true
+
+# Create development user
+RUN useradd -m -s /bin/bash developer && \
+    usermod -aG sudo developer
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy project files
+COPY . /workspace/
+
+# Set ownership
+RUN chown -R developer:developer /workspace
+
+# Switch to development user
+USER developer
+
+# Set environment variables
+ENV CC="ccache gcc"
+ENV PATH="/usr/lib/ccache:$PATH"
+
+# Build the project
+RUN make pch && make -j$(nproc)
+
+# Expose any ports if needed (for future web interface)
+EXPOSE 8080
+
+# Default command
+CMD ["/bin/bash"]

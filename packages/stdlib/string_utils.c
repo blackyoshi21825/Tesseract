@@ -2,6 +2,7 @@
 #include "../../include/ast.h"
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 // String utility functions for Tesseract
 ASTNode *tesseract_str_reverse(ASTNode **args, int arg_count)
