@@ -26,11 +26,10 @@ jobs:
     - name: Install dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install curl ${{ matrix.compiler }} cppcheck
+        brew install cppcheck
 
     - name: Build
       run: |
-        export CC=${{ matrix.compiler }}
         make clean
         make pch
         make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)

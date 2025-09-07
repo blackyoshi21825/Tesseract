@@ -2,20 +2,21 @@
 
 ## Development Setup
 
-1. Run the setup script:
-   ```bash
-   ./dev-setup.sh
-   ```
+**macOS:**
+```bash
+./dev-setup.sh
+```
 
-2. Build the project:
-   ```bash
-   ./dev-tools/build.sh
-   ```
+**Linux:**
+```bash
+./setup-linux.sh
+```
 
-3. Run tests:
-   ```bash
-   ./dev-tools/run-tests.sh
-   ```
+**Manual:**
+```bash
+./dev-tools/build.sh
+./dev-tools/run-tests.sh
+```
 
 ## Development Workflow
 
