@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "tesseract_pch.h"
 #include "error.h"
 #include "../packages/core/package_loader.h"
