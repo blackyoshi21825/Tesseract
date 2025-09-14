@@ -30,15 +30,15 @@ ASTNode *tesseract_bun_scaffold(ASTNode **args, int arg_count) {
     mkdir(project_name, 0755);
     
     char path[512];
-    if (strcmp(project_type, "c") == 0) {
+    if (strcmp(project_type, "tesseract") == 0) {
         snprintf(path, sizeof(path), "%s/src", project_name);
         mkdir(path, 0755);
-        snprintf(path, sizeof(path), "%s/include", project_name);
+        snprintf(path, sizeof(path), "%s/tests", project_name);
         mkdir(path, 0755);
-        snprintf(path, sizeof(path), "%s/main.c", project_name);
+        snprintf(path, sizeof(path), "%s/main.tesseract", project_name);
         FILE *f = fopen(path, "w");
         if (f) {
-            fprintf(f, "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, %s!\\n\");\n    return 0;\n}\n", project_name);
+            fprintf(f, "# %s - Main application\n\n::print \"Hello from %s!\"\n", project_name, project_name);
             fclose(f);
         }
     }
@@ -100,10 +100,12 @@ ASTNode *tesseract_cheese_template(ASTNode **args, int arg_count) {
     
     printf("Generating %s template: %s\n", template_type, name);
     
-    if (strcmp(template_type, "header") == 0) {
-        fprintf(f, "#ifndef %s_H\n#define %s_H\n\n// %s header file\n\n#endif\n", name, name, name);
+    if (strcmp(template_type, "module") == 0) {
+        fprintf(f, "# %s module\n\n# Module functions\nfunc$init() => {\n    ::print \"Module %s initialized\"\n}\n\n# Export functions\nexport$init\n", name, name);
     } else if (strcmp(template_type, "class") == 0) {
-        fprintf(f, "typedef struct {\n    // Add fields here\n} %s;\n\n%s* %s_new();\nvoid %s_free(%s* obj);\n", name, name, name, name, name);
+        fprintf(f, "# %s class definition\n\nclass$%s => {\n    # Class fields\n    let$name := \"\"\n    \n    # Constructor\n    func$init(name) => {\n        self.name := name\n    }\n    \n    # Methods\n    func$getName() => {\n        self.name\n    }\n}\n", name, name);
+    } else if (strcmp(template_type, "test") == 0) {
+        fprintf(f, "# %s test file\n\nimport$ \"burger\"\n\n# Test cases\ntomato_assert(1, \"%s basic test\")\ntomato_assert(5 > 3, \"%s comparison test\")\n\n::print \"All %s tests completed\"\n", name, name, name, name);
     }
     
     fclose(f);
@@ -120,9 +122,9 @@ ASTNode *tesseract_meat_compile(ASTNode **args, int arg_count) {
     const char *output = args[1]->string;
     
     char command[1024];
-    snprintf(command, sizeof(command), "gcc -o %s %s", output, source);
+    snprintf(command, sizeof(command), "./tesser %s", source);
     
-    printf("Compiling: %s -> %s\n", source, output);
+    printf("Running Tesseract file: %s\n", source);
     int result = system(command);
     
     if (result == 0) {
