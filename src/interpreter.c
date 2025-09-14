@@ -19,6 +19,7 @@ void init_system_utils_package();
 void init_database_package();
 void init_console_utils_package();
 void init_time_package();
+void init_burger_package();
 
 #define MAX_FUNCTIONS 1000000
 #define MAX_CLASSES 1000000
@@ -565,6 +566,7 @@ static void initialize_packages() {
         init_database_package();
         init_console_utils_package();
         init_time_package();
+        init_burger_package();
         initialize_builtin_functions();
         packages_initialized = 1;
     }
@@ -1252,17 +1254,24 @@ void interpret(ASTNode *root)
     }
     else if (root->type == NODE_IMPORT)
     {
-        char *source = read_file(root->string);
-        if (!source)
-        {
-            char error_msg[256];
-            snprintf(error_msg, sizeof(error_msg), "Could not open file '%s'", root->string);
-            error_throw_at_line(ERROR_FILE_NOT_FOUND, error_msg, root->line);
+        // Check if it's a package import (no file extension) or file import
+        if (strchr(root->string, '.') == NULL) {
+            // Package import
+            load_package(root->string);
+        } else {
+            // File import
+            char *source = read_file(root->string);
+            if (!source)
+            {
+                char error_msg[256];
+                snprintf(error_msg, sizeof(error_msg), "Could not open file '%s'", root->string);
+                error_throw_at_line(ERROR_FILE_NOT_FOUND, error_msg, root->line);
+            }
+            parser_init(source);
+            ASTNode *import_root = parse_program();
+            interpret(import_root);
+            free(source);
         }
-        parser_init(source);
-        ASTNode *import_root = parse_program();
-        interpret(import_root);
-        free(source);
     }
     else if (root->type == NODE_FUNC_DEF)
     {

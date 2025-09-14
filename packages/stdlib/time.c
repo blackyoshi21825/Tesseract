@@ -8,6 +8,7 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+#include <sys/types.h>
 #endif
 
 ASTNode *tesseract_sleep(ASTNode **args, int arg_count) {
@@ -21,7 +22,7 @@ ASTNode *tesseract_sleep(ASTNode **args, int arg_count) {
 #ifdef _WIN32
     Sleep((DWORD)(seconds * 1000));
 #else
-    usleep((useconds_t)(seconds * 1000000));
+    usleep((unsigned int)(seconds * 1000000));
 #endif
 
     return ast_new_number(1);
@@ -48,7 +49,7 @@ ASTNode *tesseract_delay(ASTNode **args, int arg_count) {
 #ifdef _WIN32
     Sleep((DWORD)milliseconds);
 #else
-    usleep((useconds_t)(milliseconds * 1000));
+    usleep((unsigned int)(milliseconds * 1000));
 #endif
 
     return ast_new_number(1);
