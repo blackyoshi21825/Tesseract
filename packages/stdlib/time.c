@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "../core/package_loader.h"
 #include "../../include/ast.h"
 #include <time.h>
