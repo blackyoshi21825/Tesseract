@@ -53,8 +53,8 @@ Smooth code generation that melts perfectly into your project.
 
 **Example:**
 ```tesseract
-cheese_template("header", "MYHEADER", "myheader.h")
-cheese_template("class", "MyClass", "myclass.h")
+cheese_template("header", "MYFILE", "myfile.tesseract")
+cheese_template("class", "MyClass", "myclass.tesseract")
 ```
 
 **Supported templates:** header, class
